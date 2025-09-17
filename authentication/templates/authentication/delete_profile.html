@@ -1,0 +1,128 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Delete Profile - {{ profile.name }} - Glomart CRM{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card-modern border-danger">
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="bg-danger rounded-circle p-3 d-inline-flex mb-3">
+                            <i class="bi bi-exclamation-triangle text-white" style="font-size: 2rem;"></i>
+                        </div>
+                        <h4 class="fw-bold text-danger mb-2">Delete Profile</h4>
+                        <p class="text-muted">This action cannot be undone</p>
+                    </div>
+                    
+                    <div class="alert alert-danger">
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-shield-x me-2"></i>
+                            You are about to delete: "{{ profile.name }}"
+                        </h6>
+                        <p class="mb-0">{{ profile.description|default:"No description available" }}</p>
+                    </div>
+                    
+                    {% if users_count > 0 %}
+                    <div class="alert alert-warning">
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Profile Cannot Be Deleted
+                        </h6>
+                        <p class="mb-2">This profile is currently assigned to <strong>{{ users_count }} user{{ users_count|pluralize }}</strong>.</p>
+                        <p class="mb-0">Please reassign these users to different profiles before deleting this one.</p>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'authentication:profiles' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Back to Profiles
+                        </a>
+                        <a href="{% url 'authentication:users' %}?profile={{ profile.id }}" class="btn btn-gradient">
+                            <i class="bi bi-people me-2"></i>View Assigned Users
+                        </a>
+                    </div>
+                    
+                    {% else %}
+                    
+                    <div class="alert alert-info">
+                        <h6 class="fw-bold mb-2">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Deletion Impact
+                        </h6>
+                        <ul class="mb-0">
+                            <li>Profile will be permanently removed</li>
+                            <li>All associated permissions will be deleted</li>
+                            <li>No users are currently assigned to this profile</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Profile Information -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <h6 class="fw-bold mb-3">Profile Details</h6>
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Profile Name</small>
+                                    <span class="fw-semibold">{{ profile.name }}</span>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted d-block">Created</small>
+                                    <span class="fw-semibold">{{ profile.created_at|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <small class="text-muted d-block">Permissions</small>
+                                    <span class="fw-semibold">{{ profile.permissions.count }} permission{{ profile.permissions.count|pluralize }}</span>
+                                </div>
+                                <div class="col-6 mt-2">
+                                    <small class="text-muted d-block">Assigned Users</small>
+                                    <span class="fw-semibold">{{ users_count }} user{{ users_count|pluralize }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'authentication:profiles' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you absolutely sure you want to delete this profile? This action cannot be undone.')">
+                                <i class="bi bi-trash me-2"></i>Delete Profile
+                            </button>
+                        </div>
+                    </form>
+                    
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteForm = document.querySelector('form[method="post"]');
+    
+    if (deleteForm) {
+        deleteForm.addEventListener('submit', function(e) {
+            const confirmation = confirm('Type "DELETE" to confirm profile deletion:');
+            if (!confirmation) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Double confirmation for extra safety
+            const doubleConfirm = confirm('This will permanently delete the profile "{{ profile.name }}". Are you absolutely sure?');
+            if (!doubleConfirm) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

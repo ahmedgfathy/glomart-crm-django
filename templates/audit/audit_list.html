@@ -1,0 +1,405 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Audit Logs - Real Estate CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .audit-card {
+        transition: all 0.3s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .audit-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .audit-card.severity-low { border-left-color: #28a745; }
+    .audit-card.severity-medium { border-left-color: #ffc107; }
+    .audit-card.severity-high { border-left-color: #fd7e14; }
+    .audit-card.severity-critical { border-left-color: #dc3545; }
+    
+    .action-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+    }
+    
+    .filter-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .severity-indicator {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    
+    .severity-low { background-color: #28a745; }
+    .severity-medium { background-color: #ffc107; }
+    .severity-high { background-color: #fd7e14; }
+    .severity-critical { background-color: #dc3545; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="bi bi-shield-check text-primary me-2"></i>Audit Logs
+            </h1>
+            <p class="text-muted mb-0">Track all system activities and changes</p>
+        </div>
+        
+        <div class="d-flex gap-2">
+            {% if can_export %}
+            <a href="{% url 'audit:audit_export' %}" class="btn btn-gradient">
+                <i class="bi bi-download me-2"></i>Export
+            </a>
+            {% endif %}
+            
+            {% if can_manage %}
+            <a href="{% url 'audit:audit_settings' %}" class="btn btn-gradient">
+                <i class="bi bi-gear me-2"></i>Settings
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-list-check display-6 mb-2"></i>
+                    <h4 class="fw-bold">{{ total_audits }}</h4>
+                    <p class="mb-0">Total Logs</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-calendar-day text-primary display-6 mb-2"></i>
+                    <h4 class="fw-bold text-primary">{{ today_audits }}</h4>
+                    <p class="text-muted mb-0">Today's Activities</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-graph-up text-success me-2"></i>Recent Activity
+                    </h6>
+                    {% for stat in recent_stats %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-secondary">{{ stat.action|upper }}</span>
+                        <strong>{{ stat.count }}</strong>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted mb-0">No recent activity</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filters -->
+    <div class="card filter-card mb-4">
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="date_from" class="form-label">Date From</label>
+                        <input type="date" class="form-control" id="date_from" name="date_from" 
+                               value="{{ filters.date_from }}">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="date_to" class="form-label">Date To</label>
+                        <input type="date" class="form-control" id="date_to" name="date_to" 
+                               value="{{ filters.date_to }}">
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="action" class="form-label">Action</label>
+                        <select class="form-control" id="action" name="action">
+                            <option value="">All Actions</option>
+                            {% for value, label in action_choices %}
+                            <option value="{{ value }}" {% if filters.action == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    {% if can_view_all %}
+                    <div class="col-md-2">
+                        <label for="user" class="form-label">User</label>
+                        <select class="form-control" id="user" name="user">
+                            <option value="">All Users</option>
+                            {% for user in users_for_filter %}
+                            <option value="{{ user.id }}" {% if filters.user == user.id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-2">
+                        <label for="severity" class="form-label">Severity</label>
+                        <select class="form-control" id="severity" name="severity">
+                            <option value="">All Severities</option>
+                            {% for value, label in severity_choices %}
+                            <option value="{{ value }}" {% if filters.severity == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="search" class="form-label">Search</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="search" name="search" 
+                                   placeholder="Search in descriptions..." value="{{ filters.search }}">
+                            <button class="btn btn-gradient" type="submit">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-1 d-flex align-items-end">
+                        <a href="{% url 'audit:audit_list' %}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Audit Logs Table -->
+    <div class="card">
+        <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-list-ul text-primary me-2"></i>Audit Entries
+                </h6>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted">Show:</span>
+                    <select class="form-select form-select-sm" style="width: auto;" onchange="changePageSize(this.value)">
+                        <option value="10" {% if page_size == 10 %}selected{% endif %}>10</option>
+                        <option value="25" {% if page_size == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if page_size == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if page_size == 100 %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            {% if page_obj.object_list %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="border-0">Time</th>
+                            <th class="border-0">Action</th>
+                            <th class="border-0">Lead</th>
+                            <th class="border-0">User</th>
+                            <th class="border-0">Description</th>
+                            <th class="border-0">Severity</th>
+                            <th class="border-0">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for audit in page_obj.object_list %}
+                            <tr class="audit-row" data-audit-id="{{ audit.id }}">
+                                <td>
+                                    <div class="d-flex flex-column">
+                                        <span class="fw-bold">{{ audit.timestamp|date:"M d, Y" }}</span>
+                                        <small class="text-muted">{{ audit.timestamp|time:"H:i:s" }}</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge action-badge 
+                                        {% if audit.action == 'create' %}bg-success
+                                        {% elif audit.action == 'update' %}bg-primary
+                                        {% elif audit.action == 'delete' %}bg-danger
+                                        {% elif audit.action == 'status_change' %}bg-warning
+                                        {% elif audit.action == 'assignment_change' %}bg-info
+                                        {% else %}bg-secondary{% endif %}">
+                                        {{ audit.get_action_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if audit.lead %}
+                                        <a href="#" class="text-decoration-none">
+                                            {{ audit.lead.full_name }}
+                                        </a>
+                                        <br>
+                                        <small class="text-muted">{{ audit.lead.mobile }}</small>
+                                    {% else %}
+                                        <span class="text-muted">{{ audit.lead_name_backup }}</span>
+                                        <br>
+                                        <small class="text-danger">(Deleted)</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar avatar-sm bg-primary text-white rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                        {{ audit.user_identifier|first|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-medium">{{ audit.user_identifier }}</div>
+                                        {% if audit.ip_address %}
+                                        <small class="text-muted">{{ audit.ip_address }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="description-cell">
+                                    {{ audit.description|truncatechars:80 }}
+                                    {% if audit.field_name %}
+                                    <br>
+                                    <small class="text-muted">
+                                        <strong>Field:</strong> {{ audit.field_name }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="severity-indicator severity-{{ audit.severity }}"></span>
+                                {{ audit.get_severity_display }}
+                            </td>
+                            <td>
+                                <a href="{% url 'audit:audit_detail' audit.id %}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                                    <h5>No Audit Logs Found</h5>
+                                    <p>No audit logs match your current filters.</p>
+                                    
+                                    <!-- Debug info (remove in production) -->
+                                    <div class="mt-3 p-3 bg-light rounded">
+                                        <strong>Debug Info:</strong><br>
+                                        Total audits in system: {{ total_audits }}<br>
+                                        Current user: {{ user.username }}<br>
+                                        Can view all: {{ can_view_all }}<br>
+                                        Page object count: {{ page_obj.object_list|length }}
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="card-footer bg-white border-top">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="text-muted">
+                        Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} 
+                        of {{ page_obj.paginator.count }} entries
+                    </div>
+                    
+                    <nav aria-label="Audit pagination">
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                            </li>
+                            {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h5 class="mt-3 text-muted">No audit logs found</h5>
+                <p class="text-muted">Try adjusting your filters or check back later.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function changePageSize(size) {
+    const url = new URL(window.location);
+    url.searchParams.set('page_size', size);
+    url.searchParams.delete('page'); // Reset to first page
+    window.location.href = url.toString();
+}
+
+// Auto-submit filter form on change
+document.querySelectorAll('#filterForm select').forEach(select => {
+    select.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+});
+
+// Auto-submit form on date change
+document.querySelectorAll('#filterForm input[type="date"]').forEach(input => {
+    input.addEventListener('change', function() {
+        document.getElementById('filterForm').submit();
+    });
+});
+</script>
+{% endblock %}

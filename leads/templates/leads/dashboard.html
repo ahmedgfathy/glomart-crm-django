@@ -1,0 +1,679 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Leads Dashboard - Glomart CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Dashboard specific styles */
+.dashboard-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+.dashboard-card:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color);
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    transform: translate(30px, -30px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.stat-change {
+    font-size: 0.8rem;
+    opacity: 0.9;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    width: 100%;
+}
+
+.activity-item {
+    padding: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.3s ease;
+}
+
+.activity-item:hover {
+    background-color: #f8fafc;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    margin-right: 1rem;
+}
+
+.activity-icon.call {
+    background: #3b82f6;
+    color: white;
+}
+
+.activity-icon.email {
+    background: #10b981;
+    color: white;
+}
+
+.activity-icon.meeting {
+    background: #f59e0b;
+    color: white;
+}
+
+.activity-icon.note {
+    background: #8b5cf6;
+    color: white;
+}
+
+.lead-card {
+    border-left: 4px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.lead-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.lead-card.hot {
+    border-left-color: #ef4444;
+}
+
+.lead-card.warm {
+    border-left-color: #f59e0b;
+}
+
+.lead-card.cold {
+    border-left-color: #6b7280;
+}
+
+.performance-metric {
+    text-align: center;
+    padding: 1rem;
+    border-right: 1px solid #e5e7eb;
+}
+
+.performance-metric:last-child {
+    border-right: none;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.metric-label {
+    font-size: 0.8rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pipeline-stage {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.pipeline-stage:hover {
+    border-color: var(--primary-color);
+    background: white;
+}
+
+.stage-count {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.stage-label {
+    font-size: 0.9rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+}
+
+.quick-filter {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    color: #374151;
+    text-decoration: none;
+    margin: 0.25rem;
+    transition: all 0.3s ease;
+    font-size: 0.875rem;
+}
+
+.quick-filter:hover {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    text-decoration: none;
+}
+
+.quick-filter.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.donut-chart {
+    width: 150px;
+    height: 150px;
+    margin: 0 auto;
+}
+
+.goal-progress {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.5rem;
+}
+
+.goal-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i class="bi bi-graph-up me-2 text-primary"></i>Leads Dashboard
+                    </h1>
+                    <p class="text-muted mb-0">Track your leads performance and manage your pipeline</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'leads:create_lead' %}" class="btn btn-gradient">
+                        <i class="bi bi-plus-circle me-2"></i>New Lead
+                    </a>
+                    <a href="{% url 'leads:leads_list' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-list me-2"></i>All Leads
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="stat-number">{{ total_leads }}</div>
+                <div class="stat-label">Total Leads</div>
+                <div class="stat-change">
+                    <i class="bi bi-arrow-up"></i> +12% from last month
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #10b981, #059669);">
+                <div class="stat-icon">
+                    <i class="bi bi-check-circle"></i>
+                </div>
+                <div class="stat-number">{{ converted_leads }}</div>
+                <div class="stat-label">Converted</div>
+                <div class="stat-change">
+                    <i class="bi bi-arrow-up"></i> +8% from last month
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                <div class="stat-icon">
+                    <i class="bi bi-clock"></i>
+                </div>
+                <div class="stat-number">{{ pending_leads }}</div>
+                <div class="stat-label">Pending</div>
+                <div class="stat-change">
+                    <i class="bi bi-arrow-down"></i> -3% from last month
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                <div class="stat-icon">
+                    <i class="bi bi-percent"></i>
+                </div>
+                <div class="stat-number">{{ conversion_rate }}%</div>
+                <div class="stat-label">Conversion Rate</div>
+                <div class="stat-change">
+                    <i class="bi bi-arrow-up"></i> +5% from last month
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Lead Pipeline -->
+        <div class="col-lg-8">
+            <div class="dashboard-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0">
+                        <i class="bi bi-funnel me-2 text-primary"></i>Lead Pipeline
+                    </h5>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            This Month
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#">This Week</a></li>
+                            <li><a class="dropdown-item" href="#">This Month</a></li>
+                            <li><a class="dropdown-item" href="#">This Quarter</a></li>
+                            <li><a class="dropdown-item" href="#">This Year</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    {% for stage in pipeline_stages %}
+                    <div class="col">
+                        <div class="pipeline-stage">
+                            <div class="stage-count">{{ stage.count }}</div>
+                            <div class="stage-label">{{ stage.name }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="chart-container">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lead Sources -->
+        <div class="col-lg-4">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-pie-chart me-2 text-primary"></i>Lead Sources
+                </h5>
+                <div class="text-center mb-4">
+                    <div class="donut-chart">
+                        <canvas id="sourcesChart"></canvas>
+                    </div>
+                </div>
+                <div class="lead-sources-list">
+                    {% for source in lead_sources %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <div class="me-2" style="width: 12px; height: 12px; border-radius: 50%; background: {{ source.color }};"></div>
+                            <span>{{ source.name }}</span>
+                        </div>
+                        <span class="fw-semibold">{{ source.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+        <!-- Recent Activities -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="p-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-clock-history me-2 text-primary"></i>Recent Activities
+                        </h5>
+                        <a href="#" class="text-decoration-none">View All</a>
+                    </div>
+                </div>
+                <div class="activity-list" style="max-height: 400px; overflow-y: auto;">
+                    {% for activity in recent_activities %}
+                    <div class="activity-item">
+                        <div class="d-flex align-items-center">
+                            <div class="activity-icon {{ activity.activity_type }}">
+                                <i class="bi bi-{% if activity.activity_type == 'call' %}telephone{% elif activity.activity_type == 'email' %}envelope{% elif activity.activity_type == 'meeting' %}calendar-event{% else %}journal-text{% endif %}"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">{{ activity.title }}</div>
+                                <div class="text-muted small">{{ activity.description }}</div>
+                                <div class="text-muted small">
+                                    <i class="bi bi-person me-1"></i>{{ activity.user.get_full_name|default:activity.user.username }}
+                                    <span class="ms-2">{{ activity.created_at|timesince }} ago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history display-6 text-muted mb-3"></i>
+                        <h6 class="text-muted">No recent activities</h6>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Hot Leads -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="p-4 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">
+                            <i class="bi bi-fire me-2 text-danger"></i>Hot Leads
+                        </h5>
+                        <a href="{% url 'leads:leads_list' %}?temperature=hot" class="text-decoration-none">View All</a>
+                    </div>
+                </div>
+                <div class="p-4">
+                    {% for lead in hot_leads %}
+                    <div class="lead-card hot p-3 mb-3 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h6 class="fw-semibold mb-1">
+                                    <a href="{% url 'leads:lead_detail' lead.id %}" class="text-decoration-none">
+                                        {{ lead.full_name }}
+                                    </a>
+                                </h6>
+                                <div class="text-muted small mb-2">{{ lead.email }}</div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-danger">Hot</span>
+                                    <span class="badge" style="background-color: {{ lead.status.color }};">{{ lead.status.name }}</span>
+                                    <span class="badge bg-secondary">{{ lead.get_priority_display }}</span>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold text-primary">{{ lead.score }}%</div>
+                                <div class="text-muted small">Score</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-fire display-6 text-muted mb-3"></i>
+                        <h6 class="text-muted">No hot leads</h6>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row g-4 mt-2">
+        <div class="col-12">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-graph-up-arrow me-2 text-primary"></i>Performance Metrics
+                </h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="performance-metric">
+                            <div class="metric-value">{{ avg_response_time }}</div>
+                            <div class="metric-label">Avg Response Time (hrs)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="performance-metric">
+                            <div class="metric-value">{{ avg_deal_size }}</div>
+                            <div class="metric-label">Avg Deal Size</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="performance-metric">
+                            <div class="metric-value">{{ follow_up_rate }}%</div>
+                            <div class="metric-label">Follow-up Rate</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="performance-metric">
+                            <div class="metric-value">{{ lead_velocity }}</div>
+                            <div class="metric-label">Lead Velocity (days)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Goals and Targets -->
+    <div class="row g-4 mt-2">
+        <div class="col-lg-6">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-target me-2 text-primary"></i>Monthly Goals
+                </h5>
+                <div class="goals-list">
+                    <div class="goal-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">New Leads</span>
+                            <span class="text-muted">{{ new_leads_goal.current }}/{{ new_leads_goal.target }}</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar" style="width: {{ new_leads_goal.percentage }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ new_leads_goal.percentage }}% of target</small>
+                    </div>
+                    
+                    <div class="goal-item mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Conversions</span>
+                            <span class="text-muted">{{ conversions_goal.current }}/{{ conversions_goal.target }}</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar" style="width: {{ conversions_goal.percentage }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ conversions_goal.percentage }}% of target</small>
+                    </div>
+                    
+                    <div class="goal-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold">Revenue</span>
+                            <span class="text-muted">${{ revenue_goal.current }k/${{{ revenue_goal.target }}k</span>
+                        </div>
+                        <div class="goal-progress">
+                            <div class="goal-progress-bar" style="width: {{ revenue_goal.percentage }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ revenue_goal.percentage }}% of target</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Filters -->
+        <div class="col-lg-6">
+            <div class="dashboard-card p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-funnel me-2 text-primary"></i>Quick Filters
+                </h5>
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">By Status</h6>
+                    {% for status in statuses %}
+                    <a href="{% url 'leads:leads_list' %}?status={{ status.id }}" class="quick-filter">
+                        {{ status.name }} ({{ status.count }})
+                    </a>
+                    {% endfor %}
+                </div>
+                
+                <div class="mb-3">
+                    <h6 class="text-muted mb-2">By Temperature</h6>
+                    <a href="{% url 'leads:leads_list' %}?temperature=hot" class="quick-filter">
+                        Hot ({{ hot_count }})
+                    </a>
+                    <a href="{% url 'leads:leads_list' %}?temperature=warm" class="quick-filter">
+                        Warm ({{ warm_count }})
+                    </a>
+                    <a href="{% url 'leads:leads_list' %}?temperature=cold" class="quick-filter">
+                        Cold ({{ cold_count }})
+                    </a>
+                </div>
+                
+                <div>
+                    <h6 class="text-muted mb-2">By Priority</h6>
+                    <a href="{% url 'leads:leads_list' %}?priority=high" class="quick-filter">
+                        High Priority ({{ high_priority_count }})
+                    </a>
+                    <a href="{% url 'leads:leads_list' %}?priority=medium" class="quick-filter">
+                        Medium Priority ({{ medium_priority_count }})
+                    </a>
+                    <a href="{% url 'leads:leads_list' %}?priority=low" class="quick-filter">
+                        Low Priority ({{ low_priority_count }})
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Pipeline Chart
+    const pipelineCtx = document.getElementById('pipelineChart').getContext('2d');
+    new Chart(pipelineCtx, {
+        type: 'bar',
+        data: {
+            labels: [{% for stage in pipeline_stages %}'{{ stage.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Leads',
+                data: [{% for stage in pipeline_stages %}{{ stage.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [
+                    '#3b82f6',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#8b5cf6'
+                ],
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: '#f3f4f6'
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+
+    // Sources Chart
+    const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+    new Chart(sourcesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: [{% for source in lead_sources %}'{{ source.name }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                data: [{% for source in lead_sources %}{{ source.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: [
+                    '#3b82f6',
+                    '#10b981',
+                    '#f59e0b',
+                    '#ef4444',
+                    '#8b5cf6',
+                    '#06b6d4'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            cutout: '70%'
+        }
+    });
+
+    // Auto refresh dashboard every 5 minutes
+    setInterval(function() {
+        location.reload();
+    }, 300000);
+});
+</script>
+{% endblock %}

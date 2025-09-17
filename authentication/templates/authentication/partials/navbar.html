@@ -1,0 +1,61 @@
+{% load static %}
+
+<!-- Dark Header with Logo Only -->
+<nav class="navbar navbar-dark bg-dark fixed-top">
+    <div class="container-fluid px-4">
+        <!-- Logo Only Brand Section -->
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'authentication:dashboard' %}">
+            <div class="logo-container">
+                <img src="{% static 'images/logo.png' %}" alt="CRM Logo" class="logo">
+            </div>
+        </a>
+        
+        <!-- Right Side - User Info & Actions -->
+        <div class="d-flex align-items-center gap-3">
+            <!-- Email -->
+            <a href="https://mail.glomartrealestates.com/" target="_blank" class="btn btn-outline-secondary border-0" title="Open Email">
+                <i class="bi bi-envelope"></i>
+            </a>
+            
+            <!-- Search -->
+            <button class="btn btn-outline-secondary border-0" type="button" title="Search">
+                <i class="bi bi-search"></i>
+            </button>
+            
+            <!-- Notifications -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary border-0 position-relative" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-bell"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">3</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Notifications</h6></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle me-2"></i>New lead assigned</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-check-circle me-2"></i>Task completed</a></li>
+                </ul>
+            </div>
+            
+            <!-- User Menu -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary dropdown-toggle border-0 d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                    <div class="bg-primary rounded-circle p-2 me-2">
+                        <i class="bi bi-person text-white"></i>
+                    </div>
+                    <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                    {% if user.is_superuser %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:users' %}"><i class="bi bi-people me-2"></i>Manage Users</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:profiles' %}"><i class="bi bi-shield-check me-2"></i>Manage Profiles</a></li>
+                    <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear-wide me-2"></i>Admin</a></li>
+                    {% endif %}
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'authentication:logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</nav>

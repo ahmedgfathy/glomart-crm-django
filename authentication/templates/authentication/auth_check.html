@@ -1,0 +1,89 @@
+{% extends 'app_layout.html' %}
+
+{% block title %}Authentication Check{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h3>🔐 Authentication Status Check</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>Current User Info:</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <strong>Username:</strong> 
+                            {% if user.is_authenticated %}
+                                {{ user.username }}
+                            {% else %}
+                                Not authenticated
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Email:</strong> 
+                            {% if user.is_authenticated %}
+                                {{ user.email }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Is Superuser:</strong> 
+                            {% if user.is_authenticated %}
+                                {% if user.is_superuser %}
+                                    <span class="badge bg-success">Yes ✅</span>
+                                {% else %}
+                                    <span class="badge bg-danger">No ❌</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Is Staff:</strong> 
+                            {% if user.is_authenticated %}
+                                {% if user.is_staff %}
+                                    <span class="badge bg-success">Yes ✅</span>
+                                {% else %}
+                                    <span class="badge bg-warning">No ⚠️</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="badge bg-secondary">N/A</span>
+                            {% endif %}
+                        </li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5>Permission Check Result:</h5>
+                    {% if user.is_authenticated %}
+                        {% if user.is_superuser %}
+                            <div class="alert alert-success">
+                                <h6>✅ Permission Status: ALLOWED</h6>
+                                <p>You have superuser privileges and can modify permissions.</p>
+                                <a href="{% url 'authentication:profiles' %}" class="btn btn-gradient">
+                                    Go to Profiles
+                                </a>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-danger">
+                                <h6>❌ Permission Status: DENIED</h6>
+                                <p>You need superuser privileges to modify permissions.</p>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <h6>⚠️ Authentication Status: NOT LOGGED IN</h6>
+                            <p>Please log in with a superuser account.</p>
+                            <a href="{% url 'authentication:login' %}" class="btn btn-gradient">
+                                Login
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

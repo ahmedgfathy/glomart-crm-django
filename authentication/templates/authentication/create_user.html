@@ -1,0 +1,219 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Create User - Glomart CRM{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-person-plus text-primary me-3"></i>
+                        Create New User
+                    </h2>
+                    <p class="text-muted mb-0">Add a new user to the system with profile assignment</p>
+                </div>
+                <a href="{% url 'authentication:users' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card-modern p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <!-- Username -->
+                        <div class="col-md-6">
+                            <label for="{{ form.username.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-person me-2 text-primary"></i>Username *
+                            </label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.username.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label for="{{ form.email.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-2 text-primary"></i>Email Address *
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.email.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- First Name -->
+                        <div class="col-md-6">
+                            <label for="{{ form.first_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-2 text-primary"></i>First Name
+                            </label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.first_name.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label for="{{ form.last_name.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-person-badge-fill me-2 text-primary"></i>Last Name
+                            </label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.last_name.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Password -->
+                        <div class="col-md-6">
+                            <label for="{{ form.password1.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-lock me-2 text-primary"></i>Password *
+                            </label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password1.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Confirm Password -->
+                        <div class="col-md-6">
+                            <label for="{{ form.password2.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-lock-fill me-2 text-primary"></i>Confirm Password *
+                            </label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.password2.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Profile Assignment -->
+                        <div class="col-md-6">
+                            <label for="{{ form.profile.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-shield-check me-2 text-primary"></i>Assign Profile
+                            </label>
+                            {{ form.profile }}
+                            <div class="form-text">Select a profile to assign permissions to this user</div>
+                            {% if form.profile.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.profile.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Department -->
+                        <div class="col-md-6">
+                            <label for="{{ form.department.id_for_label }}" class="form-label fw-semibold">
+                                <i class="bi bi-building me-2 text-primary"></i>Department
+                            </label>
+                            {{ form.department }}
+                            <div class="form-text">User's department or division</div>
+                            {% if form.department.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.department.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Active Status -->
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                {{ form.is_active }}
+                                <label for="{{ form.is_active.id_for_label }}" class="form-check-label fw-semibold">
+                                    <i class="bi bi-check-circle me-2 text-success"></i>Active User
+                                </label>
+                                <div class="form-text">Uncheck to create an inactive user</div>
+                            </div>
+                            {% if form.is_active.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.is_active.errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-gradient px-4">
+                            <i class="bi bi-plus-circle me-2"></i>Create User
+                        </button>
+                        <a href="{% url 'authentication:users' %}" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="col-lg-4">
+            <div class="card-modern p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-info-circle text-info me-2"></i>User Creation Guidelines
+                </h5>
+                
+                <div class="alert alert-info border-0">
+                    <h6 class="fw-semibold">Password Requirements:</h6>
+                    <ul class="mb-0 small">
+                        <li>Minimum 8 characters</li>
+                        <li>Cannot be too similar to personal information</li>
+                        <li>Cannot be a commonly used password</li>
+                        <li>Cannot be entirely numeric</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning border-0">
+                    <h6 class="fw-semibold">Profile Assignment:</h6>
+                    <p class="mb-0 small">
+                        Profiles define what modules and actions a user can access. You can assign a profile now or later.
+                    </p>
+                </div>
+                
+                <div class="alert alert-success border-0">
+                    <h6 class="fw-semibold">User Status:</h6>
+                    <p class="mb-0 small">
+                        Active users can log in and access the system. Inactive users cannot log in but their data is preserved.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

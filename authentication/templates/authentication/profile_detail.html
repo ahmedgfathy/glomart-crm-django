@@ -1,0 +1,747 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+{% load dict_extras %}
+
+{% block title %}{{ profile.name }} - Profile Details{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Custom Range Slider Styles */
+.permission-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;
+    background: #e9ecef;
+    outline: none;
+    transition: all 0.3s ease;
+    --thumb-color: var(--primary-color);
+}
+
+.permission-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--thumb-color, var(--primary-color));
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    border: 2px solid white;
+}
+    
+    // Check if user has permission to edit (test with a simple request)
+    window.checkEditPermissions = function() {
+        console.log('🔍 Checking edit permissions...');
+        fetch(`{% url 'authentication:update_permissions' profile.id %}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({test: true})
+        })
+        .then(response => {
+            if (response.status === 403) {
+                console.warn('⚠️ User does not have superuser permissions');
+                alert('⚠️ Permission Issue\n\nYou are not logged in as a superuser.\nPermission sliders will not save changes.\n\nPlease log in with an administrator account.');
+            } else if (response.status === 302) {
+                console.warn('⚠️ User is not logged in');
+                alert('⚠️ Authentication Required\n\nYou are not logged in.\nPlease log in as a superuser to modify permissions.');
+            } else {
+                console.log('✅ User has edit permissions');
+            }
+        })
+        .catch(error => {
+            console.warn('⚠️ Could not verify permissions:', error);
+        });
+    };
+    
+    // Test function to verify save indicator works
+    window.testSaveIndicator = function() {
+        console.log('🧪 Testing save indicator...');
+        showSavingIndicator();
+        setTimeout(() => showSaveSuccessIndicator(), 1000);
+    };
+    cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    border: 2px solid white;
+}
+
+.permission-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.permission-slider::-moz-range-thumb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--thumb-color, var(--primary-color));
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+}
+
+.permission-level {
+    position: relative;
+    padding: 10px 0;
+}
+
+.permission-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    font-size: 0.75rem;
+}
+
+.permission-label {
+    color: #6c757d;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.permission-label.active {
+    color: var(--primary-color);
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.module-card {
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.module-card.has-permissions {
+    border-color: var(--primary-color);
+    background: rgba(102, 126, 234, 0.03);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.module-card.level-4 {
+    border-color: #dc3545;
+    background: rgba(220, 53, 69, 0.03);
+}
+
+.module-card.level-3 {
+    border-color: #198754;
+    background: rgba(25, 135, 84, 0.03);
+}
+
+.module-card.level-2 {
+    border-color: #fd7e14;
+    background: rgba(253, 126, 20, 0.03);
+}
+
+.module-card.level-1 {
+    border-color: #0dcaf0;
+    background: rgba(13, 202, 240, 0.03);
+}
+
+.level-badge {
+    font-size: 0.8rem !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    animation: levelBadgeUpdate 0.3s ease;
+}
+
+@keyframes levelBadgeUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* Pulsing animation for level 4 (full permissions) */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+.level-badge:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.current-level-container {
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.current-level-container:hover {
+    border-color: var(--primary-color);
+    background: linear-gradient(135deg, #f8f9fa, #f1f3f4);
+}
+
+.save-indicator {
+    opacity: 1;
+    transition: opacity 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.save-indicator.show {
+    opacity: 1;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+    {% csrf_token %}
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'authentication:profiles' %}">Profiles</a></li>
+                            <li class="breadcrumb-item active">{{ profile.name }}</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-shield-check text-primary me-3"></i>
+                        {{ profile.name }}
+                    </h2>
+                    <p class="text-muted mb-0">{{ profile.description }}</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary save-indicator" id="saveIndicator">
+                        <i class="bi bi-cloud-check me-2"></i><span id="saveText">Auto-Save Enabled</span>
+                    </button>
+                    <a href="{% url 'authentication:profiles' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Profile Info -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card-modern p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-sliders text-primary me-2"></i>
+                    Module Permissions
+                </h5>
+                <div class="alert alert-info d-flex align-items-center mb-4">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <div>
+                        <strong>Cumulative Permission Levels:</strong> Each level includes all permissions from lower levels.
+                        <br><small class="text-muted">
+                            <span class="badge bg-secondary">None</span> → 
+                            <span class="badge bg-info">View</span> → 
+                            <span class="badge bg-warning">View + Edit</span> → 
+                            <span class="badge bg-success">View + Edit + Create</span> → 
+                            <span class="badge bg-danger">View + Edit + Create + Delete</span>
+                        </small>
+                        <br><small class="text-success"><i class="bi bi-check-circle me-1"></i>Changes are saved automatically</small>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    {% for module in modules %}
+                    <div class="col-lg-6">
+                        <div class="card module-card p-3 h-100" data-module="{{ module.name }}">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-primary bg-gradient rounded-3 p-2 me-3">
+                                    <i class="{{ module.icon }} text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-0">{{ module.display_name }}</h6>
+                                    <small class="text-muted">{{ module.name }}</small>
+                                </div>
+                            </div>
+                            
+                            <div class="permission-level">
+                                <input type="range" 
+                                       class="permission-slider" 
+                                       min="0" 
+                                       max="4" 
+                                       value="{{ current_permissions|lookup:module.name|default:0 }}"
+                                       data-module="{{ module.name }}"
+                                       id="slider-{{ module.name }}">
+                                
+                                <div class="permission-labels">
+                                    <span class="permission-label" data-level="0">None</span>
+                                    <span class="permission-label" data-level="1">View</span>
+                                    <span class="permission-label" data-level="2">+ Edit</span>
+                                    <span class="permission-label" data-level="3">+ Create</span>
+                                    <span class="permission-label" data-level="4">+ Delete</span>
+                                </div>
+                                
+                                <!-- Debug: Test button for level 4 -->
+                                <div class="mt-2" style="display: none;" id="debug-controls">
+                                    <button class="btn btn-sm btn-outline-danger" 
+                                            onclick="testLevel4('{{ module.name }}')" 
+                                            title="Test Level 4 Auto-save">
+                                        🔥 Test Level 4 for {{ module.name }}
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 p-2 current-level-container rounded-3 d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-shield-check text-primary me-2"></i>
+                                    <small class="text-muted fw-bold">Current Level:</small>
+                                </div>
+                                {% with current_level=current_permissions|lookup:module.name|default:0 %}
+                                <span class="badge 
+                                    {% if current_level == 0 %}bg-secondary
+                                    {% elif current_level == 1 %}bg-info
+                                    {% elif current_level == 2 %}bg-warning
+                                    {% elif current_level == 3 %}bg-success
+                                    {% elif current_level == 4 %}bg-danger
+                                    {% endif %} level-badge fs-6 px-3 py-2" id="badge-{{ module.name }}" 
+                                    title="{% if current_level == 0 %}No access{% elif current_level == 1 %}Can view only{% elif current_level == 2 %}Can view and edit{% elif current_level == 3 %}Can view, edit and create{% elif current_level == 4 %}Full access including delete{% endif %}">
+                                    {% if current_level == 0 %}
+                                        <i class="bi bi-dash-circle me-1"></i>None
+                                    {% elif current_level == 1 %}
+                                        <i class="bi bi-eye me-1"></i>View
+                                    {% elif current_level == 2 %}
+                                        <i class="bi bi-pencil me-1"></i>View + Edit
+                                    {% elif current_level == 3 %}
+                                        <i class="bi bi-plus-circle me-1"></i>View + Edit + Create
+                                    {% elif current_level == 4 %}
+                                        <i class="bi bi-trash me-1"></i>All Permissions
+                                    {% endif %}
+                                </span>
+                                {% endwith %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Profile Summary -->
+            <div class="card-modern p-4 mb-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-info-circle text-primary me-2"></i>
+                    Profile Summary
+                </h6>
+                <div class="row g-3 text-center">
+                    <div class="col-4">
+                        <div class="bg-primary bg-gradient rounded-3 p-2 mb-2">
+                            <i class="bi bi-people text-white"></i>
+                        </div>
+                        <div class="fw-bold">{{ profile.users.count }}</div>
+                        <small class="text-muted">Users</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-success bg-gradient rounded-3 p-2 mb-2">
+                            <i class="bi bi-key text-white"></i>
+                        </div>
+                        <div class="fw-bold" id="permissions-count">{{ profile.permissions.count }}</div>
+                        <small class="text-muted">Permissions</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="bg-warning bg-gradient rounded-3 p-2 mb-2">
+                            <i class="bi bi-gear text-white"></i>
+                        </div>
+                        <div class="fw-bold">{{ profile.rules.count }}</div>
+                        <small class="text-muted">Rules</small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Assigned Users -->
+            <div class="card-modern p-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-people text-primary me-2"></i>
+                    Assigned Users
+                </h6>
+                {% for user_profile in profile.users.all %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="bg-light rounded-circle p-2 me-3">
+                        <i class="bi bi-person"></i>
+                    </div>
+                    <div>
+                        <div class="fw-semibold">{{ user_profile.user.get_full_name|default:user_profile.user.username }}</div>
+                        <small class="text-muted">{{ user_profile.user.email }}</small>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted small">No users assigned to this profile</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sliders = document.querySelectorAll('.permission-slider');
+    const saveIndicator = document.getElementById('saveIndicator');
+    const permissionsCount = document.getElementById('permissions-count');
+    
+    // Permission level names and colors - cumulative
+    const levelNames = ['None', 'View', 'View + Edit', 'View + Edit + Create', 'All Permissions'];
+    const levelColors = ['secondary', 'info', 'warning', 'success', 'danger'];
+    const levelIcons = ['bi-dash-circle', 'bi-eye', 'bi-pencil', 'bi-plus-circle', 'bi-trash'];
+    const levelDescriptions = [
+        'No access',
+        'Can view only', 
+        'Can view and edit',
+        'Can view, edit and create',
+        'Full access including delete'
+    ];
+    
+    // Initialize sliders with current values
+    let currentPermissions = {};
+    try {
+        const permissionsData = {{ current_permissions_json|safe }};
+        console.log('🔍 Raw permissions data:', permissionsData);
+        
+        if (permissionsData && typeof permissionsData === 'object') {
+            currentPermissions = permissionsData;
+            console.log('✅ Using permissions object:', currentPermissions);
+        } else {
+            console.log('⚠️ No permissions data, using empty object');
+        }
+    } catch (error) {
+        console.error('❌ Error parsing current_permissions:', error);
+        console.log('🔧 Using empty permissions object as fallback');
+        currentPermissions = {};
+    }
+    
+    sliders.forEach(slider => {
+        const module = slider.dataset.module;
+        const currentValue = currentPermissions[module] || 0;
+        slider.value = currentValue;
+        updateSliderDisplay(slider, currentValue);
+    });
+    
+    // Handle slider changes
+    sliders.forEach(slider => {
+        console.log(`🔧 Attaching events to slider: ${slider.dataset.module}`);
+        
+        slider.addEventListener('input', function() {
+            const level = parseInt(this.value);
+            console.log(`📱 INPUT event: ${this.dataset.module} = ${level}`);
+            updateSliderDisplay(this, level);
+        });
+        
+        slider.addEventListener('change', function() {
+            const module = this.dataset.module;
+            let level = parseFloat(this.value); // Use parseFloat first
+            level = Math.round(level); // Then round to ensure integer
+            level = Math.max(0, Math.min(4, level)); // Clamp between 0 and 4
+            
+            // Update the slider value to the clamped value
+            this.value = level;
+            
+            console.log(`🔄 CHANGE event: module=${module}, rawValue=${this.value}, processedLevel=${level}`);
+            
+            // Special debugging for level 4
+            if (level === 4) {
+                console.log(`🔥 LEVEL 4 DETECTED for ${module}! Auto-save should trigger now.`);
+                // Uncomment the line below to get a visual alert for testing
+                // alert(`Level 4 (Full Permissions) reached for ${module}! Auto-saving...`);
+            }
+            
+            console.log(`🚀 About to call updatePermissions(${module}, ${level})`);
+            updatePermissions(module, level);
+        });
+        
+        // Also handle mouseup and touchend events to catch any edge cases
+        slider.addEventListener('mouseup', function() {
+            const module = this.dataset.module;
+            const level = parseInt(this.value);
+            console.log(`🖱️ Mouse up event: module=${module}, level=${level}`);
+        });
+        
+        slider.addEventListener('touchend', function() {
+            const module = this.dataset.module;
+            const level = parseInt(this.value);
+            console.log(`👆 Touch end event: module=${module}, level=${level}`);
+        });
+    });
+    
+    function updateSliderDisplay(slider, level) {
+        const module = slider.dataset.module;
+        const moduleCard = document.querySelector(`[data-module="${module}"]`);
+        const badge = document.getElementById(`badge-${module}`);
+        const labels = moduleCard.querySelectorAll('.permission-label');
+        
+        // Update badge with icon, color, animation and tooltip
+        badge.innerHTML = `<i class="${levelIcons[level]} me-1"></i>${levelNames[level]}`;
+        badge.className = `badge bg-${levelColors[level]} level-badge fs-6 px-3 py-2`;
+        badge.title = levelDescriptions[level]; // Add tooltip
+        
+        // Special styling for level 4 (full permissions)
+        if (level === 4) {
+            badge.classList.add('pulse'); // Add pulsing animation for level 4
+            badge.innerHTML = `<i class="bi bi-shield-fill-exclamation me-1"></i>${levelNames[level]} 🔥`;
+        }
+        
+        // Trigger animation
+        badge.style.animation = 'none';
+        badge.offsetHeight; // Trigger reflow
+        badge.style.animation = 'levelBadgeUpdate 0.3s ease';
+        
+        // Update labels
+        labels.forEach((label, index) => {
+            if (index <= level && level > 0) {
+                label.classList.add('active');
+            } else {
+                label.classList.remove('active');
+            }
+        });
+        
+        // Update module card appearance with level-specific styling
+        moduleCard.classList.remove('has-permissions', 'level-0', 'level-1', 'level-2', 'level-3', 'level-4');
+        
+        if (level > 0) {
+            moduleCard.classList.add('has-permissions', `level-${level}`);
+        }
+        
+        // Update slider background gradient with level-specific colors
+        const percentage = (level / 4) * 100;
+        let gradientColor = 'var(--primary-color)';
+        
+        switch(level) {
+            case 0: gradientColor = '#6c757d'; break;
+            case 1: gradientColor = '#0dcaf0'; break;
+            case 2: gradientColor = '#fd7e14'; break;
+            case 3: gradientColor = '#198754'; break;
+            case 4: gradientColor = '#dc3545'; break;
+        }
+        
+        slider.style.background = `linear-gradient(to right, ${gradientColor} 0%, ${gradientColor} ${percentage}%, #e9ecef ${percentage}%, #e9ecef 100%)`;
+        
+        // Update slider thumb color
+        slider.style.setProperty('--thumb-color', gradientColor);
+    }
+    
+    function updatePermissions(module, level) {
+        console.log(`🔄 updatePermissions called: module=${module}, level=${level}`);
+        
+        // Show saving indicator
+        showSavingIndicator();
+        
+        console.log(`🔄 Updating permissions for module: ${module}, level: ${level}`); // Debug log
+        
+        const data = {
+            module: module,
+            level: level
+        };
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (!csrfToken) {
+            console.error('❌ CSRF token not found!');
+            showSaveErrorIndicator();
+            return;
+        }
+        
+        const url = `{% url 'authentication:update_permissions' profile.id %}`;
+        console.log(`🌐 Sending request to: ${url}`);
+        console.log(`📦 Data:`, data);
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken.value
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => {
+            console.log('📡 Response status:', response.status); // Debug log
+            console.log('📡 Response ok:', response.ok); // Debug log
+            
+            if (response.status === 403) {
+                throw new Error('Authentication required: You must be logged in as a superuser to change permissions.');
+            }
+            if (response.status === 302) {
+                throw new Error('Redirected to login: Please log in as a superuser first.');
+            }
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📋 Response data:', data); // Debug log
+            if (data.success) {
+                showSaveSuccessIndicator();
+                // Update permissions count
+                updatePermissionsCount();
+                console.log(`✅ Successfully updated ${module} to level ${level}`); // Debug log
+            } else {
+                showSaveErrorIndicator();
+                console.error('❌ Error updating permissions:', data.error);
+                alert(`Error: ${data.error || 'Failed to update permissions'}`);
+            }
+        })
+        .catch(error => {
+            showSaveErrorIndicator();
+            console.error('❌ Fetch error:', error);
+            
+            // Show user-friendly error message
+            if (error.message.includes('Authentication') || error.message.includes('login')) {
+                alert('🔐 Authentication Required\n\nYou must be logged in as a superuser to modify permissions.\n\nPlease log in with an administrator account and try again.');
+            } else {
+                alert(`Error updating permissions: ${error.message}`);
+            }
+        });
+    }
+    
+    function showSavingIndicator() {
+        const saveIndicator = document.getElementById('saveIndicator');
+        const saveText = document.getElementById('saveText');
+        const icon = saveIndicator.querySelector('i');
+        
+        console.log('🟡 Showing saving indicator');
+        
+        saveIndicator.className = 'btn btn-gradient save-indicator show';
+        icon.className = 'bi bi-cloud-arrow-up me-2';
+        saveText.textContent = 'Saving...';
+    }
+    
+    function showSaveSuccessIndicator() {
+        const saveIndicator = document.getElementById('saveIndicator');
+        const saveText = document.getElementById('saveText');
+        const icon = saveIndicator.querySelector('i');
+        
+        console.log('🟢 Showing save success indicator');
+        
+        saveIndicator.className = 'btn btn-gradient save-indicator show';
+        icon.className = 'bi bi-cloud-check me-2';
+        saveText.textContent = 'Saved!';
+        
+        setTimeout(() => {
+            saveIndicator.className = 'btn btn-outline-primary save-indicator show';
+            icon.className = 'bi bi-cloud-check me-2';
+            saveText.textContent = 'Auto-Save Enabled';
+        }, 3000);
+    }
+    
+    function showSaveErrorIndicator() {
+        const saveIndicator = document.getElementById('saveIndicator');
+        const saveText = document.getElementById('saveText');
+        const icon = saveIndicator.querySelector('i');
+        
+        saveIndicator.className = 'btn btn-danger save-indicator show';
+        icon.className = 'bi bi-exclamation-triangle me-2';
+        saveText.textContent = 'Save Failed';
+        
+        setTimeout(() => {
+            saveIndicator.className = 'btn btn-outline-primary save-indicator';
+            icon.className = 'bi bi-cloud-check me-2';
+            saveText.textContent = 'Auto-Save Enabled';
+        }, 3000);
+    }
+    
+    function showSaveErrorIndicator() {
+        const saveIndicator = document.getElementById('saveIndicator');
+        const saveText = document.getElementById('saveText');
+        const icon = saveIndicator.querySelector('i');
+        
+        console.log('🔴 Showing save error indicator');
+        
+        saveIndicator.className = 'btn btn-danger save-indicator show';
+        icon.className = 'bi bi-cloud-x me-2';
+        saveText.textContent = 'Error!';
+        
+        setTimeout(() => {
+            saveIndicator.className = 'btn btn-outline-primary save-indicator show';
+            icon.className = 'bi bi-cloud-check me-2';
+            saveText.textContent = 'Auto-Save Enabled';
+        }, 3000);
+    }
+    
+    function updatePermissionsCount() {
+        let totalPermissions = 0;
+        sliders.forEach(slider => {
+            const level = parseInt(slider.value);
+            totalPermissions += level;
+        });
+        permissionsCount.textContent = totalPermissions;
+    }
+    
+    // Initialize all slider displays
+    sliders.forEach(slider => {
+        updateSliderDisplay(slider, parseInt(slider.value));
+    });
+    
+    // Debug function to test level 4 directly
+    window.testLevel4 = function(module) {
+        console.log(`🧪 TESTING Level 4 for ${module} directly...`);
+        const slider = document.getElementById(`slider-${module}`);
+        if (slider) {
+            slider.value = 4;
+            updateSliderDisplay(slider, 4);
+            updatePermissions(module, 4);
+        } else {
+            console.error(`❌ Slider not found for module: ${module}`);
+        }
+    }
+    
+    // Test function to try updating permissions directly
+    window.testUpdatePermissions = function(module = 'leads', level = 2) {
+        console.log(`🧪 Testing updatePermissions directly: ${module}, level ${level}`);
+        updatePermissions(module, level);
+    };
+    
+    // Add a simple test button for easy testing
+    window.addTestButton = function() {
+        if (document.getElementById('testButton')) return; // Already exists
+        
+        const button = document.createElement('button');
+        button.id = 'testButton';
+        button.textContent = '🧪 Test Permission Save';
+        button.className = 'btn btn-gradient';
+        button.style.position = 'fixed';
+        button.style.top = '10px';
+        button.style.right = '10px';
+        button.style.zIndex = '9999';
+        button.onclick = () => testUpdatePermissions('leads', 3);
+        document.body.appendChild(button);
+    };
+    
+    // Automatically add test button
+    window.addTestButton();
+    
+    // Show debug controls if in development mode (you can enable this for testing)
+    const showDebugControls = true; // Set to true to show test buttons
+    if (showDebugControls) {
+        document.querySelectorAll('#debug-controls').forEach(control => {
+            control.style.display = 'block';
+        });
+    }
+    
+    // Initial log to confirm script is loaded
+    console.log('🚀 Permission slider system loaded and ready!');
+    console.log('📊 Current permission sliders found:', sliders.length);
+    
+    // Debug: Log each slider found
+    sliders.forEach((slider, index) => {
+        console.log(`📍 Slider ${index + 1}: module="${slider.dataset.module}", value="${slider.value}"`);
+    });
+    
+    // Test function to verify save indicator works
+    window.testSaveIndicator = function() {
+        console.log('🧪 Testing save indicator...');
+        showSavingIndicator();
+        setTimeout(() => showSaveSuccessIndicator(), 1000);
+    };
+});
+</script>
+{% endblock %}

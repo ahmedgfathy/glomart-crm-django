@@ -1,0 +1,727 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Lead Management{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="fw-bold mb-2">
+                    <i class="bi bi-person-lines-fill text-primary me-3"></i>
+                    Lead Management
+                </h2>
+                <p class="text-muted mb-0">Manage your leads and track their progress through the sales pipeline</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'leads:create_lead' %}" class="btn btn-gradient btn-sm">
+                    <i class="bi bi-plus-circle me-1"></i>Add Lead
+                </a>
+                <button type="button" class="btn btn-gradient btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-upload me-1"></i>Import
+                </button>
+                <a href="{% url 'leads:export_leads' %}" class="btn btn-gradient btn-sm">
+                    <i class="bi bi-download me-1"></i>Export
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ total_leads }}</div>
+            <div class="stat-label">Total Leads</div>
+            <i class="bi bi-people-fill"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ qualified_leads }}</div>
+            <div class="stat-label">Qualified</div>
+            <i class="bi bi-check-circle-fill"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ unassigned_leads }}</div>
+            <div class="stat-label">Unassigned</div>
+            <i class="bi bi-person-x-fill"></i>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-number">{{ page_obj.paginator.count }}</div>
+            <div class="stat-label">Filtered Results</div>
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-modern p-3">
+            <form method="get" id="filterForm" class="row g-3 align-items-end" action="{% url 'leads:leads_list' %}">
+                <div class="col-md-3">
+                    <label class="form-label">Search Leads</label>
+                    <input type="text" class="form-control" name="search" value="{{ filters.search|default:'' }}" placeholder="Search by name, email, phone, mobile...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        {% for status in statuses %}
+                        <option value="{{ status.id }}" {% if filters.status|stringformat:"s" == status.id|stringformat:"s" %}selected{% endif %}>
+                            {{ status.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Assigned To</label>
+                    <select class="form-select" name="assigned">
+                        <option value="">All Users</option>
+                        <option value="me" {% if filters.assigned == 'me' %}selected{% endif %}>My Leads</option>
+                        <option value="unassigned" {% if filters.assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                        {% for user in users %}
+                        <option value="{{ user.id }}" {% if filters.assigned|stringformat:"s" == user.id|stringformat:"s" %}selected{% endif %}>
+                            {{ user.get_full_name|default:user.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Priority</label>
+                    <select class="form-select" name="priority">
+                        <option value="">All Priorities</option>
+                        {% for priority in priorities %}
+                        <option value="{{ priority.id }}" {% if filters.priority|stringformat:"s" == priority.id|stringformat:"s" %}selected{% endif %}>
+                            {{ priority.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Source</label>
+                    <select class="form-select" name="source">
+                        <option value="">All Sources</option>
+                        {% for source in sources %}
+                        <option value="{{ source.id }}" {% if filters.source|stringformat:"s" == source.id|stringformat:"s" %}selected{% endif %}>
+                            {{ source.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+            {% if filters.search or filters.status or filters.assigned or filters.priority or filters.source %}
+            <div class="mt-3">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
+                    <i class="bi bi-x-circle me-1"></i>Clear Filters
+                </button>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Actions -->
+<div id="bulkActions" class="bulk-actions mb-3 p-3 rounded" style="display: none;">
+    <div class="d-flex justify-content-between align-items-center">
+        <span><span id="selectedCount">0</span> leads selected</span>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="bulkAssign()">
+                <i class="bi bi-person-check me-1"></i>Assign
+            </button>
+            <button type="button" class="btn btn-outline-warning btn-sm" onclick="bulkStatusChange()">
+                <i class="bi bi-arrow-repeat me-1"></i>Change Status
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" onclick="bulkExport()">
+                <i class="bi bi-download me-1"></i>Export
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="bulkDelete()">
+                <i class="bi bi-trash me-1"></i>Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Leads Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card-modern">
+            <div class="table-responsive leads-management-table">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" class="form-check-input" id="selectAll">
+                            </th>
+                            <th>Lead</th>
+                            <th>Contact</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Assigned To</th>
+                            <th>Score</th>
+                            <th>Source</th>
+                            <th>Created</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for lead in leads %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input lead-checkbox" value="{{ lead.id }}">
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-primary rounded-circle p-2 me-3">
+                                        {% if lead.first_name %}
+                                        <span class="text-white fw-bold">{{ lead.first_name.0 }}{% if lead.last_name %}{{ lead.last_name.0 }}{% endif %}</span>
+                                        {% else %}
+                                        <i class="bi bi-person text-white"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ lead.full_name }}</div>
+                                        {% if lead.company %}
+                                        <small class="text-muted">{{ lead.company }}</small>
+                                        {% endif %}
+                                        {% if lead.title %}
+                                        <small class="text-muted d-block">{{ lead.title }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    {% if lead.email %}
+                                    <div class="mb-1">
+                                        <i class="bi bi-envelope text-muted me-1"></i>
+                                        <a href="mailto:{{ lead.email }}" class="text-decoration-none">{{ lead.email }}</a>
+                                    </div>
+                                    {% endif %}
+                                    {% if lead.mobile %}
+                                    <div class="mb-1">
+                                        <i class="bi bi-phone text-muted me-1"></i>
+                                        <a href="tel:{{ lead.mobile }}" class="text-decoration-none">{{ lead.mobile }}</a>
+                                    </div>
+                                    {% endif %}
+                                    {% if lead.phone and lead.phone != lead.mobile %}
+                                    <div>
+                                        <i class="bi bi-telephone text-muted me-1"></i>
+                                        <a href="tel:{{ lead.phone }}" class="text-decoration-none">{{ lead.phone }}</a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                {% if lead.status %}
+                                <span class="badge" style="background-color: {{ lead.status.color }}; color: white;">
+                                    {{ lead.status.name }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">No Status</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if lead.priority %}
+                                <div class="d-flex align-items-center">
+                                    {% if lead.priority.name == 'High' %}
+                                    <span class="badge bg-danger me-2">{{ lead.priority.name }}</span>
+                                    {% elif lead.priority.name == 'Medium' %}
+                                    <span class="badge bg-warning text-dark me-2">{{ lead.priority.name }}</span>
+                                    {% elif lead.priority.name == 'Low' %}
+                                    <span class="badge bg-success me-2">{{ lead.priority.name }}</span>
+                                    {% else %}
+                                    <span class="badge bg-info me-2">{{ lead.priority.name }}</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if lead.assigned_to %}
+                                <div class="d-flex align-items-center">
+                                    <div class="bg-info rounded-circle p-1 me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+                                        <span class="text-white fw-bold" style="font-size: 0.8rem;">
+                                            {{ lead.assigned_to.first_name.0|default:lead.assigned_to.username.0 }}{% if lead.assigned_to.last_name %}{{ lead.assigned_to.last_name.0 }}{% endif %}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ lead.assigned_to.get_full_name|default:lead.assigned_to.username }}</div>
+                                        <small class="text-muted">{{ lead.assigned_to.email|truncatechars:20 }}</small>
+                                    </div>
+                                </div>
+                                {% else %}
+                                <span class="text-muted">Unassigned</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <span class="badge bg-warning text-dark me-2">{{ lead.score }}%</span>
+                                    <div class="progress" style="width: 60px; height: 6px;">
+                                        <div class="progress-bar 
+                                        {% if lead.score >= 80 %}bg-success
+                                        {% elif lead.score >= 60 %}bg-warning  
+                                        {% elif lead.score >= 40 %}bg-primary
+                                        {% else %}bg-secondary{% endif %}" 
+                                        role="progressbar" style="width: {{ lead.score }}%;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                {% if lead.source %}
+                                <span class="badge bg-light text-dark">{{ lead.source.name }}</span>
+                                {% else %}
+                                <span class="text-muted">-</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ lead.created_at|date:"M d, Y" }}
+                            </td>
+                            <td class="text-center">
+                                <div class="dropdown dropstart">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle border-0" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li><a class="dropdown-item" href="{% url 'leads:lead_detail' lead.id %}">
+                                            <i class="bi bi-eye me-2"></i>View Details
+                                        </a></li>
+                                        {% if can_edit %}
+                                        <li><a class="dropdown-item" href="{% url 'leads:edit_lead' lead.id %}">
+                                            <i class="bi bi-pencil me-2"></i>Edit Lead
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" data-action="quick-assign" data-lead-id="{{ lead.id }}">
+                                            <i class="bi bi-person-check me-2"></i>Quick Assign
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" data-action="quick-status" data-lead-id="{{ lead.id }}">
+                                            <i class="bi bi-arrow-repeat me-2"></i>Change Status
+                                        </a></li>
+                                        {% endif %}
+                                        <li><hr class="dropdown-divider"></li>
+                                        {% if can_delete %}
+                                        <li><a class="dropdown-item text-danger" href="{% url 'leads:delete_lead' lead.id %}">
+                                            <i class="bi bi-trash me-2"></i>Delete Lead
+                                        </a></li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="10" class="text-center py-4">
+                                <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                                <h5 class="text-muted mt-2">No Leads Found</h5>
+                                <p class="text-muted">No leads match your current filters or search criteria.</p>
+                                {% if can_create %}
+                                <a href="{% url 'leads:create_lead' %}" class="btn btn-gradient">
+                                    <i class="bi bi-plus-circle me-2"></i>Create First Lead
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <div class="d-flex justify-content-center p-3">
+                <nav>
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Previous</a>
+                            </li>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">Next</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock content %}
+
+{% block extra_css %}
+<style>
+.leads-management-table {
+    max-height: 85vh !important;
+    min-height: 600px !important;
+    overflow-y: auto !important;
+}
+
+.main-content .container-fluid {
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+/* Enhanced scrollbar for better visibility */
+.leads-management-table::-webkit-scrollbar {
+    width: 8px;
+}
+
+.leads-management-table::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.leads-management-table::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+.leads-management-table::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+
+.bulk-actions {
+    background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+    border-left: 4px solid #3b82f6;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeBulkActions();
+    initializeFilters();
+    initializeSearch();
+    initializeQuickActions();
+});
+
+// Bulk Actions Functionality
+function initializeBulkActions() {
+    const selectAll = document.getElementById('selectAll');
+    const leadCheckboxes = document.querySelectorAll('.lead-checkbox');
+    const bulkActionsContainer = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function() {
+            leadCheckboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActions();
+        });
+    }
+
+    leadCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateBulkActions);
+    });
+
+    function updateBulkActions() {
+        const checkedBoxes = document.querySelectorAll('.lead-checkbox:checked');
+        const count = checkedBoxes.length;
+        
+        if (count > 0) {
+            if (bulkActionsContainer) {
+                bulkActionsContainer.style.display = 'block';
+            }
+            if (selectedCount) {
+                selectedCount.textContent = count;
+            }
+        } else {
+            if (bulkActionsContainer) {
+                bulkActionsContainer.style.display = 'none';
+            }
+            if (selectAll) selectAll.checked = false;
+        }
+        
+        // Update selectAll checkbox state
+        if (selectAll) {
+            selectAll.checked = count === leadCheckboxes.length && count > 0;
+        }
+    }
+}
+
+// Quick Actions
+function initializeQuickActions() {
+    document.querySelectorAll('[data-action="quick-assign"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const leadId = this.dataset.leadId;
+            quickAssign(leadId);
+        });
+    });
+
+    document.querySelectorAll('[data-action="quick-status"]').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const leadId = this.dataset.leadId;
+            quickStatusChange(leadId);
+        });
+    });
+}
+
+// Bulk Action Functions
+function bulkAssign() {
+    const selectedLeads = getSelectedLeads();
+    if (selectedLeads.length === 0) {
+        showNotification('Please select leads first', 'warning');
+        return;
+    }
+    showNotification(`Bulk assign feature for ${selectedLeads.length} leads`, 'info');
+}
+
+function bulkStatusChange() {
+    const selectedLeads = getSelectedLeads();
+    if (selectedLeads.length === 0) {
+        showNotification('Please select leads first', 'warning');
+        return;
+    }
+    showNotification(`Bulk status change for ${selectedLeads.length} leads`, 'info');
+}
+
+function bulkDelete() {
+    const selectedLeads = getSelectedLeads();
+    if (selectedLeads.length === 0) {
+        showNotification('Please select leads first', 'warning');
+        return;
+    }
+    if (confirm(`Are you sure you want to delete ${selectedLeads.length} lead(s)?`)) {
+        showNotification(`Delete ${selectedLeads.length} leads confirmed`, 'success');
+    }
+}
+
+function bulkExport() {
+    const selectedLeads = getSelectedLeads();
+    if (selectedLeads.length === 0) {
+        showNotification('Please select leads first', 'warning');
+        return;
+    }
+    showNotification(`Exporting ${selectedLeads.length} leads`, 'success');
+}
+
+function getSelectedLeads() {
+    const checkedBoxes = document.querySelectorAll('.lead-checkbox:checked');
+    return Array.from(checkedBoxes).map(cb => cb.value);
+}
+
+function quickAssign(leadId) {
+    showNotification(`Quick assign for lead ${leadId}`, 'info');
+}
+
+function quickStatusChange(leadId) {
+    showNotification(`Quick status change for lead ${leadId}`, 'info');
+}
+
+// Filter Management
+function initializeFilters() {
+    const filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        const filterInputs = filterForm.querySelectorAll('select');
+        filterInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                setTimeout(() => filterForm.submit(), 100);
+            });
+        });
+    }
+}
+
+function clearFilters() {
+    const url = new URL(window.location);
+    url.search = '';
+    window.location.href = url.toString();
+}
+
+// Search functionality
+function initializeSearch() {
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                this.form.submit();
+            }, 1000);
+        });
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 5000);
+}
+
+// Export functions to global scope
+window.quickAssign = quickAssign;
+window.quickStatusChange = quickStatusChange;
+window.bulkAssign = bulkAssign;
+window.bulkStatusChange = bulkStatusChange;
+window.bulkDelete = bulkDelete;
+window.bulkExport = bulkExport;
+window.clearFilters = clearFilters;
+
+// Initialize search and filters
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSearch();
+    
+    // Auto-submit filters when changed
+    const filterSelects = document.querySelectorAll('#filterForm select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            document.getElementById('filterForm').submit();
+        });
+    });
+});
+</script>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel">
+                    <i class="bi bi-upload me-2"></i>Import Leads
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="importFile" class="form-label">Select CSV File</label>
+                        <input type="file" class="form-control" id="importFile" name="file" accept=".csv,.xlsx,.xls" required>
+                        <div class="form-text">
+                            Supported formats: CSV, Excel (.xlsx, .xls). Maximum file size: 10MB
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>CSV Format Guidelines:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Required columns: first_name, last_name, email</li>
+                            <li>Optional columns: phone, mobile, company, address, city, notes</li>
+                            <li>Use comma-separated values (CSV format)</li>
+                            <li>First row should contain column headers</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <a href="#" class="btn btn-outline-secondary btn-sm" onclick="downloadTemplate()">
+                            <i class="bi bi-download me-1"></i>Download Template
+                        </a>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-gradient" onclick="submitImport()">
+                    <i class="bi bi-upload me-1"></i>Import Leads
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function downloadTemplate() {
+    const csvContent = "first_name,last_name,email,phone,mobile,company,address,city,notes\n" +
+                      "John,Doe,john.doe@example.com,123-456-7890,987-654-3210,Sample Company,123 Main St,New York,Sample lead";
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'leads_import_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+
+function submitImport() {
+    const formData = new FormData(document.getElementById('importForm'));
+    const fileInput = document.getElementById('importFile');
+    
+    if (!fileInput.files[0]) {
+        showNotification('Please select a file to import.', 'warning');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = document.querySelector('#importModal .btn-gradient');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importing...';
+    submitBtn.disabled = true;
+    
+    fetch('/leads/bulk/import/', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Successfully imported ${data.imported_count} leads!`, 'success');
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showNotification(data.error || 'Import failed. Please check your file format.', 'danger');
+        }
+    })
+    .catch(error => {
+        showNotification('Import failed. Please try again.', 'danger');
+    })
+    .finally(() => {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
+    });
+}
+</script>
+</div>
+{% endblock %}

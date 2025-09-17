@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Access Denied - Real Estate CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-lg">
+                <div class="card-body text-center py-5">
+                    <div class="mb-4">
+                        <i class="bi bi-shield-exclamation display-1 text-danger"></i>
+                    </div>
+                    
+                    <h2 class="h4 mb-3 text-gray-800">Access Denied</h2>
+                    
+                    <p class="text-muted mb-4">
+                        {{ message|default:"You do not have permission to access this resource." }}
+                    </p>
+                    
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="javascript:history.back()" class="btn btn-gradient">
+                            <i class="bi bi-arrow-left me-2"></i>Go Back
+                        </a>
+                        
+                        <a href="{% url 'authentication:dashboard' %}" class="btn btn-gradient">
+                            <i class="bi bi-house me-2"></i>Dashboard
+                        </a>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-top">
+                        <p class="text-muted small mb-0">
+                            If you believe this is an error, please contact your administrator.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

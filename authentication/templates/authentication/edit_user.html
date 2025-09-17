@@ -1,0 +1,207 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Edit User - {{ user.username }} - Glomart CRM{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-person-gear text-primary me-3"></i>
+                        Edit User: {{ user.username }}
+                    </h2>
+                    <p class="text-muted mb-0">Update user information and profile assignment</p>
+                </div>
+                <a href="{% url 'authentication:users' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card-modern p-4">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <!-- Username (readonly) -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-person me-2 text-primary"></i>Username
+                            </label>
+                            <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                            <div class="form-text">Username cannot be changed</div>
+                        </div>
+                        
+                        <!-- Email -->
+                        <div class="col-md-6">
+                            <label for="email" class="form-label fw-semibold">
+                                <i class="bi bi-envelope me-2 text-primary"></i>Email Address
+                            </label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+                        </div>
+                        
+                        <!-- First Name -->
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label fw-semibold">
+                                <i class="bi bi-person-badge me-2 text-primary"></i>First Name
+                            </label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                        </div>
+                        
+                        <!-- Last Name -->
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label fw-semibold">
+                                <i class="bi bi-person-badge-fill me-2 text-primary"></i>Last Name
+                            </label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                        </div>
+                        
+                        <!-- Profile Assignment -->
+                        <div class="col-md-6">
+                            <label for="profile" class="form-label fw-semibold">
+                                <i class="bi bi-shield-check me-2 text-primary"></i>Assign Profile
+                            </label>
+                            <select class="form-select" id="profile" name="profile">
+                                <option value="">No Profile</option>
+                                {% for profile in profiles %}
+                                    <option value="{{ profile.id }}" {% if current_profile and current_profile.id == profile.id %}selected{% endif %}>
+                                        {{ profile.name }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Select a profile to assign permissions to this user</div>
+                        </div>
+                        
+                        <!-- Department -->
+                        <div class="col-md-6">
+                            <label for="department" class="form-label fw-semibold">
+                                <i class="bi bi-building me-2 text-primary"></i>Department
+                            </label>
+                            <input type="text" class="form-control" id="department" name="department" value="{{ user.user_profile.department }}" placeholder="e.g., Sales, Marketing, Finance">
+                            <div class="form-text">User's department or division</div>
+                        </div>
+                        
+                        <!-- Active Status -->
+                        <div class="col-md-6">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %}>
+                                <label for="is_active" class="form-check-label fw-semibold">
+                                    <i class="bi bi-check-circle me-2 text-success"></i>Active User
+                                </label>
+                                <div class="form-text">Uncheck to deactivate this user</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-gradient px-4">
+                            <i class="bi bi-check-circle me-2"></i>Update User
+                        </button>
+                        <a href="{% url 'authentication:users' %}" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- User Info Panel -->
+        <div class="col-lg-4">
+            <div class="card-modern p-4 mb-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-info-circle text-info me-2"></i>User Information
+                </h5>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Date Joined:</span>
+                    <span class="fw-semibold">{{ user.date_joined|date:"M d, Y" }}</span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted">Last Login:</span>
+                    <span class="fw-semibold">
+                        {% if user.last_login %}
+                            {{ user.last_login|date:"M d, Y H:i" }}
+                        {% else %}
+                            Never
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Status:</span>
+                    <span class="badge {% if user.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                        {% if user.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                </div>
+                
+                {% if current_profile %}
+                <div class="alert alert-info border-0">
+                    <h6 class="fw-semibold">Current Profile:</h6>
+                    <p class="mb-0">{{ current_profile.name }}</p>
+                    <small class="text-muted">{{ current_profile.description }}</small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning border-0">
+                    <h6 class="fw-semibold">No Profile Assigned</h6>
+                    <p class="mb-0 small">This user has no profile and limited access.</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Danger Zone -->
+            <div class="card-modern p-4 border-danger">
+                <h5 class="fw-bold mb-3 text-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Danger Zone
+                </h5>
+                
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-warning" onclick="toggleUserStatus({{ user.id }})">
+                        <i class="bi bi-power me-2"></i>
+                        {% if user.is_active %}Deactivate User{% else %}Activate User{% endif %}
+                    </button>
+                    
+                    {% if user != request.user %}
+                    <a href="{% url 'authentication:delete_user' user.id %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-2"></i>Delete User
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleUserStatus(userId) {
+    if (confirm('Are you sure you want to change this user\'s status?')) {
+        fetch(`/users/${userId}/toggle-status/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('An error occurred. Please try again.');
+        });
+    }
+}
+</script>
+{% endblock %}

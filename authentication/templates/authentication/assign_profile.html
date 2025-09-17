@@ -1,0 +1,256 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Assign Profile - {{ user.username }}{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-shield-check text-primary me-3"></i>
+                        Assign Profile to {{ user.get_full_name|default:user.username }}
+                    </h2>
+                    <p class="text-muted mb-0">Select a profile to assign permissions and access</p>
+                </div>
+                <a href="{% url 'authentication:users' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Users
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card-modern p-4">
+                <!-- Current Profile Info -->
+                <div class="alert alert-light border mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h6 class="fw-bold mb-2">
+                                <i class="bi bi-person-badge me-2 text-primary"></i>Current Assignment
+                            </h6>
+                            {% if current_profile %}
+                                <span class="badge bg-primary fs-6">{{ current_profile.name }}</span>
+                                <small class="text-muted d-block mt-1">{{ current_profile.description|default:"No description" }}</small>
+                            {% else %}
+                                <span class="badge bg-warning text-dark fs-6">No Profile Assigned</span>
+                                <small class="text-muted d-block mt-1">User has no specific permissions</small>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <small class="text-muted">
+                                <i class="bi bi-person me-1"></i>{{ user.email }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <!-- Profile Selection -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-shield-check me-2 text-primary"></i>Select Profile
+                            </label>
+                            <div class="form-text mb-3">Choose a profile to assign specific permissions to this user</div>
+                            
+                            <div class="row">
+                                {% for profile in profiles %}
+                                <div class="col-md-6 mb-3">
+                                    <div class="card h-100 profile-option {% if current_profile and current_profile.id == profile.id %}border-primary{% endif %}">
+                                        <div class="card-body p-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" 
+                                                       type="radio" 
+                                                       name="profile" 
+                                                       id="profile_{{ profile.id }}" 
+                                                       value="{{ profile.id }}"
+                                                       {% if current_profile and current_profile.id == profile.id %}checked{% endif %}>
+                                                <label class="form-check-label w-100" for="profile_{{ profile.id }}">
+                                                    <div class="d-flex align-items-start">
+                                                        <div class="bg-primary rounded-circle p-2 me-3">
+                                                            <i class="bi bi-shield-check text-white"></i>
+                                                        </div>
+                                                        <div class="flex-grow-1">
+                                                            <h6 class="fw-bold mb-1">{{ profile.name }}</h6>
+                                                            <p class="text-muted small mb-2">{{ profile.description|default:"No description"|truncatewords:10 }}</p>
+                                                            <small class="badge bg-light text-dark">
+                                                                <i class="bi bi-key me-1"></i>{{ profile.permissions.count }} permission{{ profile.permissions.count|pluralize }}
+                                                            </small>
+                                                        </div>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="col-12">
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-shield-x text-muted" style="font-size: 3rem;"></i>
+                                        <h5 class="text-muted mt-3">No Profiles Available</h5>
+                                        <p class="text-muted">Create profiles first to assign to users.</p>
+                                        <a href="{% url 'authentication:create_profile' %}" class="btn btn-gradient">
+                                            <i class="bi bi-plus-circle me-2"></i>Create Profile
+                                        </a>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <!-- No Profile Option -->
+                        {% if profiles %}
+                        <div class="col-12">
+                            <div class="card profile-option">
+                                <div class="card-body p-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="radio" 
+                                               name="profile" 
+                                               id="no_profile" 
+                                               value=""
+                                               {% if not current_profile %}checked{% endif %}>
+                                        <label class="form-check-label w-100" for="no_profile">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-secondary rounded-circle p-2 me-3">
+                                                    <i class="bi bi-x-circle text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="fw-bold mb-1">No Profile</h6>
+                                                    <p class="text-muted small mb-0">Remove profile assignment (user will have no specific permissions)</p>
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex gap-3">
+                        <button type="submit" class="btn btn-gradient px-4">
+                            <i class="bi bi-check-circle me-2"></i>Assign Profile
+                        </button>
+                        <a href="{% url 'authentication:users' %}" class="btn btn-outline-secondary px-4">
+                            <i class="bi bi-x-circle me-2"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="col-lg-4">
+            <div class="card-modern p-4">
+                <h5 class="fw-bold mb-3">
+                    <i class="bi bi-info-circle text-info me-2"></i>Profile Assignment Guide
+                </h5>
+                
+                <div class="alert alert-info border-0">
+                    <h6 class="fw-semibold">User Information:</h6>
+                    <ul class="mb-0 small">
+                        <li><strong>Username:</strong> {{ user.username }}</li>
+                        <li><strong>Email:</strong> {{ user.email|default:"Not provided" }}</li>
+                        <li><strong>Status:</strong> {% if user.is_active %}Active{% else %}Inactive{% endif %}</li>
+                        <li><strong>Type:</strong> {% if user.is_superuser %}Administrator{% else %}Regular User{% endif %}</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning border-0">
+                    <h6 class="fw-semibold">Profile Effects:</h6>
+                    <p class="mb-0 small">
+                        Profiles define what modules and actions a user can access. Changing a profile will immediately update the user's permissions.
+                    </p>
+                </div>
+                
+                <div class="alert alert-success border-0">
+                    <h6 class="fw-semibold">No Profile Option:</h6>
+                    <p class="mb-0 small">
+                        Selecting "No Profile" removes all profile-based permissions but preserves any administrator privileges.
+                    </p>
+                </div>
+                
+                {% if current_profile %}
+                <div class="mt-3">
+                    <a href="{% url 'authentication:profile_detail' current_profile.id %}" class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-eye me-2"></i>View Current Profile Details
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.profile-option {
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.profile-option:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.profile-option .form-check-input:checked + .form-check-label {
+    color: inherit;
+}
+
+.profile-option:has(.form-check-input:checked) {
+    border-color: var(--bs-primary) !important;
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add click handling for profile cards
+    const profileCards = document.querySelectorAll('.profile-option');
+    const radioInputs = document.querySelectorAll('input[name="profile"]');
+    
+    profileCards.forEach(card => {
+        card.addEventListener('click', function() {
+            const radio = this.querySelector('input[type="radio"]');
+            if (radio) {
+                radio.checked = true;
+                updateCardStyles();
+            }
+        });
+    });
+    
+    radioInputs.forEach(radio => {
+        radio.addEventListener('change', updateCardStyles);
+    });
+    
+    function updateCardStyles() {
+        profileCards.forEach(card => {
+            const radio = card.querySelector('input[type="radio"]');
+            if (radio && radio.checked) {
+                card.classList.add('border-primary');
+                card.style.transform = 'translateY(-2px)';
+                card.style.backgroundColor = 'rgba(var(--bs-primary-rgb), 0.05)';
+            } else {
+                card.classList.remove('border-primary');
+                card.style.transform = 'translateY(0)';
+                card.style.backgroundColor = '';
+            }
+        });
+    }
+    
+    // Initial call to set correct styles
+    updateCardStyles();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}User Management - Glomart CRM{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold mb-2">
+                        <i class="bi bi-people text-primary me-3"></i>
+                        User Management
+                    </h2>
+                    <p class="text-muted mb-0">Manage users, assign profiles, and control access</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'authentication:create_user' %}" class="btn btn-gradient">
+                        <i class="bi bi-person-plus me-2"></i>Add User
+                    </a>
+                    <a href="{% url 'authentication:profiles' %}" class="btn btn-gradient">
+                        <i class="bi bi-shield-check me-2"></i>Manage Profiles
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Search and Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card-modern p-3">
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-6">
+                        <label class="form-label">Search Users</label>
+                        <input type="text" class="form-control" name="search" value="{{ search_query }}" placeholder="Search by username, name, or email">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Filter by Profile</label>
+                        <select class="form-select" name="profile">
+                            <option value="">All Profiles</option>
+                            {% for profile in profiles %}
+                                <option value="{{ profile.id }}">{{ profile.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-search me-1"></i>Search
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card-modern">
+                <div class="table-responsive user-management-table">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
+                            <tr>
+                                <th>User</th>
+                                <th>Profile</th>
+                                <th>Department</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary rounded-circle p-2 me-3">
+                                            <i class="bi bi-person text-white"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ user.get_full_name|default:user.username }}</div>
+                                            <small class="text-muted">{{ user.email }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if user.user_profile.profile %}
+                                        <span class="badge bg-primary">{{ user.user_profile.profile.name }}</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark">No Profile</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ user.user_profile.department|default:"-" }}
+                                </td>
+                                <td>
+                                    {% if user.is_active and user.user_profile.is_active %}
+                                        <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.last_login %}
+                                        {{ user.last_login|date:"M d, Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Never</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    <div class="dropdown dropstart">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle border-0" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="{% url 'authentication:view_user_profile' user.id %}">
+                                                <i class="bi bi-eye me-2"></i>View Profile
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="{% url 'authentication:edit_user' user.id %}">
+                                                <i class="bi bi-pencil me-2"></i>Edit User
+                                            </a></li>
+                                            <li><a class="dropdown-item" href="{% url 'authentication:assign_profile' user.id %}">
+                                                <i class="bi bi-shield-check me-2"></i>Assign Profile
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            {% if user.is_active and user.user_profile.is_active %}
+                                                <li><a class="dropdown-item text-warning" href="{% url 'authentication:toggle_user_status' user.id %}">
+                                                    <i class="bi bi-pause-circle me-2"></i>Deactivate User
+                                                </a></li>
+                                            {% else %}
+                                                <li><a class="dropdown-item text-success" href="{% url 'authentication:toggle_user_status' user.id %}">
+                                                    <i class="bi bi-play-circle me-2"></i>Activate User
+                                                </a></li>
+                                            {% endif %}
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item text-danger" href="{% url 'authentication:delete_user' user.id %}">
+                                                <i class="bi bi-trash me-2"></i>Delete User
+                                            </a></li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <i class="bi bi-person-x text-muted" style="font-size: 3rem;"></i>
+                                    <h5 class="text-muted mt-2">No Users Found</h5>
+                                    <p class="text-muted">No users match your search criteria.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if users.has_other_pages %}
+                <div class="d-flex justify-content-center p-3">
+                    <nav>
+                        <ul class="pagination">
+                            {% if users.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.previous_page_number }}&search={{ search_query }}">Previous</a>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in users.paginator.page_range %}
+                                {% if users.number == num %}
+                                    <li class="page-item active">
+                                        <span class="page-link">{{ num }}</span>
+                                    </li>
+                                {% elif num > users.number|add:'-3' and num < users.number|add:'3' %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ num }}&search={{ search_query }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if users.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ users.next_page_number }}&search={{ search_query }}">Next</a>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.user-management-table {
+    max-height: 85vh !important;
+    min-height: 600px !important;
+    overflow-y: auto !important;
+}
+
+.main-content .container-fluid {
+    height: calc(100vh - 100px);
+    overflow-y: auto;
+}
+
+/* Enhanced scrollbar for better visibility */
+.user-management-table::-webkit-scrollbar {
+    width: 8px;
+}
+
+.user-management-table::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+
+.user-management-table::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+}
+
+.user-management-table::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-color);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle toggle user status
+    const toggleLinks = document.querySelectorAll('a[href*="toggle-user-status"]');
+    
+    toggleLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const url = this.href;
+            const userId = url.split('/').slice(-2, -1)[0];
+            const isCurrentlyActive = this.textContent.includes('Deactivate');
+            
+            // Show confirmation for deactivation
+            if (isCurrentlyActive) {
+                if (!confirm('Are you sure you want to deactivate this user?')) {
+                    return;
+                }
+            }
+            
+            fetch(url, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showAlert(data.message, 'success');
+                    
+                    // Reload page to update UI
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Show error message
+                    showAlert(data.message || 'Operation failed', 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('An error occurred. Please try again.', 'danger');
+            });
+        });
+    });
+    
+    // Function to show alert messages
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+        alertDiv.style.cssText = 'top: 80px; right: 20px; z-index: 9999; min-width: 300px;';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(alertDiv);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

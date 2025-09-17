@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Permission Slider Test</title>
+    <style>
+        .test-container {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .slider-test {
+            margin: 20px 0;
+        }
+        .permission-slider {
+            width: 100%;
+            height: 10px;
+            background: #e9ecef;
+        }
+        .output {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h2>Permission Slider Test</h2>
+        
+        <div class="slider-test">
+            <label>Test Slider (0-4):</label>
+            <input type="range" 
+                   class="permission-slider" 
+                   min="0" 
+                   max="4" 
+                   value="0"
+                   id="testSlider">
+            <div>Current Value: <span id="currentValue">0</span></div>
+        </div>
+        
+        <div class="output">
+            <strong>Event Log:</strong>
+            <div id="eventLog" style="height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px;"></div>
+        </div>
+        
+        <button onclick="clearLog()">Clear Log</button>
+        <button onclick="testAllLevels()">Test All Levels Programmatically</button>
+    </div>
+
+    <script>
+        const slider = document.getElementById('testSlider');
+        const currentValue = document.getElementById('currentValue');
+        const eventLog = document.getElementById('eventLog');
+        
+        function logEvent(eventType, value) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${eventType}: ${value}\n`;
+            eventLog.textContent += logEntry;
+            eventLog.scrollTop = eventLog.scrollHeight;
+            console.log(logEntry.trim());
+        }
+        
+        function updateDisplay(value) {
+            currentValue.textContent = value;
+        }
+        
+        // Test all the event listeners we use in the actual app
+        slider.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            logEvent('INPUT event', value);
+            updateDisplay(value);
+        });
+        
+        slider.addEventListener('change', function() {
+            const value = parseInt(this.value);
+            logEvent('CHANGE event', value);
+            updateDisplay(value);
+        });
+        
+        slider.addEventListener('mouseup', function() {
+            const value = parseInt(this.value);
+            logEvent('MOUSEUP event', value);
+        });
+        
+        slider.addEventListener('touchend', function() {
+            const value = parseInt(this.value);
+            logEvent('TOUCHEND event', value);
+        });
+        
+        function clearLog() {
+            eventLog.textContent = '';
+        }
+        
+        function testAllLevels() {
+            clearLog();
+            logEvent('PROGRAMMATIC TEST', 'Starting...');
+            
+            setTimeout(() => {
+                for (let i = 0; i <= 4; i++) {
+                    setTimeout(() => {
+                        slider.value = i;
+                        logEvent('SET VALUE', i);
+                        
+                        // Trigger events programmatically
+                        slider.dispatchEvent(new Event('input'));
+                        slider.dispatchEvent(new Event('change'));
+                    }, i * 500);
+                }
+            }, 100);
+        }
+        
+        // Initial log
+        logEvent('INIT', 'Slider test page loaded');
+    </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block body_class %}app-layout{% endblock %}
+
+{% block body_content %}
+    <!-- Include Header -->
+    {% include 'authentication/partials/navbar.html' %}
+    
+    <!-- Include Sidebar -->
+    {% include 'authentication/partials/sidebar.html' %}
+    
+    <!-- Main Content Area -->
+    <div class="main-content">
+        <div class="container-fluid px-4 py-4">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </div>
+{% endblock %}
