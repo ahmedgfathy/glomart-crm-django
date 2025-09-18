@@ -1,0 +1,720 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}
+Edit Lead - {{ lead.full_name }} - Glomart CRM
+{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Toast Notification Styles */
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    min-width: 320px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+.toast.warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.toast.info {
+    border-left: 4px solid #3b82f6;
+}
+
+.toast-header {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px 8px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.toast-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 8px;
+}
+
+.toast-title {
+    font-weight: 600;
+    font-size: 14px;
+    color: #374151;
+    flex: 1;
+}
+
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 18px;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.toast-close:hover {
+    color: #6b7280;
+}
+
+.toast-body {
+    padding: 8px 16px 12px 16px;
+    font-size: 13px;
+    color: #6b7280;
+    line-height: 1.4;
+}
+
+/* Form styling */
+.form-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px 8px 0 0;
+    margin: -1.5rem -1.5rem 1.5rem -1.5rem;
+}
+
+.form-floating .form-control:focus,
+.form-floating .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+}
+
+.floating-label-group {
+    position: relative;
+    margin-bottom: 1.5rem;
+}
+
+.required-field::after {
+    content: ' *';
+    color: #ef4444;
+}
+
+.tags-input {
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 0.5rem;
+    min-height: 45px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+    background: white;
+}
+
+.tag-item {
+    background: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.tag-remove {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tag-remove:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Django Messages as Toasts -->
+{% if messages %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    {% for message in messages %}
+    showToast('{{ message.tags }}', 
+             '{% if message.tags == "error" %}Error{% elif message.tags == "success" %}Success{% elif message.tags == "warning" %}Warning{% else %}Info{% endif %}', 
+             '{{ message|escapejs }}');
+    {% endfor %}
+});
+</script>
+{% endif %}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'authentication:dashboard' %}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'leads:leads_list' %}">Leads</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'leads:lead_detail' lead.id %}">{{ lead.full_name }}</a></li>
+                    <li class="breadcrumb-item active">Edit Lead</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Lead
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Update lead information for {{ lead.full_name }}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'leads:lead_detail' lead.id %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye me-2"></i>View Lead
+                    </a>
+                    <a href="{% url 'leads:leads_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Back to Leads
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" enctype="multipart/form-data" id="leadForm">
+        {% csrf_token %}
+        
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Basic Information -->
+                <div class="form-card p-4 mb-4">
+                    <div class="section-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-person me-2"></i>Basic Information
+                        </h5>
+                    </div>
+
+                    <div class="row g-3">
+                        <!-- Name Fields -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ lead.first_name|default:'' }}" required>
+                                <label for="first_name" class="required-field">First Name</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ lead.last_name|default:'' }}" required>
+                                <label for="last_name" class="required-field">Last Name</label>
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="mobile" name="mobile" 
+                                       value="{{ lead.mobile|default:'' }}" required>
+                                <label for="mobile" class="required-field">Mobile Number</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ lead.email|default:'' }}">
+                                <label for="email">Email Address</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ lead.phone|default:'' }}">
+                                <label for="phone">Phone Number</label>
+                            </div>
+                        </div>
+
+                        <!-- Company Information -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="company" name="company" 
+                                       value="{{ lead.company|default:'' }}">
+                                <label for="company">Company</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       value="{{ lead.title|default:'' }}">
+                                <label for="title">Job Title</label>
+                            </div>
+                        </div>
+
+                        <!-- Lead Source & Type -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="source" name="source">
+                                    <option value="">Choose source...</option>
+                                    {% for source in sources %}
+                                    <option value="{{ source.id }}" {% if lead.source.id == source.id %}selected{% endif %}>
+                                        {{ source.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="source">Lead Source</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="lead_type" name="lead_type">
+                                    <option value="">Choose type...</option>
+                                    {% for lead_type in lead_types %}
+                                    <option value="{{ lead_type.id }}" {% if lead.lead_type.id == lead_type.id %}selected{% endif %}>
+                                        {{ lead_type.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="lead_type">Lead Type</label>
+                            </div>
+                        </div>
+
+                        <!-- Status & Priority -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="status" name="status" required>
+                                    {% for status in statuses %}
+                                    <option value="{{ status.id }}" {% if lead.status.id == status.id %}selected{% endif %}>
+                                        {{ status.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="status" class="required-field">Status</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="">Choose priority...</option>
+                                    {% for priority in priorities %}
+                                    <option value="{{ priority.id }}" {% if lead.priority.id == priority.id %}selected{% endif %}>
+                                        {{ priority.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="priority">Priority</label>
+                            </div>
+                        </div>
+
+                        <!-- Assignment -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="assigned_to" name="assigned_to">
+                                    <option value="">Unassigned</option>
+                                    {% for user in users %}
+                                    <option value="{{ user.id }}" {% if lead.assigned_to.id == user.id %}selected{% endif %}>
+                                        {{ user.get_full_name|default:user.username }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="assigned_to">Assign To</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="temperature" name="temperature">
+                                    <option value="">Choose temperature...</option>
+                                    {% for temperature in temperatures %}
+                                    <option value="{{ temperature.id }}" {% if lead.temperature.id == temperature.id %}selected{% endif %}>
+                                        {{ temperature.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <label for="temperature">Temperature</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Details -->
+                <div class="form-card p-4 mb-4">
+                    <div class="section-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-house me-2"></i>Property Interests
+                        </h5>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="budget_range" name="budget_range" 
+                                       value="{{ lead.budget_range|default:'' }}">
+                                <label for="budget_range">Budget Range</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="property_type" name="property_type" 
+                                       value="{{ lead.property_type|default:'' }}">
+                                <label for="property_type">Property Type</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="preferred_locations" name="preferred_locations" 
+                                          style="height: 100px">{{ lead.preferred_locations|default:'' }}</textarea>
+                                <label for="preferred_locations">Preferred Locations</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="requirements" name="requirements" 
+                                          style="height: 120px">{{ lead.requirements|default:'' }}</textarea>
+                                <label for="requirements">Specific Requirements</label>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="form-floating">
+                                <textarea class="form-control" id="notes" name="notes" 
+                                          style="height: 100px">{{ lead.notes|default:'' }}</textarea>
+                                <label for="notes">General Notes</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Communication Preferences -->
+                <div class="form-card p-4">
+                    <div class="section-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-chat-dots me-2"></i>Communication Preferences
+                        </h5>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <select class="form-select" id="preferred_contact_method" name="preferred_contact_method">
+                                    <option value="email" {% if lead.preferred_contact_method == 'email' %}selected{% endif %}>Email</option>
+                                    <option value="phone" {% if lead.preferred_contact_method == 'phone' %}selected{% endif %}>Phone</option>
+                                    <option value="sms" {% if lead.preferred_contact_method == 'sms' %}selected{% endif %}>SMS</option>
+                                    <option value="whatsapp" {% if lead.preferred_contact_method == 'whatsapp' %}selected{% endif %}>WhatsApp</option>
+                                </select>
+                                <label for="preferred_contact_method">Preferred Contact Method</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control" id="best_contact_time" name="best_contact_time" 
+                                       value="{{ lead.best_contact_time|default:'' }}">
+                                <label for="best_contact_time">Best Contact Time</label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                <input type="number" class="form-control" id="score" name="score" 
+                                       value="{{ lead.score|default:'0' }}" min="0" max="100">
+                                <label for="score">Lead Score (0-100)</label>
+                            </div>
+                        </div>
+
+                        <!-- Tags -->
+                        <div class="col-12">
+                            <label class="form-label">Tags</label>
+                            <div class="tags-input" id="tagsInput">
+                                <input type="text" id="tagInput" placeholder="Type and press Enter to add tags..." 
+                                       style="border: none; outline: none; flex: 1; min-width: 200px;">
+                            </div>
+                            <input type="hidden" id="tags" name="tags" value="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="sticky-top" style="top: 20px;">
+                    <!-- Form Actions -->
+                    <div class="form-card p-3 mb-4">
+                        <h6 class="fw-bold mb-3">Actions</h6>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-gradient">
+                                <i class="bi bi-check-circle me-2"></i>Update Lead
+                            </button>
+                            <a href="{% url 'leads:lead_detail' lead.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-eye me-2"></i>View Lead
+                            </a>
+                            <a href="{% url 'leads:leads_list' %}" class="btn btn-outline-light">
+                                <i class="bi bi-list me-2"></i>All Leads
+                            </a>
+                            <button type="button" class="btn btn-outline-danger" onclick="resetForm()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Reset Changes
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lead Info -->
+                    <div class="form-card p-3 mb-4">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-info-circle text-info me-2"></i>Lead Information
+                        </h6>
+                        <div class="small text-muted">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Lead ID:</span>
+                                <span class="text-dark">{{ lead.id|truncatechars:8 }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Created:</span>
+                                <span class="text-dark">{{ lead.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Last Updated:</span>
+                                <span class="text-dark">{{ lead.updated_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Created By:</span>
+                                <span class="text-dark">{{ lead.created_by.get_full_name|default:lead.created_by.username }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="form-card p-3">
+                        <h6 class="fw-bold mb-3">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>Tips
+                        </h6>
+                        <div class="small text-muted">
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success me-2"></i>
+                                    Update contact information to maintain accurate records
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success me-2"></i>
+                                    Adjust priority and temperature based on recent interactions
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success me-2"></i>
+                                    Add detailed notes to track lead progress
+                                </li>
+                                <li class="mb-2">
+                                    <i class="bi bi-check text-success me-2"></i>
+                                    Use tags to categorize leads for better organization
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let tags = [];
+
+document.addEventListener('DOMContentLoaded', function() {
+    setupTagsInput();
+    loadExistingTags();
+});
+
+function setupTagsInput() {
+    const tagsInput = document.getElementById('tagsInput');
+    const tagInput = document.getElementById('tagInput');
+    const hiddenTagsInput = document.getElementById('tags');
+    
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(this.value.trim());
+            this.value = '';
+        }
+    });
+    
+    tagInput.addEventListener('blur', function() {
+        if (this.value.trim()) {
+            addTag(this.value.trim());
+            this.value = '';
+        }
+    });
+    
+    function addTag(tagText) {
+        if (tagText && !tags.includes(tagText)) {
+            tags.push(tagText);
+            renderTags();
+            updateHiddenInput();
+        }
+    }
+    
+    function removeTag(tagText) {
+        tags = tags.filter(tag => tag !== tagText);
+        renderTags();
+        updateHiddenInput();
+    }
+    
+    function renderTags() {
+        const existingTags = tagsInput.querySelectorAll('.tag-item');
+        existingTags.forEach(tag => tag.remove());
+        
+        tags.forEach(tag => {
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.innerHTML = `
+                ${tag}
+                <button type="button" class="tag-remove" onclick="removeTag('${tag}')">
+                    <i class="bi bi-x"></i>
+                </button>
+            `;
+            tagsInput.insertBefore(tagElement, tagInput);
+        });
+    }
+    
+    function updateHiddenInput() {
+        hiddenTagsInput.value = tags.join(',');
+    }
+    
+    // Global function for removing tags
+    window.removeTag = removeTag;
+    window.addTag = addTag;
+}
+
+function loadExistingTags() {
+    // Load existing tags from the lead model
+    {% if lead.tags %}
+    const existingTags = '{{ lead.tags }}'.split(',').filter(tag => tag.trim());
+    existingTags.forEach(tag => {
+        if (tag.trim()) {
+            addTag(tag.trim());
+        }
+    });
+    {% endif %}
+}
+
+function resetForm() {
+    if (confirm('Are you sure you want to reset all changes? This will revert to the original lead data.')) {
+        location.reload();
+    }
+}
+
+// Toast Notification System
+function showToast(type, title, message) {
+    const toastContainer = document.getElementById('toastContainer');
+    const toastId = 'toast-' + Date.now();
+    
+    const toastHTML = `
+        <div class="toast ${type}" id="${toastId}">
+            <div class="toast-header">
+                <div class="toast-icon">
+                    ${getToastIcon(type)}
+                </div>
+                <div class="toast-title">${title}</div>
+                <button class="toast-close" onclick="closeToast('${toastId}')">&times;</button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    // Show toast with animation
+    setTimeout(() => {
+        document.getElementById(toastId).classList.add('show');
+    }, 100);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        closeToast(toastId);
+    }, 5000);
+}
+
+function getToastIcon(type) {
+    switch(type) {
+        case 'success':
+            return '<svg viewBox="0 0 20 20" fill="currentColor" style="color: #10b981;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>';
+        case 'error':
+            return '<svg viewBox="0 0 20 20" fill="currentColor" style="color: #ef4444;"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>';
+        case 'warning':
+            return '<svg viewBox="0 0 20 20" fill="currentColor" style="color: #f59e0b;"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>';
+        case 'info':
+            return '<svg viewBox="0 0 20 20" fill="currentColor" style="color: #3b82f6;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>';
+        default:
+            return '<svg viewBox="0 0 20 20" fill="currentColor" style="color: #6b7280;"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>';
+    }
+}
+
+function closeToast(toastId) {
+    const toast = document.getElementById(toastId);
+    if (toast) {
+        toast.classList.remove('show');
+        setTimeout(() => {
+            toast.remove();
+        }, 300);
+    }
+}
+
+// Form validation
+document.getElementById('leadForm').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let isValid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            isValid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!isValid) {
+        e.preventDefault();
+        showToast('error', 'Validation Error', 'Please fill in all required fields.');
+    }
+});
+</script>
+{% endblock %}
