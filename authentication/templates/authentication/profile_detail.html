@@ -281,15 +281,6 @@
                                     <span class="permission-label" data-level="3">+ Create</span>
                                     <span class="permission-label" data-level="4">+ Delete</span>
                                 </div>
-                                
-                                <!-- Debug: Test button for level 4 -->
-                                <div class="mt-2" style="display: none;" id="debug-controls">
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="testLevel4('{{ module.name }}')" 
-                                            title="Test Level 4 Auto-save">
-                                        🔥 Test Level 4 for {{ module.name }}
-                                    </button>
-                                </div>
                             </div>
                             
                             <div class="mt-3 p-2 current-level-container rounded-3 d-flex align-items-center justify-content-between">
@@ -700,27 +691,8 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePermissions(module, level);
     };
     
-    // Add a simple test button for easy testing
-    window.addTestButton = function() {
-        if (document.getElementById('testButton')) return; // Already exists
-        
-        const button = document.createElement('button');
-        button.id = 'testButton';
-        button.textContent = '🧪 Test Permission Save';
-        button.className = 'btn btn-gradient';
-        button.style.position = 'fixed';
-        button.style.top = '10px';
-        button.style.right = '10px';
-        button.style.zIndex = '9999';
-        button.onclick = () => testUpdatePermissions('leads', 3);
-        document.body.appendChild(button);
-    };
-    
-    // Automatically add test button
-    window.addTestButton();
-    
     // Show debug controls if in development mode (you can enable this for testing)
-    const showDebugControls = true; // Set to true to show test buttons
+    const showDebugControls = false; // Set to true to show test buttons
     if (showDebugControls) {
         document.querySelectorAll('#debug-controls').forEach(control => {
             control.style.display = 'block';
@@ -729,19 +701,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial log to confirm script is loaded
     console.log('🚀 Permission slider system loaded and ready!');
-    console.log('📊 Current permission sliders found:', sliders.length);
-    
-    // Debug: Log each slider found
-    sliders.forEach((slider, index) => {
-        console.log(`📍 Slider ${index + 1}: module="${slider.dataset.module}", value="${slider.value}"`);
-    });
-    
-    // Test function to verify save indicator works
-    window.testSaveIndicator = function() {
-        console.log('🧪 Testing save indicator...');
-        showSavingIndicator();
-        setTimeout(() => showSaveSuccessIndicator(), 1000);
-    };
 });
 </script>
 {% endblock %}

@@ -243,30 +243,25 @@ body {
 
 /* Header Styles - Dark like Sidebar */
 .navbar-dark {
-    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+    background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.2);
-    border-bottom: 1px solid #334155;
-    height: 65px;
+    border-bottom: none;
+    height: 70px;
     transition: all 0.3s ease;
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: 1050;
-    border-radius: 0 0 20px 20px;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
 }
 
-.navbar-dark::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #3b82f6 0%, #9333ea 50%, #3b82f6 100%);
-    background-size: 200% 100%;
-    animation: headerGradientShift 4s ease-in-out infinite;
-    border-radius: 0 0 15px 15px;
+.navbar-dark .container-fluid {
+    height: 100%;
+    display: flex;
+    align-items: center;
 }
 
 @keyframes headerGradientShift {
@@ -288,8 +283,11 @@ body {
     font-weight: 700;
     transition: all 0.3s ease;
     text-decoration: none;
-    padding: 6px 0;
+    padding: 0;
     font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    height: 100%;
 }
 
 .navbar-dark .navbar-brand:hover {
@@ -307,13 +305,17 @@ body {
 .navbar-dark .btn-outline-secondary {
     border: none;
     color: rgba(226, 232, 240, 0.8);
-    padding: 6px 10px;
+    padding: 8px 12px;
     border-radius: 12px;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
     background: rgba(59, 130, 246, 0.1);
     font-size: 0.85rem;
+    height: fit-content;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .navbar-dark .btn-outline-secondary::before {
@@ -342,10 +344,13 @@ body {
     border: none;
     background: rgba(59, 130, 246, 0.1);
     color: rgba(226, 232, 240, 0.9);
-    padding: 6px 12px;
+    padding: 8px 14px;
     border-radius: 12px;
     transition: all 0.3s ease;
     font-size: 0.85rem;
+    height: fit-content;
+    display: flex;
+    align-items: center;
 }
 
 .navbar-dark .dropdown-toggle:hover {
@@ -357,10 +362,10 @@ body {
 /* Fixed Sidebar Styles */
 .sidebar-fixed {
     position: fixed;
-    top: 65px;
+    top: 70px;
     left: 0;
     width: 280px;
-    height: calc(100vh - 65px);
+    height: calc(100vh - 70px);
     background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
     box-shadow: 2px 0 10px rgba(0,0,0,0.15);
     z-index: 1040;
@@ -394,7 +399,7 @@ body {
 }
 
 .sidebar-nav .nav-item {
-    margin: 0 1rem 0.5rem 1rem;
+    margin: 0 1rem 0.25rem 1rem;
 }
 
 .sidebar-nav .nav-link {
@@ -442,7 +447,7 @@ body {
 
 /* Navigation Dividers */
 .nav-divider {
-    margin: 1.5rem 1rem 1rem 1rem;
+    margin: 1rem 1rem 0.75rem 1rem;
     padding: 0;
 }
 
@@ -474,8 +479,8 @@ body {
 
 .main-content {
     margin-left: 280px;
-    margin-top: 85px;
-    min-height: calc(100vh - 85px);
+    margin-top: 70px;
+    min-height: calc(100vh - 70px);
     transition: margin-left 0.3s ease;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     padding: 20px;
@@ -502,10 +507,10 @@ body {
     
     .sidebar-overlay {
         position: fixed;
-        top: 65px;
+        top: 70px;
         left: 0;
         width: 100%;
-        height: calc(100vh - 65px);
+        height: calc(100vh - 70px);
         background: rgba(0,0,0,0.5);
         z-index: 1039;
         opacity: 0;

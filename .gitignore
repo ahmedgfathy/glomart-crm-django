@@ -1,0 +1,297 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+.python-version
+
+# pipenv
+#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
+#   However, in case of collaboration, if having platform-specific dependencies or dependencies
+#   having no cross-platform support, pipenv may install dependencies that don't work, or not
+#   install all needed dependencies.
+#Pipfile.lock
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ==============================================
+# CRM SPECIFIC MEDIA FILES AND UPLOADS
+# ==============================================
+
+# All media uploads
+media/
+uploads/
+static/uploads/
+
+# Property images and videos
+properties/*/images/
+properties/*/videos/
+properties/images/
+properties/videos/
+
+# Project images and videos  
+projects/*/images/
+projects/*/videos/
+projects/images/
+projects/videos/
+
+# Lead attachments
+leads/*/attachments/
+leads/attachments/
+
+# Profile images
+profiles/*/images/
+profiles/images/
+
+# Property images in static directory
+static/images/property-*
+static/images/properties/
+
+# All image file types
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.tiff
+*.tif
+*.svg
+*.webp
+*.ico
+
+# All video file types  
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+*.mkv
+*.m4v
+*.3gp
+
+# Audio files
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+*.wma
+
+# Document uploads (if too large)
+*.pdf
+*.doc
+*.docx
+*.xls
+*.xlsx
+*.ppt
+*.pptx
+
+# Compressed files
+*.zip
+*.rar
+*.7z
+*.tar.gz
+*.tar.bz2
+
+# Database backups
+*.sql
+*.dump
+*.backup
+
+# ==============================================
+# DEVELOPMENT AND IDE FILES
+# ==============================================
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+
+# ==============================================
+# TEMPORARY AND CACHE FILES
+# ==============================================
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node.js (if using any JS tools)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Redis dump file
+dump.rdb
+
+# Elasticsearch
+elasticsearch/
+
+# Logs
+logs/
+*.log
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# ==============================================
+# CUSTOM IGNORED DIRECTORIES
+# ==============================================
+
+# Custom upload directories that might be created
+user_uploads/
+property_media/
+project_media/
+lead_media/
+backup/
+backups/

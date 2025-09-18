@@ -59,7 +59,13 @@ def permission_required(level):
 @permission_required(1)  # View permission
 def leads_list_view(request):
     """Display paginated list of leads with filtering and search"""
-    leads = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').all()
+    # Restrict leads based on user permissions
+    if request.user.is_superuser:
+        # Superuser can see all leads
+        leads = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').all()
+    else:
+        # Regular users can only see leads assigned to them
+        leads = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').filter(assigned_to=request.user)
     
     # Apply filters
     status_filter = request.GET.get('status')
@@ -147,15 +153,28 @@ def leads_list_view(request):
     # Get filter options
     statuses = LeadStatus.objects.filter(is_active=True)
     sources = LeadSource.objects.filter(is_active=True)
-    users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    
+    # Users dropdown - superusers see all, regular users only see themselves
+    if request.user.is_superuser:
+        users = User.objects.filter(is_active=True).order_by('first_name', 'last_name')
+    else:
+        users = User.objects.filter(id=request.user.id)  # Only current user
+    
     lead_types = LeadType.objects.filter(is_active=True)
     priorities = LeadPriority.objects.filter(is_active=True).order_by('order')
     temperatures = LeadTemperature.objects.filter(is_active=True).order_by('order')
     
-    # Statistics
-    total_leads = Lead.objects.count()
-    qualified_leads = Lead.objects.filter(is_qualified=True).count()
-    unassigned_leads = Lead.objects.filter(assigned_to__isnull=True).count()
+    # Statistics - User-specific for non-superusers
+    if request.user.is_superuser:
+        total_leads = Lead.objects.count()
+        qualified_leads = Lead.objects.filter(is_qualified=True).count()
+        unassigned_leads = Lead.objects.filter(assigned_to__isnull=True).count()
+    else:
+        # Regular users see only their assigned leads statistics
+        user_leads = Lead.objects.filter(assigned_to=request.user)
+        total_leads = user_leads.count()
+        qualified_leads = user_leads.filter(is_qualified=True).count()
+        unassigned_leads = 0  # User can't see unassigned leads
     
     context = {
         'page_obj': page_obj,
@@ -1045,7 +1064,11 @@ def export_leads_view(request):
         'Priority', 'Score', 'Created', 'Assigned To'
     ])
     
-    leads = Lead.objects.select_related('status', 'source', 'assigned_to').all()
+    # Restrict export based on user permissions
+    if request.user.is_superuser:
+        leads = Lead.objects.select_related('status', 'source', 'assigned_to').all()
+    else:
+        leads = Lead.objects.select_related('status', 'source', 'assigned_to').filter(assigned_to=request.user)
     
     for lead in leads:
         writer.writerow([

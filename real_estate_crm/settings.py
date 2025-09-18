@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-4cow$muvk#-gxnnbvrzy80f5$$-)%s4(117e-89_q96s7aq7&1
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '192.168.1.5']
 
 
 # Application definition
@@ -39,6 +39,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'authentication',
     'leads',
+    'properties',  # Property management app
+    'projects',    # Project management app
 ]
 
 MIDDLEWARE = [
@@ -65,6 +67,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'authentication.context_processors.permissions_context',
             ],
         },
     },
@@ -121,7 +124,12 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / "static",
+    BASE_DIR / "public",
 ]
+
+# Media files (User uploads)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

@@ -1,0 +1,1296 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+{% load property_filters %}
+
+{% block title %}{{ property.property_number|default:property.property_id }} - Properties{% endblock %}
+
+{% block extra_css %}
+<style>
+    .property-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 0.5rem;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .detail-card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .detail-card .card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: 600;
+    }
+    
+    .property-image {
+        width: 100%;
+        height: 300px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+    }
+    
+    /* Image Slider Styles */
+    .property-image-slider {
+        position: relative;
+        background: #000;
+    }
+    
+    .slider-image {
+        height: 400px;
+        object-fit: cover;
+        cursor: pointer;
+    }
+    
+    .slider-nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.6);
+        border: none;
+        color: white;
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        z-index: 10;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .property-image-slider:hover .slider-nav-btn {
+        opacity: 1;
+    }
+    
+    .slider-nav-btn:hover {
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .prev-slider-btn {
+        left: 15px;
+    }
+    
+    .next-slider-btn {
+        right: 15px;
+    }
+    
+    .slider-counter {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        padding: 5px 12px;
+        border-radius: 15px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    /* Thumbnail Styles */
+    .thumbnail-strip {
+        max-height: 80px;
+    }
+    
+    .thumbnail-item {
+        flex: 0 0 auto;
+        width: 80px;
+        height: 60px;
+        border-radius: 8px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .thumbnail-item.active {
+        border-color: #007bff;
+    }
+    
+    .thumbnail-item:hover {
+        border-color: #0056b3;
+        transform: scale(1.05);
+    }
+    
+    .thumbnail-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    /* Fullscreen Gallery Styles */
+    .fullscreen-gallery {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.95);
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .fullscreen-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px;
+        color: white;
+    }
+    
+    .fullscreen-counter {
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .fullscreen-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        padding: 20px;
+    }
+    
+    .fullscreen-image {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 8px;
+    }
+    
+    .fullscreen-nav-btn {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        z-index: 10;
+        transition: all 0.3s ease;
+    }
+    
+    .fullscreen-nav-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-50%) scale(1.1);
+    }
+    
+    .prev-fullscreen-btn {
+        left: 30px;
+    }
+    
+    .next-fullscreen-btn {
+        right: 30px;
+    }
+    
+    .status-badge {
+        padding: 0.5rem 1rem;
+        border-radius: 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    
+    .info-item {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #64748b;
+        min-width: 120px;
+    }
+    
+    .history-item {
+        padding: 1rem;
+        border-left: 3px solid #e2e8f0;
+        margin-bottom: 1rem;
+        background: #f8fafc;
+        border-radius: 0 0.375rem 0.375rem 0;
+    }
+    
+    .action-buttons .btn {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'properties:property_list' %}">Properties</a></li>
+            <li class="breadcrumb-item active">{{ property.property_number|default:property.property_id }}</li>
+        </ol>
+    </nav>
+
+    <!-- Property Header -->
+    <div class="property-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="h2 mb-2">{{ property.property_number|default:property.property_id }}</h1>
+                <h5 class="mb-3 opacity-90">{{ property.name|default:"Unnamed Property" }}</h5>
+                
+                <div class="row">
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            <span>{{ property.region.name|default:"No Region" }}</span>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-building me-2"></i>
+                            <span>{{ property.property_type.name|default:"No Type" }}</span>
+                        </div>
+                    </div>
+                    {% if property.compound %}
+                    <div class="col-auto">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-houses me-2"></i>
+                            <span>{{ property.compound.name }}</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="mb-3">
+                    {% if property.status %}
+                    <span class="status-badge bg-light text-dark">
+                        {{ property.status.name }}
+                    </span>
+                    {% endif %}
+                </div>
+                {% if property.total_price %}
+                <div class="h3 mb-0">
+                    {{ property.display_price }}
+                </div>
+                {% else %}
+                <div class="h5 mb-0 opacity-75">Price on request</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-buttons mb-4">
+        <a href="{% url 'properties:property_edit' property.property_id %}" class="btn btn-primary">
+            <i class="bi bi-pencil me-2"></i>Edit Property
+        </a>
+        <button type="button" class="btn btn-outline-{% if property.is_liked %}danger{% else %}secondary{% endif %}" 
+                onclick="likeProperty('{{ property.property_id }}')">
+            <i class="bi bi-heart{% if property.is_liked %}-fill{% endif %} me-2"></i>
+            {% if property.is_liked %}Unlike{% else %}Like{% endif %}
+        </button>
+        <a href="{% url 'properties:property_assign' property.property_id %}" class="btn btn-outline-primary">
+            <i class="bi bi-person-plus me-2"></i>Assign Users
+        </a>
+        <button type="button" class="btn btn-outline-danger" onclick="deleteProperty()">
+            <i class="bi bi-trash me-2"></i>Delete
+        </button>
+    </div>
+
+    <div class="row">
+        <!-- Left Column -->
+                <!-- Main Content Area -->
+        <div class="col-lg-8">
+            <!-- Property Images Gallery -->
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-dark text-white border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-images me-2"></i>Property Gallery</h5>
+                    <button type="button" class="btn btn-outline-light btn-sm" onclick="openFullscreenGallery()">
+                        <i class="bi bi-arrows-fullscreen me-1"></i>Fullscreen
+                    </button>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Main Image Slider -->
+                    <div class="property-image-slider position-relative">
+                        <div class="slider-main-image">
+                            <img id="mainSliderImage" src="{{ property.get_image_url }}" alt="Property Image" 
+                                 class="slider-image w-100" style="height: 350px; object-fit: cover;"
+                                 onerror="this.src='/static/images/property-placeholder.svg';"
+                                 onclick="openFullscreenGallery()">
+                        </div>
+                        
+                        <!-- Navigation Arrows -->
+                        <button type="button" class="slider-nav-btn prev-slider-btn" onclick="changeSliderImage(-1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button type="button" class="slider-nav-btn next-slider-btn" onclick="changeSliderImage(1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        
+                        <!-- Image Counter -->
+                        <div class="slider-counter">
+                            <span id="currentSliderIndex">1</span> / <span id="totalSliderImages">1</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Thumbnail Strip -->
+                    <div class="image-thumbnails mt-3 px-3 pb-3">
+                        <div class="thumbnail-strip d-flex gap-2 overflow-auto">
+                            <div class="thumbnail-item active" onclick="goToSliderImage(0)">
+                                <img src="{{ property.get_image_url }}" alt="Thumbnail" class="thumbnail-img"
+                                     onerror="this.src='/static/images/property-placeholder.svg';">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Property Description -->
+            {% if property.description %}
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-card-text me-2"></i>Property Description</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="property-description" style="font-size: 1.1rem; line-height: 1.7;">
+                        {{ property.description|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Property Features & Amenities -->
+            {% if property.features or property.facilities or property.unit_features %}
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-success text-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-star me-2"></i>Features & Amenities</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if property.unit_features %}
+                    <div class="mb-4">
+                        <h6 class="text-success fw-bold mb-3"><i class="bi bi-house me-2"></i>Unit Features</h6>
+                        <div class="unit-features" style="background: #f8f9fa; padding: 1rem; border-radius: 8px;">
+                            {{ property.unit_features|linebreaks }}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if property.features %}
+                    <div class="mb-4">
+                        <h6 class="text-success fw-bold mb-3"><i class="bi bi-check-circle me-2"></i>Property Features</h6>
+                        <div class="features-grid row g-2">
+                            {% for feature in property.features %}
+                            <div class="col-md-6">
+                                <span class="badge bg-light text-dark w-100 p-2 text-start">
+                                    <i class="bi bi-check2 text-success me-2"></i>{{ feature }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if property.facilities %}
+                    <div>
+                        <h6 class="text-success fw-bold mb-3"><i class="bi bi-building me-2"></i>Building Facilities</h6>
+                        <div class="facilities-grid row g-2">
+                            {% for facility in property.facilities %}
+                            <div class="col-md-6">
+                                <span class="badge bg-light text-dark w-100 p-2 text-start">
+                                    <i class="bi bi-building text-success me-2"></i>{{ facility }}
+                                </span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Location & Contact Information -->
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Location & Contact</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-info fw-bold mb-3"><i class="bi bi-map me-2"></i>Location Details</h6>
+                            {% if property.region %}
+                            <div class="info-item mb-2 p-2 bg-light rounded">
+                                <strong class="text-dark">Region:</strong> 
+                                <span class="text-muted">{{ property.region.name }}</span>
+                            </div>
+                            {% endif %}
+                            {% if property.compound %}
+                            <div class="info-item mb-2 p-2 bg-light rounded">
+                                <strong class="text-dark">Compound:</strong> 
+                                <span class="text-muted">{{ property.compound.name }}</span>
+                            </div>
+                            {% endif %}
+                            {% if property.address %}
+                            <div class="info-item mb-2 p-2 bg-light rounded">
+                                <strong class="text-dark">Address:</strong> 
+                                <span class="text-muted">{{ property.address }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-info fw-bold mb-3"><i class="bi bi-telephone me-2"></i>Contact Information</h6>
+                            {% if property.mobile_number %}
+                            <div class="info-item mb-2 p-2 bg-light rounded">
+                                <strong class="text-dark">Mobile:</strong> 
+                                <a href="tel:{{ property.mobile_number }}" class="text-decoration-none text-primary">
+                                    <i class="bi bi-phone me-1"></i>{{ property.mobile_number }}
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% if property.secondary_phone %}
+                            <div class="info-item mb-2 p-2 bg-light rounded">
+                                <strong class="text-dark">Phone:</strong> 
+                                <a href="tel:{{ property.secondary_phone }}" class="text-decoration-none text-primary">
+                                    <i class="bi bi-telephone me-1"></i>{{ property.secondary_phone }}
+                                </a>
+                            </div>
+                            {% endif %}
+                            {% if property.property_offered_by %}
+                            <div class="info-item mb-2 p-2 bg-light rounded">
+                                <strong class="text-dark">Offered By:</strong> 
+                                <span class="text-muted">{{ property.property_offered_by }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fullscreen Gallery Modal -->
+            <div id="fullscreenGallery" class="fullscreen-gallery d-none">
+                <div class="fullscreen-header">
+                    <div class="fullscreen-counter">
+                        <span id="fullscreenCurrentIndex">1</span> / <span id="fullscreenTotalImages">1</span>
+                    </div>
+                    <button type="button" class="btn btn-light btn-sm" onclick="closeFullscreenGallery()">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="fullscreen-content">
+                    <img id="fullscreenImage" src="" alt="Property Image" class="fullscreen-image">
+                    
+                    <!-- Fullscreen Navigation -->
+                    <button type="button" class="fullscreen-nav-btn prev-fullscreen-btn" onclick="changeFullscreenImage(-1)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button type="button" class="fullscreen-nav-btn next-fullscreen-btn" onclick="changeFullscreenImage(1)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+                </div>
+            </div>
+
+            <!-- Property Description -->
+            {% if property.description %}
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0">Description</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ property.description|linebreaks }}</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Property Features -->
+            {% if property.unit_features or property.features %}
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0">Features & Amenities</h5>
+                </div>
+                <div class="card-body">
+                    {% if property.unit_features %}
+                    <h6>Unit Features</h6>
+                    <p>{{ property.unit_features|linebreaks }}</p>
+                    {% endif %}
+                    
+                    {% if property.features %}
+                    <h6>Additional Features</h6>
+                    <div class="row">
+                        {% for feature in property.features %}
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                <span>{{ feature }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Property History -->
+            {% if history %}
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0">Recent Activity</h5>
+                </div>
+                <div class="card-body">
+                    {% for item in history %}
+                    <div class="history-item">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <strong>{{ item.change_type|title }}</strong>
+                            <small class="text-muted">{{ item.created_at|date:"M j, Y H:i" }}</small>
+                        </div>
+                        {% if item.notes %}
+                        <p class="mb-2">{{ item.notes }}</p>
+                        {% endif %}
+                        {% if item.changed_by %}
+                        <small class="text-muted">
+                            by {{ item.changed_by.get_full_name|default:item.changed_by.username }}
+                        </small>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column - Key Information Sidebar -->
+        <div class="col-lg-4">
+            <!-- Property Overview -->
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-primary text-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-info-circle-fill me-2"></i>Property Overview</h5>
+                </div>
+                <div class="card-body p-3">
+                    <!-- Primary Information -->
+                    <div class="property-info-section mb-3">
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Property ID:</span>
+                            <span class="fw-bold text-dark">{{ property.property_id }}</span>
+                        </div>
+                        
+                        {% if property.property_number %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Property Number:</span>
+                            <span class="fw-bold text-dark">{{ property.property_number }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.property_type %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Type:</span>
+                            <span class="fw-bold text-dark">{{ property.property_type.name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.category %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Category:</span>
+                            <span class="fw-bold text-dark">{{ property.category.name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.status %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Status:</span>
+                            <span class="badge bg-success ms-auto">{{ property.status.name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Location Information -->
+                    <div class="property-info-section mb-3">
+                        <h6 class="text-primary fw-bold mb-2"><i class="bi bi-geo-alt me-1"></i>Location</h6>
+                        
+                        {% if property.building %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Building:</span>
+                            <span class="fw-bold text-dark">{{ property.building }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.floor_number %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Floor:</span>
+                            <span class="fw-bold text-dark">{{ property.floor_number }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.unit_number %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Unit:</span>
+                            <span class="fw-bold text-dark">{{ property.unit_number }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Space Information -->
+                    <div class="property-info-section">
+                        <h6 class="text-primary fw-bold mb-2"><i class="bi bi-rulers me-1"></i>Specifications</h6>
+                        
+                        {% if property.rooms %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Rooms:</span>
+                            <span class="fw-bold text-dark">{{ property.rooms }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.bathrooms %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Bathrooms:</span>
+                            <span class="fw-bold text-dark">{{ property.bathrooms }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.total_space %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Total Area:</span>
+                            <span class="fw-bold text-dark">{{ property.total_space|number_format }} m²</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pricing Information -->
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-success text-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Pricing</h5>
+                </div>
+                <div class="card-body p-3">
+                    {% if property.total_price %}
+                    <div class="primary-price mb-3 p-3 bg-light rounded">
+                        <div class="text-center">
+                            <div class="text-muted small">Total Price</div>
+                            <div class="h4 fw-bold text-success mb-0">
+                                {% if property.currency %}
+                                    {{ property.total_price|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.total_price|currency_format }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Price Breakdown -->
+                    {% if property.asking_price or property.base_price or property.price_per_meter %}
+                    <div class="price-breakdown">
+                        {% if property.asking_price %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Asking Price:</span>
+                            <span class="fw-bold text-dark">
+                                {% if property.currency %}
+                                    {{ property.asking_price|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.asking_price|currency_format }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.base_price %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Base Price:</span>
+                            <span class="fw-bold text-dark">
+                                {% if property.currency %}
+                                    {{ property.base_price|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.base_price|currency_format }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.price_per_meter %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">Price per m²:</span>
+                            <span class="fw-bold text-dark">
+                                {% if property.currency %}
+                                    {{ property.price_per_meter|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.price_per_meter|currency_format }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Payment Information -->
+                    {% if property.down_payment or property.installment or property.monthly_payment %}
+                    <div class="payment-info mt-3">
+                        <h6 class="text-success fw-bold mb-2"><i class="bi bi-credit-card me-1"></i>Payment Options</h6>
+                        
+                        {% if property.down_payment %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Down Payment:</span>
+                            <span class="fw-bold text-dark">
+                                {% if property.currency %}
+                                    {{ property.down_payment|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.down_payment|currency_format }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.installment %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Installment:</span>
+                            <span class="fw-bold text-dark">
+                                {% if property.currency %}
+                                    {{ property.installment|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.installment|currency_format }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.monthly_payment %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Monthly Payment:</span>
+                            <span class="fw-bold text-dark">
+                                {% if property.currency %}
+                                    {{ property.monthly_payment|currency_format:property.currency.symbol }}
+                                {% else %}
+                                    {{ property.monthly_payment|currency_format }}
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Owner Information -->
+            {% if property.owner_name or property.owner_phone or property.owner_email %}
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-person me-2"></i>Owner Information</h5>
+                </div>
+                <div class="card-body">
+                    {% if property.owner_name %}
+                    <div class="info-item d-flex">
+                        <span class="info-label">Owner Name:</span>
+                        <span class="ms-auto">{{ property.owner_name }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if property.owner_phone %}
+                    <div class="info-item d-flex">
+                        <span class="info-label">Mobile:</span>
+                        <span class="ms-auto">
+                            <a href="tel:{{ property.owner_phone }}" class="text-decoration-none">
+                                {{ property.owner_phone }}
+                            </a>
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if property.owner_email %}
+                    <div class="info-item d-flex">
+                        <span class="info-label">Email:</span>
+                        <span class="ms-auto">
+                            <a href="mailto:{{ property.owner_email }}" class="text-decoration-none">
+                                {{ property.owner_email }}
+                            </a>
+                        </span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if property.owner_notes %}
+                    <div class="info-item">
+                        <span class="info-label">Notes:</span>
+                        <div class="mt-2 text-muted">{{ property.owner_notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Management Information -->
+            <div class="detail-card card border-0 shadow-sm mb-4">
+                <div class="card-header bg-info text-white border-0">
+                    <h5 class="mb-0"><i class="bi bi-people-fill me-2"></i>Management</h5>
+                </div>
+                <div class="card-body p-3">
+                    <!-- Team Information -->
+                    <div class="team-info mb-3">
+                        {% if property.handler %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">
+                                <i class="bi bi-person-circle me-1"></i>Handler:
+                            </span>
+                            <span class="fw-bold text-dark">
+                                {{ property.handler.get_full_name|default:property.handler.username }}
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.sales_person %}
+                        <div class="info-item d-flex justify-content-between py-2 border-bottom">
+                            <span class="info-label text-muted">
+                                <i class="bi bi-person-badge me-1"></i>Sales Person:
+                            </span>
+                            <span class="fw-bold text-dark">
+                                {{ property.sales_person.get_full_name|default:property.sales_person.username }}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Status and Activity -->
+                    <div class="status-info mb-3">
+                        <h6 class="text-info fw-bold mb-2"><i class="bi bi-activity me-1"></i>Status & Activity</h6>
+                        
+                        {% if property.activity %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Activity:</span>
+                            <span class="badge bg-primary">{{ property.activity.name }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.unit_purpose %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Purpose:</span>
+                            <span class="fw-bold text-dark">{{ property.unit_purpose.name }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Timeline -->
+                    <div class="timeline-info">
+                        <h6 class="text-info fw-bold mb-2"><i class="bi bi-clock-history me-1"></i>Timeline</h6>
+                        
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Created:</span>
+                            <span class="fw-bold text-dark">{{ property.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Updated:</span>
+                            <span class="fw-bold text-dark">{{ property.updated_at|date:"M d, Y" }}</span>
+                        </div>
+                        
+                        {% if property.last_follow_up %}
+                        <div class="info-item d-flex justify-content-between py-1">
+                            <span class="info-label text-muted">Last Follow-up:</span>
+                            <span class="fw-bold text-dark">{{ property.last_follow_up|date:"M d, Y" }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-lightning me-2"></i>Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'properties:property_edit' property.property_id %}" class="btn btn-primary">
+                            <i class="bi bi-pencil me-2"></i>Edit Property
+                        </a>
+                        {% if property.owner_phone %}
+                        <a href="tel:{{ property.owner_phone }}" class="btn btn-outline-success">
+                            <i class="bi bi-telephone me-2"></i>Call Owner
+                        </a>
+                        {% endif %}
+                        {% if property.owner_email %}
+                        <a href="mailto:{{ property.owner_email }}" class="btn btn-outline-info">
+                            <i class="bi bi-envelope me-2"></i>Email Owner
+                        </a>
+                        {% endif %}
+                        <button type="button" class="btn btn-outline-warning" onclick="likeProperty('{{ property.property_id }}')">
+                            <i class="bi bi-heart{% if property.is_liked %}-fill{% endif %} me-2"></i>
+                            {% if property.is_liked %}Unlike{% else %}Like{% endif %}
+                        </button>
+                        <button type="button" class="btn btn-outline-danger" onclick="deleteProperty()">
+                            <i class="bi bi-trash me-2"></i>Delete Property
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Information Sections (Full Width Below) -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <!-- Property Specifications -->
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-rulers me-2"></i>Property Specifications</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if property.property_type %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Property Type:</span>
+                                <div class="fw-bold">{{ property.property_type.name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.property_category %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Category:</span>
+                                <div class="fw-bold">{{ property.property_category.name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.finishing_type %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Finishing:</span>
+                                <div class="fw-bold">{{ property.finishing_type.name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.view_type %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">View Type:</span>
+                                <div class="fw-bold">{{ property.view_type }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.built_up_area %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Built-up Area:</span>
+                                <div class="fw-bold">{{ property.built_up_area }} m²</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.garden_area %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Garden Area:</span>
+                                <div class="fw-bold">{{ property.garden_area }} m²</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.delivery_date %}
+                        <div class="col-md-3 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Delivery Date:</span>
+                                <div class="fw-bold">{{ property.delivery_date|date:"M d, Y" }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Information -->
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-geo-alt me-2"></i>Location Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if property.region %}
+                        <div class="col-md-4 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Region:</span>
+                                <div class="fw-bold">{{ property.region.name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.compound %}
+                        <div class="col-md-4 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Compound:</span>
+                                <div class="fw-bold">{{ property.compound.name }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.city %}
+                        <div class="col-md-4 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">City:</span>
+                                <div class="fw-bold">{{ property.city }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if property.address %}
+                        <div class="col-12 mb-3">
+                            <div class="info-item">
+                                <span class="info-label">Address:</span>
+                                <div class="fw-bold">{{ property.address }}</div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Description and Notes -->
+            {% if property.description or property.notes %}
+            <div class="detail-card card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-chat-text me-2"></i>Description & Notes</h5>
+                </div>
+                <div class="card-body">
+                    {% if property.description %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Description:</h6>
+                        <p>{{ property.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if property.notes %}
+                    <div>
+                        <h6 class="text-muted">Additional Notes:</h6>
+                        <p>{{ property.notes }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete this property? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'properties:property_delete' property.property_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete Property</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function likeProperty(propertyId) {
+    fetch(`/properties/${propertyId}/like/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function deleteProperty() {
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Image slider functionality
+let propertyImageUrls = [];
+let currentImageIndex = 0;
+
+function loadPropertyImages() {
+    // Fetch all images for this property
+    fetch(`/properties/{{ property.property_id }}/images/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.images && data.images.length > 0) {
+                propertyImageUrls = data.images;
+                currentImageIndex = 0;
+                
+                // Update slider
+                updateSliderDisplay();
+                updateThumbnails();
+                
+                // Show navigation if more than one image
+                if (propertyImageUrls.length > 1) {
+                    document.querySelectorAll('.slider-nav-btn').forEach(btn => {
+                        btn.style.display = 'flex';
+                    });
+                }
+            }
+        })
+        .catch(error => console.error('Error loading images:', error));
+}
+
+function updateSliderDisplay() {
+    if (propertyImageUrls.length === 0) return;
+    
+    const mainImage = document.getElementById('mainSliderImage');
+    const currentIndex = document.getElementById('currentSliderIndex');
+    const totalImages = document.getElementById('totalSliderImages');
+    
+    mainImage.src = propertyImageUrls[currentImageIndex];
+    currentIndex.textContent = currentImageIndex + 1;
+    totalImages.textContent = propertyImageUrls.length;
+}
+
+function updateThumbnails() {
+    const thumbnailStrip = document.querySelector('.thumbnail-strip');
+    thumbnailStrip.innerHTML = '';
+    
+    propertyImageUrls.forEach((url, index) => {
+        const thumbnailItem = document.createElement('div');
+        thumbnailItem.className = `thumbnail-item ${index === currentImageIndex ? 'active' : ''}`;
+        thumbnailItem.onclick = () => goToSliderImage(index);
+        
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = 'Thumbnail';
+        img.className = 'thumbnail-img';
+        img.onerror = function() {
+            this.src = '/static/images/property-placeholder.svg';
+        };
+        
+        thumbnailItem.appendChild(img);
+        thumbnailStrip.appendChild(thumbnailItem);
+    });
+}
+
+function changeSliderImage(direction) {
+    if (propertyImageUrls.length <= 1) return;
+    
+    currentImageIndex += direction;
+    
+    if (currentImageIndex < 0) {
+        currentImageIndex = propertyImageUrls.length - 1;
+    } else if (currentImageIndex >= propertyImageUrls.length) {
+        currentImageIndex = 0;
+    }
+    
+    updateSliderDisplay();
+    updateThumbnailActive();
+}
+
+function goToSliderImage(index) {
+    currentImageIndex = index;
+    updateSliderDisplay();
+    updateThumbnailActive();
+}
+
+function updateThumbnailActive() {
+    document.querySelectorAll('.thumbnail-item').forEach((item, index) => {
+        item.classList.toggle('active', index === currentImageIndex);
+    });
+}
+
+// Fullscreen gallery functionality
+function openFullscreenGallery() {
+    const gallery = document.getElementById('fullscreenGallery');
+    const fullscreenImage = document.getElementById('fullscreenImage');
+    const fullscreenCurrentIndex = document.getElementById('fullscreenCurrentIndex');
+    const fullscreenTotalImages = document.getElementById('fullscreenTotalImages');
+    
+    if (propertyImageUrls.length === 0) return;
+    
+    fullscreenImage.src = propertyImageUrls[currentImageIndex];
+    fullscreenCurrentIndex.textContent = currentImageIndex + 1;
+    fullscreenTotalImages.textContent = propertyImageUrls.length;
+    
+    gallery.classList.remove('d-none');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeFullscreenGallery() {
+    const gallery = document.getElementById('fullscreenGallery');
+    gallery.classList.add('d-none');
+    document.body.style.overflow = '';
+}
+
+function changeFullscreenImage(direction) {
+    if (propertyImageUrls.length <= 1) return;
+    
+    currentImageIndex += direction;
+    
+    if (currentImageIndex < 0) {
+        currentImageIndex = propertyImageUrls.length - 1;
+    } else if (currentImageIndex >= propertyImageUrls.length) {
+        currentImageIndex = 0;
+    }
+    
+    const fullscreenImage = document.getElementById('fullscreenImage');
+    const fullscreenCurrentIndex = document.getElementById('fullscreenCurrentIndex');
+    
+    fullscreenImage.src = propertyImageUrls[currentImageIndex];
+    fullscreenCurrentIndex.textContent = currentImageIndex + 1;
+    
+    // Also update the main slider
+    updateSliderDisplay();
+    updateThumbnailActive();
+}
+
+// Keyboard navigation for fullscreen
+document.addEventListener('keydown', function(e) {
+    const gallery = document.getElementById('fullscreenGallery');
+    if (!gallery.classList.contains('d-none')) {
+        if (e.key === 'ArrowLeft') {
+            changeFullscreenImage(-1);
+        } else if (e.key === 'ArrowRight') {
+            changeFullscreenImage(1);
+        } else if (e.key === 'Escape') {
+            closeFullscreenGallery();
+        }
+    }
+});
+
+// Initialize image slider when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadPropertyImages();
+});
+</script>
+{% endblock %}

@@ -17,6 +17,16 @@
                 <i class="bi bi-envelope"></i>
             </a>
             
+            <!-- Calendar -->
+            <button class="btn btn-outline-secondary border-0" type="button" title="Calendar" onclick="alert('Calendar module coming soon!')">
+                <i class="bi bi-calendar3"></i>
+            </button>
+            
+            <!-- Documents -->
+            <button class="btn btn-outline-secondary border-0" type="button" title="Documents" onclick="alert('Documents module coming soon!')">
+                <i class="bi bi-file-earmark-text"></i>
+            </button>
+            
             <!-- Search -->
             <button class="btn btn-outline-secondary border-0" type="button" title="Search">
                 <i class="bi bi-search"></i>
@@ -44,10 +54,11 @@
                     <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Profile</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:user_profile_settings' %}"><i class="bi bi-person me-2"></i>My Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:user_profile_settings' %}"><i class="bi bi-gear me-2"></i>User Settings</a></li>
                     {% if user.is_superuser %}
                     <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:company_settings' %}"><i class="bi bi-building-gear me-2"></i>Company Settings</a></li>
                     <li><a class="dropdown-item" href="{% url 'authentication:users' %}"><i class="bi bi-people me-2"></i>Manage Users</a></li>
                     <li><a class="dropdown-item" href="{% url 'authentication:profiles' %}"><i class="bi bi-shield-check me-2"></i>Manage Profiles</a></li>
                     <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear-wide me-2"></i>Admin</a></li>

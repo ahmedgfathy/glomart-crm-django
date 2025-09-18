@@ -16,15 +16,21 @@
                 <p class="text-muted mb-0">Manage your leads and track their progress through the sales pipeline</p>
             </div>
             <div class="d-flex gap-2">
+                {% if has_leads_create %}
                 <a href="{% url 'leads:create_lead' %}" class="btn btn-gradient btn-sm">
                     <i class="bi bi-plus-circle me-1"></i>Add Lead
                 </a>
+                {% endif %}
+                {% if has_leads_create %}
                 <button type="button" class="btn btn-gradient btn-sm" data-bs-toggle="modal" data-bs-target="#importModal">
                     <i class="bi bi-upload me-1"></i>Import
                 </button>
+                {% endif %}
+                {% if has_leads_view %}
                 <a href="{% url 'leads:export_leads' %}" class="btn btn-gradient btn-sm">
                     <i class="bi bi-download me-1"></i>Export
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -179,8 +185,8 @@
                     </thead>
                     <tbody>
                         {% for lead in leads %}
-                        <tr>
-                            <td>
+                        <tr class="lead-row" style="cursor: pointer;" onclick="window.location.href='{% url 'leads:lead_detail' lead.id %}'">
+                            <td onclick="event.stopPropagation();">
                                 <input type="checkbox" class="form-check-input lead-checkbox" value="{{ lead.id }}">
                             </td>
                             <td>
@@ -292,7 +298,7 @@
                             <td>
                                 {{ lead.created_at|date:"M d, Y" }}
                             </td>
-                            <td class="text-center">
+                            <td class="text-center" onclick="event.stopPropagation();">
                                 <div class="dropdown dropstart">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle border-0" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bi bi-three-dots"></i>

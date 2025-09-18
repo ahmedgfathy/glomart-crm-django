@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
@@ -70,10 +70,60 @@ def dashboard_view(request):
         accessible_modules = Module.objects.none()
         messages.warning(request, 'No profile assigned. Contact administrator.')
     
-    return render(request, 'authentication/dashboard.html', {
+    # Get real statistics from database
+    from properties.models import Property
+    from leads.models import Lead
+    from projects.models import Project
+    
+    # Property statistics
+    total_properties = Property.objects.count()
+    
+    # Lead statistics (as active clients)
+    active_leads = Lead.objects.filter(status__name__icontains='active').count()
+    if active_leads == 0:
+        # Fallback to all leads if no active status defined
+        active_leads = Lead.objects.count()
+    
+    # Project statistics
+    total_projects = Project.objects.filter(is_active=True).count()
+    active_projects = Project.objects.filter(is_active=True, status__name='active').count()
+    
+    # Pending deals (leads in negotiation or similar status)
+    pending_deals = Lead.objects.filter(
+        Q(status__name__icontains='negotiation') | 
+        Q(status__name__icontains='pending') |
+        Q(status__name__icontains='follow')
+    ).count()
+    
+    # Calculate total property value (monthly revenue equivalent)
+    total_property_value = Property.objects.aggregate(
+        total=Sum('total_price')
+    )['total'] or 0
+    
+    # Format the total value for display
+    if total_property_value > 1000000:
+        monthly_revenue = f"${total_property_value/1000000:.1f}M"
+    elif total_property_value > 1000:
+        monthly_revenue = f"${total_property_value/1000:.0f}K"
+    else:
+        monthly_revenue = f"${total_property_value:.0f}"
+    
+    # Recent activities from UserActivity
+    recent_activities = UserActivity.objects.select_related('user').order_by('-timestamp')[:5]
+    
+    context = {
         'user': request.user,
-        'accessible_modules': accessible_modules
-    })
+        'accessible_modules': accessible_modules,
+        'total_properties': total_properties,
+        'total_projects': total_projects,
+        'active_leads': active_leads,
+        'active_projects': active_projects,
+        'pending_deals': pending_deals,
+        'monthly_revenue': monthly_revenue,
+        'recent_activities': recent_activities,
+    }
+    
+    return render(request, 'authentication/dashboard.html', context)
 
 
 @login_required

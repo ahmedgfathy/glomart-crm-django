@@ -40,104 +40,69 @@
                 </li>
                 
                 <!-- Leads Module -->
-                {% if user.is_superuser %}
+                {% if has_leads_view %}
                 <li class="nav-item">
                     <a class="nav-link {% if 'leads' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'leads:leads_list' %}">
                         <i class="bi bi-person-lines-fill me-3"></i>
                         <span>Leads</span>
-                        <span class="badge bg-primary ms-auto">12</span>
+                        {% if user_leads_count > 0 %}
+                        <span class="badge bg-primary ms-auto">{{ user_leads_count }}</span>
+                        {% endif %}
                     </a>
                 </li>
                 {% endif %}
                 
-                <!-- Property Module -->
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="bi bi-building me-3"></i>
-                        <span>Property</span>
-                        <span class="badge bg-success ms-auto">8</span>
-                    </a>
-                </li>
-                {% endif %}
-                
-                <!-- Projects Module -->
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="bi bi-diagram-3 me-3"></i>
-                        <span>Projects</span>
-                        <span class="badge bg-warning ms-auto">3</span>
-                    </a>
-                </li>
-                {% endif %}
-                
-                <!-- Opportunities Module - Hidden until implemented -->
-                {% comment %}
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="bi bi-target me-3"></i>
-                        <span>Opportunities</span>
-                        <span class="badge bg-info ms-auto">15</span>
-                    </a>
-                </li>
-                {% endif %}
-                {% endcomment %}
-                
-                <!-- Reports Module -->
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="bi bi-graph-up me-3"></i>
-                        <span>Reports</span>
-                    </a>
-                </li>
-                {% endif %}
-                
-                <!-- Calendar Module -->
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="bi bi-calendar3 me-3"></i>
-                        <span>Calendar</span>
-                    </a>
-                </li>
-                {% endif %}
-                
-                <!-- Documents Module -->
-                {% if user.is_superuser %}
-                <li class="nav-item">
-                    <a class="nav-link" href="#">
-                        <i class="bi bi-file-earmark-text me-3"></i>
-                        <span>Documents</span>
-                    </a>
-                </li>
-                {% endif %}
-                
-                <!-- For regular users, show accessible modules -->
-                {% if not user.is_superuser and accessible_modules %}
-                    {% for module in accessible_modules %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">
-                            <i class="{{ module.icon }} me-3"></i>
-                            <span>{{ module.display_name }}</span>
-                        </a>
-                    </li>
+                <!-- Other Modules - Show based on user permissions -->
+                {% if user_accessible_modules %}
+                    {% for module in user_accessible_modules|dictsort:"order" %}
+                        {% if module.name == 'report' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Reports module coming soon!')">
+                                <i class="bi bi-graph-up me-3"></i>
+                                <span>Reports</span>
+                            </a>
+                        </li>
+                        {% elif module.name == 'property' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'properties' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'properties:property_list' %}">
+                                <i class="bi bi-building me-3"></i>
+                                <span>Properties</span>
+                                {% if user_properties_count > 0 %}
+                                <span class="badge bg-success ms-auto">{{ user_properties_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% elif module.name == 'projects' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'projects' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'projects:project_list' %}">
+                                <i class="bi bi-building me-3"></i>
+                                <span>Projects</span>
+                                {% if user_projects_count > 0 %}
+                                <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% elif module.name == 'opportunity' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Opportunities module coming soon!')">
+                                <i class="bi bi-trophy me-3"></i>
+                                <span>Opportunities</span>
+                            </a>
+                        </li>
+                        {% elif module.name != 'leads' and module.name != 'authentication' and module.name != 'audit' and module.name != 'calendar' and module.name != 'document' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('{{ module.display_name }} module coming soon!')">
+                                <i class="{{ module.icon|default:'bi bi-puzzle' }} me-3"></i>
+                                <span>{{ module.display_name }}</span>
+                            </a>
+                        </li>
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
                 
                 {% if user.is_superuser %}
                 <li class="nav-divider">
                     <span class="nav-divider-text">ADMINISTRATION</span>
-                </li>
-                
-                <!-- User Management -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'users' %}active{% endif %}" href="{% url 'authentication:users' %}">
-                        <i class="bi bi-people me-3"></i>
-                        <span>Manage Users</span>
-                    </a>
                 </li>
                 
                 <!-- Profile Management -->
@@ -153,15 +118,6 @@
                     <a class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'audit:audit_list' %}">
                         <i class="bi bi-shield-exclamation me-3"></i>
                         <span>Audit Logs</span>
-                    </a>
-                </li>
-                
-                <!-- Django Admin -->
-                <li class="nav-item">
-                    <a class="nav-link" href="/admin/" target="_blank">
-                        <i class="bi bi-gear-wide me-3"></i>
-                        <span>Django Admin</span>
-                        <i class="bi bi-box-arrow-up-right ms-auto"></i>
                     </a>
                 </li>
                 {% endif %}
@@ -191,13 +147,13 @@
         <div class="px-3 py-2">
             <small class="text-light opacity-75 d-block mb-2">Glomart CRM v1.0</small>
             <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-light flex-fill" type="button">
+                <a href="{% url 'authentication:user_profile_settings' %}" class="btn btn-sm btn-outline-light flex-fill" title="User Settings">
                     <i class="bi bi-gear"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-light flex-fill" type="button">
+                </a>
+                <button class="btn btn-sm btn-outline-light flex-fill" type="button" title="Help">
                     <i class="bi bi-question-circle"></i>
                 </button>
-                <a href="{% url 'authentication:logout' %}" class="btn btn-sm btn-outline-danger flex-fill">
+                <a href="{% url 'authentication:logout' %}" class="btn btn-sm btn-outline-danger flex-fill" title="Logout">
                     <i class="bi bi-box-arrow-right"></i>
                 </a>
             </div>

@@ -1,0 +1,413 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Projects - Real Estate CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+    }
+    
+    .stats-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .project-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        background: white;
+    }
+    
+    .project-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+    
+    .project-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 1.2rem;
+    }
+    
+    .project-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.3rem;
+    }
+    
+    .project-id {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+    
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .btn-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        border-radius: 25px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .btn-gradient-outline {
+        background: transparent;
+        border: 2px solid #667eea;
+        color: #667eea;
+        border-radius: 25px;
+        padding: 0.4rem 1.4rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-gradient-outline:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .filter-card {
+        background: white;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-control, .form-select {
+        border-radius: 10px;
+        border: 1px solid #e1e5e9;
+        padding: 0.6rem 1rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        border-color: #667eea;
+    }
+    
+    .pagination .page-link {
+        border-radius: 10px;
+        margin: 0 2px;
+        border: 1px solid #e1e5e9;
+        color: #667eea;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
+    }
+    
+    .project-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .project-meta i {
+        margin-right: 0.3rem;
+        color: #667eea;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-dark fw-bold mb-1">Projects</h2>
+            <p class="text-muted mb-0">Manage your real estate projects</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'projects:project_export' %}?{{ request.GET.urlencode }}" class="btn btn-gradient-outline">
+                <i class="bi bi-download me-2"></i>Export
+            </a>
+            <button type="button" class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="bi bi-upload me-2"></i>Import
+            </button>
+            <a href="{% url 'projects:project_create' %}" class="btn btn-gradient">
+                <i class="bi bi-plus-lg me-2"></i>New Project
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number">{{ stats.total_projects }}</div>
+                    <div class="stats-label">Total Projects</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number">{{ stats.active_projects }}</div>
+                    <div class="stats-label">Active Projects</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number">{{ stats.total_units|floatformat:0 }}</div>
+                    <div class="stats-label">Total Units</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-number">{{ stats.available_units|floatformat:0 }}</div>
+                    <div class="stats-label">Available Units</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card filter-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" placeholder="Search projects..." 
+                           value="{{ search|default:'' }}">
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="status">
+                        <option value="">All Statuses</option>
+                        {% for status in statuses %}
+                            <option value="{{ status.id }}" {% if current_filters.status == status.id|stringformat:"s" %}selected{% endif %}>
+                                {{ status.display_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="type">
+                        <option value="">All Types</option>
+                        {% for type in types %}
+                            <option value="{{ type.id }}" {% if current_filters.type == type.id|stringformat:"s" %}selected{% endif %}>
+                                {{ type.display_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="priority">
+                        <option value="">All Priorities</option>
+                        {% for priority in priorities %}
+                            <option value="{{ priority.id }}" {% if current_filters.priority == priority.id|stringformat:"s" %}selected{% endif %}>
+                                {{ priority.display_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select class="form-select" name="assigned">
+                        <option value="">All Assignments</option>
+                        <option value="me" {% if current_filters.assigned == 'me' %}selected{% endif %}>Assigned to Me</option>
+                        <option value="unassigned" {% if current_filters.assigned == 'unassigned' %}selected{% endif %}>Unassigned</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-gradient w-100">
+                        <i class="bi bi-funnel"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="row">
+        {% for project in projects %}
+        <div class="col-lg-6 col-xl-4 mb-4">
+            <div class="card project-card h-100">
+                <div class="project-header">
+                    <div class="project-title">{{ project.name }}</div>
+                    <div class="project-id">ID: {{ project.project_id }}</div>
+                </div>
+                <div class="card-body d-flex flex-column">
+                    <div class="mb-3">
+                        {% if project.status %}
+                            <span class="badge status-badge" style="background-color: {{ project.status.color }};">
+                                {{ project.status.display_name }}
+                            </span>
+                        {% endif %}
+                        {% if project.priority %}
+                            <span class="badge status-badge ms-1" style="background-color: {{ project.priority.color }};">
+                                {{ project.priority.display_name }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3 flex-grow-1">
+                        {% if project.location %}
+                            <div class="project-meta mb-2">
+                                <i class="bi bi-geo-alt"></i>{{ project.location }}
+                            </div>
+                        {% endif %}
+                        {% if project.developer %}
+                            <div class="project-meta mb-2">
+                                <i class="bi bi-building"></i>{{ project.developer }}
+                            </div>
+                        {% endif %}
+                        {% if project.project_type %}
+                            <div class="project-meta mb-2">
+                                <i class="{{ project.project_type.icon }}"></i>{{ project.project_type.display_name }}
+                            </div>
+                        {% endif %}
+                        {% if project.total_units %}
+                            <div class="project-meta mb-2">
+                                <i class="bi bi-grid-3x3"></i>{{ project.total_units }} total units
+                                {% if project.available_units %}
+                                    ({{ project.available_units }} available)
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if project.price_range %}
+                            <div class="project-meta mb-2">
+                                <i class="bi bi-currency-dollar"></i>{{ project.price_range }}
+                            </div>
+                        {% endif %}
+                        {% if project.assigned_to %}
+                            <div class="project-meta mb-2">
+                                <i class="bi bi-person"></i>{{ project.assigned_to.get_full_name }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <i class="bi bi-calendar me-1"></i>{{ project.created_at|date:"M d, Y" }}
+                        </small>
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'projects:project_detail' project.project_id %}" 
+                               class="btn btn-sm btn-gradient-outline">
+                                View
+                            </a>
+                            <a href="{% url 'projects:project_edit' project.project_id %}" 
+                               class="btn btn-sm btn-gradient">
+                                Edit
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="bi bi-building" style="font-size: 4rem; color: #dee2e6;"></i>
+                </div>
+                <h4 class="text-muted">No projects found</h4>
+                <p class="text-muted">Try adjusting your search criteria or create a new project.</p>
+                <a href="{% url 'projects:project_create' %}" class="btn btn-gradient">
+                    <i class="bi bi-plus-lg me-2"></i>Create First Project
+                </a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if projects.has_other_pages %}
+    <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Projects pagination">
+            <ul class="pagination">
+                {% if projects.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page=1">First</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ projects.previous_page_number }}">Previous</a>
+                    </li>
+                {% endif %}
+
+                <li class="page-item active">
+                    <span class="page-link">{{ projects.number }}</span>
+                </li>
+
+                {% if projects.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ projects.next_page_number }}">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}page={{ projects.paginator.num_pages }}">Last</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'projects:project_import' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Import Projects</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select File</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".csv,.xlsx" required>
+                        <div class="form-text">Upload a CSV or Excel file with project data.</div>
+                    </div>
+                    <div class="alert alert-info">
+                        <h6>Import Format:</h6>
+                        <small>
+                            Required columns: Name<br>
+                            Optional columns: Description, Location, Developer, Price Range, Notes, Tags
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-gradient">Import Projects</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

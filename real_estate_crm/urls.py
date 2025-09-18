@@ -17,6 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import redirect
+from django.conf import settings
+from django.conf.urls.static import static
 
 def root_redirect(request):
     return redirect('authentication:dashboard' if request.user.is_authenticated else 'authentication:login')
@@ -26,5 +28,11 @@ urlpatterns = [
     path('', root_redirect, name='root'),
     path('', include('authentication.urls')),
     path('leads/', include('leads.urls')),
+    path('properties/', include('properties.urls')),
+    path('projects/', include('projects.urls')),
     path('audit/', include('leads.audit_urls')),
 ]
+
+# Serve media files in development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

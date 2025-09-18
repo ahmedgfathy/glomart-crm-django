@@ -1,0 +1,439 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+{% load property_filters %}
+
+{% block title %}Add Property - Glomart CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'properties:property_list' %}">Properties</a></li>
+            <li class="breadcrumb-item active">Add Property</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">
+                <i class="bi bi-plus-circle text-primary me-2"></i>
+                Add New Property
+            </h1>
+            <p class="text-muted mb-0">Create a new property listing</p>
+        </div>
+        <a href="{% url 'properties:property_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Back to Properties
+        </a>
+    </div>
+
+    <!-- Property Creation Form -->
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <!-- Basic Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-info-circle text-primary me-2"></i>
+                    Basic Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.property_number.id_for_label }}" class="form-label">Property Number <span class="text-danger">*</span></label>
+                        {{ form.property_number }}
+                        {% if form.property_number.errors %}
+                            <div class="invalid-feedback d-block">{{ form.property_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Property Name</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.region.id_for_label }}" class="form-label">Region <span class="text-danger">*</span></label>
+                        {{ form.region }}
+                        {% if form.region.errors %}
+                            <div class="invalid-feedback d-block">{{ form.region.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.property_type.id_for_label }}" class="form-label">Property Type <span class="text-danger">*</span></label>
+                        {{ form.property_type }}
+                        {% if form.property_type.errors %}
+                            <div class="invalid-feedback d-block">{{ form.property_type.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.category.id_for_label }}" class="form-label">Category <span class="text-danger">*</span></label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <div class="invalid-feedback d-block">{{ form.category.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-geo-alt text-primary me-2"></i>
+                    Location Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="{{ form.compound.id_for_label }}" class="form-label">Compound</label>
+                        {{ form.compound }}
+                        {% if form.compound.errors %}
+                            <div class="invalid-feedback d-block">{{ form.compound.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.building.id_for_label }}" class="form-label">Building</label>
+                        {{ form.building }}
+                        {% if form.building.errors %}
+                            <div class="invalid-feedback d-block">{{ form.building.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.unit_number.id_for_label }}" class="form-label">Unit Number</label>
+                        {{ form.unit_number }}
+                        {% if form.unit_number.errors %}
+                            <div class="invalid-feedback d-block">{{ form.unit_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.apartment_number.id_for_label }}" class="form-label">Apartment Number</label>
+                        {{ form.apartment_number }}
+                        {% if form.apartment_number.errors %}
+                            <div class="invalid-feedback d-block">{{ form.apartment_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.floor_number.id_for_label }}" class="form-label">Floor Number</label>
+                        {{ form.floor_number }}
+                        {% if form.floor_number.errors %}
+                            <div class="invalid-feedback d-block">{{ form.floor_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-house text-primary me-2"></i>
+                    Property Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label for="{{ form.rooms.id_for_label }}" class="form-label">Total Rooms</label>
+                        {{ form.rooms }}
+                        {% if form.rooms.errors %}
+                            <div class="invalid-feedback d-block">{{ form.rooms.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="{{ form.living_rooms.id_for_label }}" class="form-label">Living Rooms</label>
+                        {{ form.living_rooms }}
+                        {% if form.living_rooms.errors %}
+                            <div class="invalid-feedback d-block">{{ form.living_rooms.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="{{ form.sales_rooms.id_for_label }}" class="form-label">Sales Rooms</label>
+                        {{ form.sales_rooms }}
+                        {% if form.sales_rooms.errors %}
+                            <div class="invalid-feedback d-block">{{ form.sales_rooms.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <label for="{{ form.bathrooms.id_for_label }}" class="form-label">Bathrooms</label>
+                        {{ form.bathrooms }}
+                        {% if form.bathrooms.errors %}
+                            <div class="invalid-feedback d-block">{{ form.bathrooms.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.total_space.id_for_label }}" class="form-label">Total Space (sq meters)</label>
+                        {{ form.total_space }}
+                        {% if form.total_space.errors %}
+                            <div class="invalid-feedback d-block">{{ form.total_space.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.sales_area.id_for_label }}" class="form-label">Sales Area (sq meters)</label>
+                        {{ form.sales_area }}
+                        {% if form.sales_area.errors %}
+                            <div class="invalid-feedback d-block">{{ form.sales_area.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.unit_features.id_for_label }}" class="form-label">Unit Features</label>
+                        {{ form.unit_features }}
+                        {% if form.unit_features.errors %}
+                            <div class="invalid-feedback d-block">{{ form.unit_features.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Information -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-currency-dollar text-primary me-2"></i>
+                    Pricing Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="{{ form.currency.id_for_label }}" class="form-label">Currency <span class="text-danger">*</span></label>
+                        {{ form.currency }}
+                        {% if form.currency.errors %}
+                            <div class="invalid-feedback d-block">{{ form.currency.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.base_price.id_for_label }}" class="form-label">Base Price</label>
+                        {{ form.base_price }}
+                        {% if form.base_price.errors %}
+                            <div class="invalid-feedback d-block">{{ form.base_price.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.asking_price.id_for_label }}" class="form-label">Asking Price</label>
+                        {{ form.asking_price }}
+                        {% if form.asking_price.errors %}
+                            <div class="invalid-feedback d-block">{{ form.asking_price.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.total_price.id_for_label }}" class="form-label">Total Price</label>
+                        {{ form.total_price }}
+                        {% if form.total_price.errors %}
+                            <div class="invalid-feedback d-block">{{ form.total_price.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.down_payment.id_for_label }}" class="form-label">Down Payment</label>
+                        {{ form.down_payment }}
+                        {% if form.down_payment.errors %}
+                            <div class="invalid-feedback d-block">{{ form.down_payment.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.monthly_payment.id_for_label }}" class="form-label">Monthly Payment</label>
+                        {{ form.monthly_payment }}
+                        {% if form.monthly_payment.errors %}
+                            <div class="invalid-feedback d-block">{{ form.monthly_payment.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-12">
+                        <label for="{{ form.payment_frequency.id_for_label }}" class="form-label">Payment Frequency</label>
+                        {{ form.payment_frequency }}
+                        {% if form.payment_frequency.errors %}
+                            <div class="invalid-feedback d-block">{{ form.payment_frequency.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Features -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-star text-primary me-2"></i>
+                    Property Features
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            {{ form.has_garage }}
+                            <label class="form-check-label" for="{{ form.has_garage.id_for_label }}">
+                                Has Garage
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <label for="{{ form.garage_type.id_for_label }}" class="form-label">Garage Details</label>
+                            {{ form.garage_type }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            {{ form.has_garden }}
+                            <label class="form-check-label" for="{{ form.has_garden.id_for_label }}">
+                                Has Garden
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <label for="{{ form.garden_type.id_for_label }}" class="form-label">Garden Details</label>
+                            {{ form.garden_type }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            {{ form.has_pool }}
+                            <label class="form-check-label" for="{{ form.has_pool.id_for_label }}">
+                                Has Pool
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <label for="{{ form.pool_type.id_for_label }}" class="form-label">Pool Details</label>
+                            {{ form.pool_type }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check">
+                            {{ form.has_terraces }}
+                            <label class="form-check-label" for="{{ form.has_terraces.id_for_label }}">
+                                Has Terraces
+                            </label>
+                        </div>
+                        <div class="mt-2">
+                            <label for="{{ form.terrace_type.id_for_label }}" class="form-label">Terrace Details</label>
+                            {{ form.terrace_type }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact & Management -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-lines-fill text-primary me-2"></i>
+                    Contact & Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="{{ form.status.id_for_label }}" class="form-label">Status <span class="text-danger">*</span></label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <div class="invalid-feedback d-block">{{ form.status.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.activity.id_for_label }}" class="form-label">Activity <span class="text-danger">*</span></label>
+                        {{ form.activity }}
+                        {% if form.activity.errors %}
+                            <div class="invalid-feedback d-block">{{ form.activity.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.project.id_for_label }}" class="form-label">Project</label>
+                        {{ form.project }}
+                        {% if form.project.errors %}
+                            <div class="invalid-feedback d-block">{{ form.project.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.mobile_number.id_for_label }}" class="form-label">Contact Mobile</label>
+                        {{ form.mobile_number }}
+                        {% if form.mobile_number.errors %}
+                            <div class="invalid-feedback d-block">{{ form.mobile_number.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ form.secondary_phone.id_for_label }}" class="form-label">Secondary Phone</label>
+                        {{ form.secondary_phone }}
+                        {% if form.secondary_phone.errors %}
+                            <div class="invalid-feedback d-block">{{ form.secondary_phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.owner_name.id_for_label }}" class="form-label">Owner Name</label>
+                        {{ form.owner_name }}
+                        {% if form.owner_name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.owner_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.owner_phone.id_for_label }}" class="form-label">Owner Phone</label>
+                        {{ form.owner_phone }}
+                        {% if form.owner_phone.errors %}
+                            <div class="invalid-feedback d-block">{{ form.owner_phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <label for="{{ form.owner_email.id_for_label }}" class="form-label">Owner Email</label>
+                        {{ form.owner_email }}
+                        {% if form.owner_email.errors %}
+                            <div class="invalid-feedback d-block">{{ form.owner_email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-12">
+                        <label for="{{ form.notes.id_for_label }}" class="form-label">Additional Notes</label>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                            <div class="invalid-feedback d-block">{{ form.notes.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'properties:property_list' %}" class="btn btn-gradient">
+                        <i class="bi bi-x-lg me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-gradient">
+                        <i class="bi bi-check-lg me-2"></i>Create Property
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+// Simple form validation enhancement
+(function() {
+    'use strict';
+    window.addEventListener('load', function() {
+        var forms = document.getElementsByClassName('needs-validation');
+        var validation = Array.prototype.filter.call(forms, function(form) {
+            form.addEventListener('submit', function(event) {
+                if (form.checkValidity() === false) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                form.classList.add('was-validated');
+            }, false);
+        });
+    }, false);
+})();
+</script>
+{% endblock %}

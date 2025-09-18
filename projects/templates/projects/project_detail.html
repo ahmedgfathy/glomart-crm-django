@@ -1,0 +1,583 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}{{ project.name }} - Projects - Real Estate CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .project-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .project-title {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    
+    .project-id {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+    
+    .info-card {
+        background: white;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .info-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    }
+    
+    .info-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px 15px 0 0;
+        padding: 1rem 1.5rem;
+        font-weight: 600;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 500;
+        color: #495057;
+        display: flex;
+        align-items: center;
+    }
+    
+    .info-label i {
+        margin-right: 0.5rem;
+        color: #667eea;
+        width: 20px;
+        text-align: center;
+    }
+    
+    .info-value {
+        font-weight: 600;
+        color: #212529;
+    }
+    
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 500;
+    }
+    
+    .btn-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        border-radius: 25px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .btn-gradient-outline {
+        background: transparent;
+        border: 2px solid #667eea;
+        color: #667eea;
+        border-radius: 25px;
+        padding: 0.5rem 1.4rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-gradient-outline:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .btn-danger-gradient {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+        color: white;
+        border-radius: 25px;
+        padding: 0.6rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-danger-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+        color: white;
+    }
+    
+    .history-timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .history-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.5rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .history-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .history-item::before {
+        content: '';
+        position: absolute;
+        left: -1.75rem;
+        top: 1rem;
+        width: 12px;
+        height: 12px;
+        background: #667eea;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px #dee2e6;
+    }
+    
+    .history-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .assignments-list .list-group-item {
+        border: none;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .assignment-avatar {
+        width: 40px;
+        height: 40px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        margin-right: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Project Header -->
+    <div class="project-header">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <div class="project-title">{{ project.name }}</div>
+                <div class="project-id">Project ID: {{ project.project_id }}</div>
+                {% if project.description %}
+                    <p class="mt-3 mb-0 opacity-75">{{ project.description }}</p>
+                {% endif %}
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'projects:project_edit' project.project_id %}" class="btn btn-light">
+                    <i class="bi bi-pencil me-2"></i>Edit Project
+                </a>
+                <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="bi bi-trash me-2"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Basic Information -->
+        <div class="col-lg-6 mb-4">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    <i class="bi bi-info-circle me-2"></i>Basic Information
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-tag"></i>Status
+                        </div>
+                        <div class="info-value">
+                            {% if project.status %}
+                                <span class="badge status-badge" style="background-color: {{ project.status.color }};">
+                                    {{ project.status.display_name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-building"></i>Type
+                        </div>
+                        <div class="info-value">
+                            {% if project.project_type %}
+                                <i class="{{ project.project_type.icon }} me-2"></i>{{ project.project_type.display_name }}
+                            {% else %}
+                                <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-bookmark"></i>Category
+                        </div>
+                        <div class="info-value">
+                            {{ project.category.display_name|default:"Not set" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-exclamation-triangle"></i>Priority
+                        </div>
+                        <div class="info-value">
+                            {% if project.priority %}
+                                <span class="badge status-badge" style="background-color: {{ project.priority.color }};">
+                                    {{ project.priority.display_name }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-geo-alt"></i>Location
+                        </div>
+                        <div class="info-value">
+                            {{ project.location|default:"Not specified" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-building"></i>Developer
+                        </div>
+                        <div class="info-value">
+                            {{ project.developer|default:"Not specified" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline & Financial Info -->
+        <div class="col-lg-6 mb-4">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    <i class="bi bi-calendar me-2"></i>Timeline & Financial
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-check"></i>Start Date
+                        </div>
+                        <div class="info-value">
+                            {{ project.start_date|date:"M d, Y"|default:"Not set" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-x"></i>End Date
+                        </div>
+                        <div class="info-value">
+                            {{ project.end_date|date:"M d, Y"|default:"Not set" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-calendar3"></i>Completion Year
+                        </div>
+                        <div class="info-value">
+                            {{ project.completion_year|default:"Not set" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-grid-3x3"></i>Total Units
+                        </div>
+                        <div class="info-value">
+                            {{ project.total_units|default:"Not specified" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-grid"></i>Available Units
+                        </div>
+                        <div class="info-value">
+                            {{ project.available_units|default:"Not specified" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-currency-dollar"></i>Price Range
+                        </div>
+                        <div class="info-value">
+                            {% if project.price_range %}
+                                {{ project.price_range }}
+                                {% if project.currency %}
+                                    ({{ project.currency.symbol }})
+                                {% endif %}
+                            {% else %}
+                                Not specified
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assignment & Management -->
+        <div class="col-lg-6 mb-4">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    <i class="bi bi-people me-2"></i>Assignment & Management
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-person-check"></i>Assigned To
+                        </div>
+                        <div class="info-value">
+                            {% if project.assigned_to %}
+                                <div class="d-flex align-items-center">
+                                    <div class="assignment-avatar me-2" style="width: 30px; height: 30px; font-size: 0.8rem;">
+                                        {{ project.assigned_to.first_name|first|default:project.assigned_to.username|first }}{{ project.assigned_to.last_name|first|default:"" }}
+                                    </div>
+                                    {{ project.assigned_to.get_full_name }}
+                                </div>
+                            {% else %}
+                                <span class="text-muted">Unassigned</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-person-plus"></i>Created By
+                        </div>
+                        <div class="info-value">
+                            {% if project.created_by %}
+                                {{ project.created_by.get_full_name }}
+                            {% else %}
+                                Unknown
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-plus"></i>Created
+                        </div>
+                        <div class="info-value">
+                            {{ project.created_at|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-calendar-event"></i>Last Updated
+                        </div>
+                        <div class="info-value">
+                            {{ project.updated_at|date:"M d, Y H:i" }}
+                        </div>
+                    </div>
+                    
+                    {% if project.is_featured %}
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="bi bi-star"></i>Featured
+                        </div>
+                        <div class="info-value">
+                            <span class="badge bg-warning text-dark">Featured Project</span>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Information -->
+        <div class="col-lg-6 mb-4">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    <i class="bi bi-file-text me-2"></i>Additional Information
+                </div>
+                <div class="card-body">
+                    {% if project.notes %}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Notes</h6>
+                        <p class="mb-0">{{ project.notes|linebreaks }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if project.tags %}
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-2">Tags</h6>
+                        <div>
+                            {% for tag in project.tags|split:"," %}
+                                <span class="badge bg-light text-dark me-1">{{ tag|strip }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not project.notes and not project.tags %}
+                    <p class="text-muted text-center py-3">No additional information available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Assignments -->
+        {% if assignments %}
+        <div class="col-lg-6 mb-4">
+            <div class="card info-card h-100">
+                <div class="card-header">
+                    <i class="bi bi-people-fill me-2"></i>Project Team
+                </div>
+                <div class="card-body">
+                    <div class="assignments-list">
+                        {% for assignment in assignments %}
+                        <div class="list-group-item d-flex align-items-center">
+                            <div class="assignment-avatar">
+                                {{ assignment.user.first_name|first|default:assignment.user.username|first }}{{ assignment.user.last_name|first|default:"" }}
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">{{ assignment.user.get_full_name }}</h6>
+                                <small class="text-muted">{{ assignment.role|title }} • Assigned {{ assignment.assigned_at|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Project History -->
+        <div class="col-12 mb-4">
+            <div class="card info-card">
+                <div class="card-header">
+                    <i class="bi bi-clock-history me-2"></i>Project History
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                    <div class="history-timeline">
+                        {% for item in history %}
+                        <div class="history-item">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1">{{ item.action|title }} {{ item.field_name|title }}</h6>
+                                    {% if item.old_value and item.new_value %}
+                                        <p class="mb-1 small">
+                                            Changed from "{{ item.old_value }}" to "{{ item.new_value }}"
+                                        </p>
+                                    {% elif item.new_value %}
+                                        <p class="mb-1 small">{{ item.new_value }}</p>
+                                    {% endif %}
+                                    <div class="history-meta">
+                                        <i class="bi bi-person me-1"></i>{{ item.user.get_full_name }}
+                                        <i class="bi bi-clock ms-3 me-1"></i>{{ item.created_at|date:"M d, Y H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center py-3">No history available</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center mt-4">
+        <a href="{% url 'projects:project_list' %}" class="btn btn-gradient-outline">
+            <i class="bi bi-arrow-left me-2"></i>Back to Projects
+        </a>
+        <div class="d-flex gap-2">
+            <a href="{% url 'projects:project_edit' project.project_id %}" class="btn btn-gradient">
+                <i class="bi bi-pencil me-2"></i>Edit Project
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-danger" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Delete Project
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete the project <strong>"{{ project.name }}"</strong>?</p>
+                <p class="text-muted small">This action cannot be undone. The project will be marked as inactive.</p>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'projects:project_delete' project.project_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger-gradient">
+                        <i class="bi bi-trash me-2"></i>Delete Project
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

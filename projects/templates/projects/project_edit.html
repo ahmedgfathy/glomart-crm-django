@@ -1,0 +1,474 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+
+{% block title %}Edit {{ project.name }} - Projects - Real Estate CRM{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: white;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+    
+    .form-card .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px 15px 0 0;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .form-card .card-header h4 {
+        margin: 0;
+        font-weight: 600;
+    }
+    
+    .form-control, .form-select, .form-check-input {
+        border-radius: 10px;
+        border: 1px solid #e1e5e9;
+        padding: 0.75rem 1rem;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        border-color: #667eea;
+    }
+    
+    .form-label {
+        font-weight: 500;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        color: white;
+        border-radius: 25px;
+        padding: 0.75rem 2rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-gradient:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        color: white;
+    }
+    
+    .btn-gradient-outline {
+        background: transparent;
+        border: 2px solid #667eea;
+        color: #667eea;
+        border-radius: 25px;
+        padding: 0.65rem 1.9rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-block;
+    }
+    
+    .btn-gradient-outline:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .section-divider {
+        border: none;
+        height: 2px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        margin: 2rem 0;
+        border-radius: 1px;
+    }
+    
+    .section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 0.5rem;
+        color: #667eea;
+    }
+    
+    .required-indicator {
+        color: #dc3545;
+        margin-left: 0.25rem;
+    }
+    
+    .form-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .input-group-text {
+        background: #f8f9fa;
+        border: 1px solid #e1e5e9;
+        border-radius: 10px 0 0 10px;
+        color: #495057;
+    }
+    
+    .input-group .form-control {
+        border-radius: 0 10px 10px 0;
+    }
+    
+    .form-check {
+        margin-top: 0.5rem;
+    }
+    
+    .form-check-label {
+        margin-left: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .project-id-display {
+        background: #f8f9fa;
+        border: 1px solid #e1e5e9;
+        border-radius: 10px;
+        padding: 0.75rem 1rem;
+        font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+        font-weight: 500;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10 col-xl-8">
+            <div class="card form-card">
+                <div class="card-header">
+                    <h4><i class="bi bi-pencil me-2"></i>Edit Project: {{ project.name }}</h4>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Project ID Display -->
+                        <div class="mb-3">
+                            <label class="form-label">Project ID</label>
+                            <div class="project-id-display">{{ project.project_id }}</div>
+                            <div class="form-text">Project ID cannot be changed</div>
+                        </div>
+                        
+                        <!-- Basic Information Section -->
+                        <div class="section-title">
+                            <i class="bi bi-info-circle"></i>Basic Information
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="name" class="form-label">
+                                    Project Name<span class="required-indicator">*</span>
+                                </label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ project.name }}" placeholder="Enter project name" required>
+                                <div class="form-text">Enter a clear, descriptive name for the project</div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="status" class="form-label">
+                                    Status<span class="required-indicator">*</span>
+                                </label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="">Select Status</option>
+                                    {% for status in statuses %}
+                                        <option value="{{ status.id }}" {% if project.status_id == status.id %}selected{% endif %}>
+                                            {{ status.display_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="project_type" class="form-label">
+                                    Project Type<span class="required-indicator">*</span>
+                                </label>
+                                <select class="form-select" id="project_type" name="project_type" required>
+                                    <option value="">Select Type</option>
+                                    {% for type in types %}
+                                        <option value="{{ type.id }}" {% if project.project_type_id == type.id %}selected{% endif %}>
+                                            {{ type.display_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="category" class="form-label">Category</label>
+                                <select class="form-select" id="category" name="category">
+                                    <option value="">Select Category</option>
+                                    {% for category in categories %}
+                                        <option value="{{ category.id }}" {% if project.category_id == category.id %}selected{% endif %}>
+                                            {{ category.display_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="">Select Priority</option>
+                                    {% for priority in priorities %}
+                                        <option value="{{ priority.id }}" {% if project.priority_id == priority.id %}selected{% endif %}>
+                                            {{ priority.display_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="3"
+                                      placeholder="Describe the project details, features, and key information">{{ project.description }}</textarea>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- Location & Developer Section -->
+                        <div class="section-title">
+                            <i class="bi bi-geo-alt"></i>Location & Developer
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8 mb-3">
+                                <label for="location" class="form-label">Location</label>
+                                <input type="text" class="form-control" id="location" name="location" 
+                                       value="{{ project.location }}" placeholder="Enter project location (city, district, address)">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="developer" class="form-label">Developer</label>
+                                <input type="text" class="form-control" id="developer" name="developer" 
+                                       value="{{ project.developer }}" placeholder="Developer/Builder name">
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- Timeline Section -->
+                        <div class="section-title">
+                            <i class="bi bi-calendar"></i>Timeline
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
+                                       value="{{ project.start_date|date:'Y-m-d' }}">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="end_date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date" 
+                                       value="{{ project.end_date|date:'Y-m-d' }}">
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="completion_year" class="form-label">Completion Year</label>
+                                <input type="number" class="form-control" id="completion_year" name="completion_year"
+                                       value="{{ project.completion_year }}" min="2020" max="2040" placeholder="2024">
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- Units & Capacity Section -->
+                        <div class="section-title">
+                            <i class="bi bi-grid-3x3"></i>Units & Capacity
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="total_units" class="form-label">Total Units</label>
+                                <input type="number" class="form-control" id="total_units" name="total_units"
+                                       value="{{ project.total_units }}" min="1" placeholder="Enter total number of units">
+                                <div class="form-text">Total number of units in the project</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="available_units" class="form-label">Available Units</label>
+                                <input type="number" class="form-control" id="available_units" name="available_units"
+                                       value="{{ project.available_units }}" min="0" placeholder="Enter available units">
+                                <div class="form-text">Number of units currently available for sale</div>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- Pricing Section -->
+                        <div class="section-title">
+                            <i class="bi bi-currency-dollar"></i>Pricing Information
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="price_range" class="form-label">Price Range</label>
+                                <input type="text" class="form-control" id="price_range" name="price_range"
+                                       value="{{ project.price_range }}" placeholder="e.g., 1.5M - 3.2M EGP">
+                                <div class="form-text">General price range description</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="currency" class="form-label">Currency</label>
+                                <select class="form-select" id="currency" name="currency">
+                                    <option value="">Select Currency</option>
+                                    {% for currency in currencies %}
+                                        <option value="{{ currency.id }}" {% if project.currency_id == currency.id %}selected{% endif %}>
+                                            {{ currency.name }} ({{ currency.symbol }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="min_price" class="form-label">Minimum Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">{% if project.currency %}{{ project.currency.symbol }}{% else %}${% endif %}</span>
+                                    <input type="number" class="form-control" id="min_price" name="min_price"
+                                           value="{{ project.min_price }}" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="max_price" class="form-label">Maximum Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">{% if project.currency %}{{ project.currency.symbol }}{% else %}${% endif %}</span>
+                                    <input type="number" class="form-control" id="max_price" name="max_price"
+                                           value="{{ project.max_price }}" step="0.01" placeholder="0.00">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="section-divider">
+
+                        <!-- Assignment & Additional Info Section -->
+                        <div class="section-title">
+                            <i class="bi bi-person"></i>Assignment & Additional Information
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="assigned_to" class="form-label">Assign To User</label>
+                                <select class="form-select" id="assigned_to" name="assigned_to">
+                                    <option value="">Leave unassigned</option>
+                                    <!-- Users will be populated via Django context or API -->
+                                    {% if project.assigned_to %}
+                                        <option value="{{ project.assigned_to.id }}" selected>
+                                            {{ project.assigned_to.get_full_name }}
+                                        </option>
+                                    {% endif %}
+                                </select>
+                                <div class="form-text">Select a user to assign this project to</div>
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="tags" class="form-label">Tags</label>
+                                <input type="text" class="form-control" id="tags" name="tags" value="{{ project.tags }}"
+                                       placeholder="luxury, waterfront, investment (comma-separated)">
+                                <div class="form-text">Add tags separated by commas</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="3"
+                                      placeholder="Additional notes, special features, or important information">{{ project.notes }}</textarea>
+                        </div>
+                        
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_featured" name="is_featured" 
+                                   {% if project.is_featured %}checked{% endif %}>
+                            <label class="form-check-label" for="is_featured">
+                                Featured Project
+                            </label>
+                            <div class="form-text">Mark this project as featured to highlight it in listings</div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3">
+                            <a href="{% url 'projects:project_detail' project.project_id %}" class="btn btn-gradient-outline">
+                                <i class="bi bi-arrow-left me-2"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-gradient">
+                                <i class="bi bi-check-lg me-2"></i>Update Project
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update currency symbol when currency changes
+    const currencySelect = document.getElementById('currency');
+    const minPriceGroup = document.querySelector('#min_price').parentElement.querySelector('.input-group-text');
+    const maxPriceGroup = document.querySelector('#max_price').parentElement.querySelector('.input-group-text');
+    
+    currencySelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        if (selectedOption.value) {
+            const currencyText = selectedOption.text;
+            const symbol = currencyText.match(/\(([^)]+)\)/);
+            if (symbol) {
+                minPriceGroup.textContent = symbol[1];
+                maxPriceGroup.textContent = symbol[1];
+            }
+        } else {
+            minPriceGroup.textContent = '$';
+            maxPriceGroup.textContent = '$';
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const nameInput = document.getElementById('name');
+        const statusInput = document.getElementById('status');
+        const typeInput = document.getElementById('project_type');
+        
+        if (!nameInput.value.trim()) {
+            e.preventDefault();
+            nameInput.focus();
+            alert('Please enter a project name.');
+            return false;
+        }
+        
+        if (!statusInput.value) {
+            e.preventDefault();
+            statusInput.focus();
+            alert('Please select a project status.');
+            return false;
+        }
+        
+        if (!typeInput.value) {
+            e.preventDefault();
+            typeInput.focus();
+            alert('Please select a project type.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,411 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+{% load prope            <a href="{% url 'properties:property_detail' property.property_id %}" class="btn btn-gradient">
+                <i class="bi bi-arrow-left me-2"></i>Back to Property
+            </a>_filters %}
+
+{% block title %}Edit Property - {{ property.property_number|default:property.property_id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-section {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .form-section h5 {
+        color: #495057;
+        border-bottom: 2px solid #e9ecef;
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-row {
+        margin-bottom: 1rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Edit Property</h1>
+            <p class="text-muted mb-0">{{ property.property_number|default:property.property_id }} - Update property information</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'properties:property_detail' property.property_id %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Back to Details
+            </a>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Left Column - Main Information -->
+            <div class="col-lg-8">
+                
+                <!-- Basic Information -->
+                <div class="form-section">
+                    <h5><i class="bi bi-house me-2"></i>Basic Information</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-row">
+                            <label for="property_number" class="form-label required-field">Property Number</label>
+                            <input type="text" class="form-control" id="property_number" name="property_number" 
+                                   value="{{ property.property_number }}" required>
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="property_type" class="form-label required-field">Property Type</label>
+                            <select class="form-select" id="property_type" name="property_type" required>
+                                <option value="">Select Type</option>
+                                {% for type in property_types %}
+                                <option value="{{ type.id }}" {% if property.property_type_id == type.id %}selected{% endif %}>
+                                    {{ type.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="property_category" class="form-label">Category</label>
+                            <select class="form-select" id="property_category" name="property_category">
+                                <option value="">Select Category</option>
+                                {% for category in property_categories %}
+                                <option value="{{ category.id }}" {% if property.category_id == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="">Select Status</option>
+                                {% for status in property_statuses %}
+                                <option value="{{ status.id }}" {% if property.status_id == status.id %}selected{% endif %}>
+                                    {{ status.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-12 form-row">
+                            <label for="name" class="form-label">Property Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ property.name }}" placeholder="Enter property name">
+                        </div>
+                        <div class="col-12 form-row">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" 
+                                      placeholder="Enter property description">{{ property.description }}</textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Location Information -->
+                <div class="form-section">
+                    <h5><i class="bi bi-geo-alt me-2"></i>Location</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-row">
+                            <label for="region" class="form-label">Region</label>
+                            <select class="form-select" id="region" name="region">
+                                <option value="">Select Region</option>
+                                {% for region in regions %}
+                                <option value="{{ region.id }}" {% if property.region_id == region.id %}selected{% endif %}>
+                                    {{ region.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="compound" class="form-label">Compound</label>
+                            <select class="form-select" id="compound" name="compound">
+                                <option value="">Select Compound</option>
+                                {% for compound in compounds %}
+                                <option value="{{ compound.id }}" {% if property.compound_id == compound.id %}selected{% endif %}>
+                                    {{ compound.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="city" name="city" 
+                                   value="{{ property.city }}" placeholder="Enter city">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="address" class="form-label">Address</label>
+                            <input type="text" class="form-control" id="address" name="address" 
+                                   value="{{ property.address }}" placeholder="Enter address">
+                        </div>
+                        <div class="col-md-4 form-row">
+                            <label for="building_number" class="form-label">Building Number</label>
+                            <input type="text" class="form-control" id="building_number" name="building_number" 
+                                   value="{{ property.building_number }}" placeholder="Enter building number">
+                        </div>
+                        <div class="col-md-4 form-row">
+                            <label for="floor_number" class="form-label">Floor Number</label>
+                            <input type="number" class="form-control" id="floor_number" name="floor_number" 
+                                   value="{{ property.floor_number }}" placeholder="Enter floor number">
+                        </div>
+                        <div class="col-md-4 form-row">
+                            <label for="unit_number" class="form-label">Unit Number</label>
+                            <input type="text" class="form-control" id="unit_number" name="unit_number" 
+                                   value="{{ property.unit_number }}" placeholder="Enter unit number">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Property Details -->
+                <div class="form-section">
+                    <h5><i class="bi bi-rulers me-2"></i>Property Specifications</h5>
+                    <div class="row">
+                        <div class="col-md-4 form-row">
+                            <label for="rooms" class="form-label">Rooms</label>
+                            <input type="number" class="form-control" id="rooms" name="rooms" 
+                                   value="{{ property.rooms }}" min="0" placeholder="Number of rooms">
+                        </div>
+                        <div class="col-md-4 form-row">
+                            <label for="bathrooms" class="form-label">Bathrooms</label>
+                            <input type="number" class="form-control" id="bathrooms" name="bathrooms" 
+                                   value="{{ property.bathrooms }}" min="0" placeholder="Number of bathrooms">
+                        </div>
+                        <div class="col-md-4 form-row">
+                            <label for="bedrooms" class="form-label">Bedrooms</label>
+                            <input type="number" class="form-control" id="bedrooms" name="bedrooms" 
+                                   value="{{ property.bedrooms }}" min="0" placeholder="Number of bedrooms">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="total_space" class="form-label">Total Space (m²)</label>
+                            <input type="number" class="form-control" id="total_space" name="total_space" 
+                                   value="{{ property.total_space }}" step="0.01" placeholder="Total area in square meters">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="built_up_area" class="form-label">Built-up Area (m²)</label>
+                            <input type="number" class="form-control" id="built_up_area" name="built_up_area" 
+                                   value="{{ property.built_up_area }}" step="0.01" placeholder="Built-up area in square meters">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="garden_area" class="form-label">Garden Area (m²)</label>
+                            <input type="number" class="form-control" id="garden_area" name="garden_area" 
+                                   value="{{ property.garden_area }}" step="0.01" placeholder="Garden area in square meters">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="finishing_type" class="form-label">Finishing Type</label>
+                            <select class="form-select" id="finishing_type" name="finishing_type">
+                                <option value="">Select Finishing</option>
+                                {% for finishing in finishing_types %}
+                                <option value="{{ finishing.id }}" {% if property.finishing_type_id == finishing.id %}selected{% endif %}>
+                                    {{ finishing.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing Information -->
+                <div class="form-section">
+                    <h5><i class="bi bi-currency-dollar me-2"></i>Pricing</h5>
+                    <div class="row">
+                        <div class="col-md-6 form-row">
+                            <label for="currency" class="form-label">Currency</label>
+                            <select class="form-select" id="currency" name="currency">
+                                <option value="">Select Currency</option>
+                                {% for currency in currencies %}
+                                <option value="{{ currency.id }}" {% if property.currency_id == currency.id %}selected{% endif %}>
+                                    {{ currency.symbol }} - {{ currency.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="total_price" class="form-label">Total Price</label>
+                            <input type="number" class="form-control" id="total_price" name="total_price" 
+                                   value="{{ property.total_price }}" step="0.01" placeholder="Enter total price">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="asking_price" class="form-label">Asking Price</label>
+                            <input type="number" class="form-control" id="asking_price" name="asking_price" 
+                                   value="{{ property.asking_price }}" step="0.01" placeholder="Enter asking price">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="base_price" class="form-label">Base Price</label>
+                            <input type="number" class="form-control" id="base_price" name="base_price" 
+                                   value="{{ property.base_price }}" step="0.01" placeholder="Enter base price">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="price_per_meter" class="form-label">Price per m²</label>
+                            <input type="number" class="form-control" id="price_per_meter" name="price_per_meter" 
+                                   value="{{ property.price_per_meter }}" step="0.01" placeholder="Price per square meter">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="down_payment" class="form-label">Down Payment</label>
+                            <input type="number" class="form-control" id="down_payment" name="down_payment" 
+                                   value="{{ property.down_payment }}" step="0.01" placeholder="Down payment amount">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="monthly_payment" class="form-label">Monthly Payment</label>
+                            <input type="number" class="form-control" id="monthly_payment" name="monthly_payment" 
+                                   value="{{ property.monthly_payment }}" step="0.01" placeholder="Monthly payment amount">
+                        </div>
+                        <div class="col-md-6 form-row">
+                            <label for="payment_plan_years" class="form-label">Payment Plan (Years)</label>
+                            <input type="number" class="form-control" id="payment_plan_years" name="payment_plan_years" 
+                                   value="{{ property.payment_plan_years }}" min="0" placeholder="Payment plan duration">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column - Management & Owner Info -->
+            <div class="col-lg-4">
+                
+                <!-- Management Information -->
+                <div class="form-section">
+                    <h5><i class="bi bi-people me-2"></i>Management</h5>
+                    <div class="form-row">
+                        <label for="handler" class="form-label">Handler</label>
+                        <select class="form-select" id="handler" name="handler">
+                            <option value="">Select Handler</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if property.handler_id == user.id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="sales_person" class="form-label">Sales Person</label>
+                        <select class="form-select" id="sales_person" name="sales_person">
+                            <option value="">Select Sales Person</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}" {% if property.sales_person_id == user.id %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="activity" class="form-label">Activity</label>
+                        <select class="form-select" id="activity" name="activity">
+                            <option value="">Select Activity</option>
+                            {% for activity in activities %}
+                            <option value="{{ activity.id }}" {% if property.activity_id == activity.id %}selected{% endif %}>
+                                {{ activity.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="purpose" class="form-label">Purpose</label>
+                        <select class="form-select" id="purpose" name="purpose">
+                            <option value="">Select Purpose</option>
+                            {% for purpose in unit_purposes %}
+                            <option value="{{ purpose.id }}" {% if property.unit_purpose_id == purpose.id %}selected{% endif %}>
+                                {{ purpose.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Owner Information -->
+                <div class="form-section">
+                    <h5><i class="bi bi-person me-2"></i>Owner Information</h5>
+                    <div class="form-row">
+                        <label for="owner_name" class="form-label">Owner Name</label>
+                        <input type="text" class="form-control" id="owner_name" name="owner_name" 
+                               value="{{ property.owner_name }}" placeholder="Enter owner name">
+                    </div>
+                    <div class="form-row">
+                        <label for="owner_phone" class="form-label">Owner Phone</label>
+                        <input type="tel" class="form-control" id="owner_phone" name="owner_phone" 
+                               value="{{ property.owner_phone }}" placeholder="Enter owner phone number">
+                    </div>
+                    <div class="form-row">
+                        <label for="owner_email" class="form-label">Owner Email</label>
+                        <input type="email" class="form-control" id="owner_email" name="owner_email" 
+                               value="{{ property.owner_email }}" placeholder="Enter owner email">
+                    </div>
+                    <div class="form-row">
+                        <label for="owner_notes" class="form-label">Owner Notes</label>
+                        <textarea class="form-control" id="owner_notes" name="owner_notes" rows="3" 
+                                  placeholder="Additional notes about the owner">{{ property.owner_notes }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Additional Information -->
+                <div class="form-section">
+                    <h5><i class="bi bi-info-circle me-2"></i>Additional Info</h5>
+                    <div class="form-row">
+                        <label for="delivery_date" class="form-label">Delivery Date</label>
+                        <input type="date" class="form-control" id="delivery_date" name="delivery_date" 
+                               value="{{ property.delivery_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="form-row">
+                        <label for="view_type" class="form-label">View Type</label>
+                        <input type="text" class="form-control" id="view_type" name="view_type" 
+                               value="{{ property.view_type }}" placeholder="e.g., Garden view, Sea view">
+                    </div>
+                    <div class="form-row">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4" 
+                                  placeholder="Additional notes about the property">{{ property.notes }}</textarea>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="form-section">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-gradient">
+                            <i class="bi bi-check-lg me-2"></i>Save Changes
+                        </button>
+                        <a href="{% url 'properties:property_detail' property.property_id %}" class="btn btn-gradient">
+                            <i class="bi bi-x-lg me-2"></i>Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-calculate price per meter when total price or area changes
+document.addEventListener('DOMContentLoaded', function() {
+    const totalPriceInput = document.getElementById('total_price');
+    const totalSpaceInput = document.getElementById('total_space');
+    const pricePerMeterInput = document.getElementById('price_per_meter');
+    
+    function calculatePricePerMeter() {
+        const totalPrice = parseFloat(totalPriceInput.value) || 0;
+        const totalSpace = parseFloat(totalSpaceInput.value) || 0;
+        
+        if (totalPrice > 0 && totalSpace > 0) {
+            const pricePerMeter = totalPrice / totalSpace;
+            pricePerMeterInput.value = pricePerMeter.toFixed(2);
+        }
+    }
+    
+    totalPriceInput.addEventListener('input', calculatePricePerMeter);
+    totalSpaceInput.addEventListener('input', calculatePricePerMeter);
+});
+</script>
+{% endblock %}

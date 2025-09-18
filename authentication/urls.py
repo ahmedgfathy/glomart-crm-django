@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import user_settings
 
 app_name = 'authentication'
 
@@ -8,6 +9,10 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    
+    # Settings
+    path('settings/profile/', user_settings.user_profile_settings, name='user_profile_settings'),
+    path('settings/company/', user_settings.company_settings, name='company_settings'),
     
     # User Management
     path('users/', views.user_management_view, name='users'),
