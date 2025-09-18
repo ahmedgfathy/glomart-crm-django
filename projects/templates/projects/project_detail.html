@@ -1,16 +1,18 @@
 {% extends 'app_layout.html' %}
 {% load static %}
+{% load project_filters %}
 
 {% block title %}{{ project.name }} - Projects - Real Estate CRM{% endblock %}
 
 {% block extra_css %}
 <style>
-    .project-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 15px;
+        .project-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        color: #1e293b;
         padding: 2rem;
+        border-radius: 10px;
         margin-bottom: 2rem;
+        border: 1px solid #e2e8f0;
     }
     
     .project-title {
@@ -24,25 +26,24 @@
         opacity: 0.9;
     }
     
-    .info-card {
+        .info-card {
         background: white;
-        border: none;
-        border-radius: 15px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         transition: all 0.3s ease;
     }
     
     .info-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
     
-    .info-card .card-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 15px 15px 0 0;
-        padding: 1rem 1.5rem;
+        .info-card .card-header {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        color: #1e293b;
+        border-bottom: 1px solid #e2e8f0;
         font-weight: 600;
     }
     
@@ -84,12 +85,12 @@
         font-weight: 500;
     }
     
-    .btn-gradient {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn-gradient {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
         border: none;
         color: white;
-        border-radius: 25px;
-        padding: 0.6rem 1.5rem;
+        padding: 8px 20px;
+        border-radius: 6px;
         font-weight: 500;
         transition: all 0.3s ease;
         text-decoration: none;
@@ -97,27 +98,10 @@
     }
     
     .btn-gradient:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         color: white;
-    }
-    
-    .btn-gradient-outline {
-        background: transparent;
-        border: 2px solid #667eea;
-        color: #667eea;
-        border-radius: 25px;
-        padding: 0.5rem 1.4rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-block;
-    }
-    
-    .btn-gradient-outline:hover {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        transform: translateY(-2px);
     }
     
     .btn-danger-gradient {

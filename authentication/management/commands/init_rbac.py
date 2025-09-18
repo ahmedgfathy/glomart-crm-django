@@ -11,7 +11,6 @@ class Command(BaseCommand):
             {'name': 'leads', 'display_name': 'Leads', 'icon': 'bi-person-lines-fill', 'url_name': 'leads:index', 'order': 1},
             {'name': 'property', 'display_name': 'Property', 'icon': 'bi-building', 'url_name': 'property:index', 'order': 2},
             {'name': 'project', 'display_name': 'Projects', 'icon': 'bi-diagram-3', 'url_name': 'project:index', 'order': 3},
-            {'name': 'opportunity', 'display_name': 'Opportunities', 'icon': 'bi-target', 'url_name': 'opportunity:index', 'order': 4},
             {'name': 'report', 'display_name': 'Reports', 'icon': 'bi-graph-up', 'url_name': 'report:index', 'order': 5},
             {'name': 'calendar', 'display_name': 'Calendar', 'icon': 'bi-calendar3', 'url_name': 'calendar:index', 'order': 6},
             {'name': 'document', 'display_name': 'Documents', 'icon': 'bi-file-earmark-text', 'url_name': 'document:index', 'order': 7},

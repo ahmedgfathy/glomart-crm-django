@@ -78,6 +78,39 @@ def dashboard_view(request):
     # Property statistics
     total_properties = Property.objects.count()
     
+    # Count residential and commercial properties
+    residential_count = Property.objects.filter(
+        Q(property_type__name__icontains='residential') |
+        Q(property_type__name__icontains='apartment') |
+        Q(property_type__name__icontains='villa') |
+        Q(property_type__name__icontains='house') |
+        Q(property_type__name__icontains='flat')
+    ).count()
+    
+    commercial_count = Property.objects.filter(
+        Q(property_type__name__icontains='commercial') |
+        Q(property_type__name__icontains='office') |
+        Q(property_type__name__icontains='retail') |
+        Q(property_type__name__icontains='warehouse') |
+        Q(property_type__name__icontains='shop')
+    ).count()
+    
+    # Count medical and office properties specifically
+    medical_count = Property.objects.filter(
+        Q(property_type__name__icontains='medical') |
+        Q(property_type__name__icontains='clinic') |
+        Q(property_type__name__icontains='hospital') |
+        Q(property_type__name__icontains='pharmacy') |
+        Q(property_type__name__icontains='healthcare')
+    ).count()
+    
+    office_count = Property.objects.filter(
+        Q(property_type__name__icontains='office') |
+        Q(property_type__name__icontains='workspace') |
+        Q(property_type__name__icontains='coworking') |
+        Q(property_type__name__icontains='business center')
+    ).count()
+    
     # Lead statistics (as active clients)
     active_leads = Lead.objects.filter(status__name__icontains='active').count()
     if active_leads == 0:
@@ -120,6 +153,10 @@ def dashboard_view(request):
         'active_projects': active_projects,
         'pending_deals': pending_deals,
         'monthly_revenue': monthly_revenue,
+        'residential_count': residential_count,
+        'commercial_count': commercial_count,
+        'medical_count': medical_count,
+        'office_count': office_count,
         'recent_activities': recent_activities,
     }
     

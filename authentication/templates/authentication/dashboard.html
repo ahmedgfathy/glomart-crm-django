@@ -3,91 +3,460 @@
 
 {% block title %}Dashboard - Glomart CRM{% endblock %}
 
-{% block content %}
-    <!-- Welcome Header -->
-    <div class="dashboard-header animate-fade-in-up">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h1 class="h2 fw-bold mb-2">
-                    <i class="bi bi-speedometer2 me-3"></i>
-                    Welcome back, {{ user.username }}!
-                </h1>
-                <p class="mb-0 opacity-90">
-                    Manage your real estate portfolio, track investments, and grow your business with Glomart CRM.
-                </p>
-            </div>
-            <div class="col-md-4 text-end">
-                <div class="d-flex justify-content-end gap-2">
-                    <button class="btn btn-light btn-sm interactive">
-                        <i class="bi bi-bell"></i>
-                    </button>
-                    <button class="btn btn-light btn-sm interactive">
-                        <i class="bi bi-search"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+{% block extra_css %}
+<style>
+    /* Modern Dashboard Styles */
+    .modern-stat-card {
+        position: relative;
+        padding: 2rem;
+        border-radius: 20px;
+        color: #343a40;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
     
+    .modern-stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+    
+    .modern-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        transform: translate(30px, -30px);
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #343a40 !important;
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724 !important;
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404 !important;
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        color: #0c5460 !important;
+    }
+    
+    .bg-gradient-dark {
+        background: linear-gradient(135deg, #f8f9fa 0%, #dee2e6 100%);
+        color: #343a40 !important;
+    }
+    
+    .bg-gradient-medical {
+        background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+        color: #721c24 !important;
+    }
+    
+    .bg-gradient-office {
+        background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+        color: #383d41 !important;
+    }
+    
+    .bg-gradient-projects {
+        background: linear-gradient(135deg, #e7e3ff 0%, #d4c5ff 100%);
+        color: #4c1d95 !important;
+    }
+    
+    .modern-stat-card .card-icon {
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.1);
+        border-radius: 50%;
+        font-size: 1.5rem;
+        color: #495057 !important;
+    }
+    
+    .modern-stat-card .card-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .modern-stat-card .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1;
+    }
+    
+    .modern-stat-card .stat-label {
+        font-size: 1rem;
+        margin-bottom: 1rem;
+        opacity: 0.8;
+    }
+    
+    .modern-stat-card .stat-trend {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        opacity: 0.8;
+    }
+    
+    .modern-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: none;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .modern-card:hover {
+        box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+    }
+    
+    .modern-card .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-bottom: 1px solid #dee2e6;
+        padding: 1.5rem 2rem;
+    }
+    
+    .modern-card .card-title {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #495057;
+    }
+    
+    .modern-card .card-body {
+        padding: 2rem;
+    }
+    
+    .action-card {
+        text-align: center;
+        padding: 2rem 1.5rem;
+        border-radius: 15px;
+        background: white;
+        border: 2px solid #f8f9fa;
+        transition: all 0.3s ease;
+        height: 100%;
+    }
+    
+    .action-card:hover {
+        border-color: #007bff;
+        transform: translateY(-3px);
+        box-shadow: 0 15px 25px rgba(0,123,255,0.1);
+    }
+    
+    .action-icon {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 1.75rem;
+        color: white;
+    }
+    
+    .action-icon.primary { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+    .action-icon.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .action-icon.warning { background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%); }
+    .action-icon.info { background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%); }
+    
+    .action-card h5 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #212529;
+    }
+    
+    .action-card p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .action-link {
+        color: #007bff;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: color 0.3s ease;
+    }
+    
+    .action-link:hover {
+        color: #0056b3;
+    }
+    
+    .activity-timeline {
+        position: relative;
+    }
+    
+    .activity-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+        position: relative;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+    
+    .activity-icon.primary { background: linear-gradient(135deg, #6c757d 0%, #495057 100%); }
+    .activity-icon.success { background: linear-gradient(135deg, #28a745 0%, #20c997 100%); }
+    .activity-icon.warning { background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%); }
+    
+    .activity-content h6 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: #212529;
+    }
+    
+    .activity-content p {
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .activity-time {
+        color: #adb5bd;
+        font-size: 0.8rem;
+    }
+    
+    .insight-item {
+        margin-bottom: 2rem;
+    }
+    
+    .insight-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .insight-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+    }
+    
+    .insight-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .insight-value {
+        font-weight: 700;
+        font-size: 1.25rem;
+    }
+    
+    .insight-value.primary { color: #6c757d; }
+    .insight-value.success { color: #28a745; }
+    .insight-value.warning { color: #fd7e14; }
+    
+    .insight-progress {
+        height: 8px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+    
+    .progress-bar.primary { background: linear-gradient(90deg, #6c757d 0%, #495057 100%); }
+    .progress-bar.success { background: linear-gradient(90deg, #28a745 0%, #20c997 100%); }
+    .progress-bar.warning { background: linear-gradient(90deg, #fd7e14 0%, #ffc107 100%); }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .modern-stat-card {
+            padding: 1.5rem;
+        }
+        
+        .modern-stat-card .stat-number {
+            font-size: 2rem;
+        }
+        
+        .modern-card .card-header {
+            padding: 1rem 1.5rem;
+        }
+        
+        .modern-card .card-body {
+            padding: 1.5rem;
+        }
+        
+        .action-card {
+            padding: 1.5rem 1rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
     <!-- Stats Grid -->
     <div class="row g-4 mb-5">
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card animate-fade-in-up animate-delay-1">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="bg-primary bg-gradient rounded-3 p-2">
-                        <i class="bi bi-building text-white fs-4"></i>
-                    </div>
-                    <small class="text-success fw-semibold">
-                        <i class="bi bi-arrow-up"></i> +12%
-                    </small>
+            <div class="modern-stat-card bg-gradient-info">
+                <div class="card-icon">
+                    <i class="bi bi-house"></i>
                 </div>
-                <h3 class="stat-number mb-1">{{ total_properties }}</h3>
-                <p class="text-muted mb-0 small">Total Properties</p>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ residential_count }}</h3>
+                    <p class="stat-label">Residential Units</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+5%</span>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card animate-fade-in-up animate-delay-2">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="bg-success bg-gradient rounded-3 p-2">
-                        <i class="bi bi-people text-white fs-4"></i>
-                    </div>
-                    <small class="text-success fw-semibold">
-                        <i class="bi bi-arrow-up"></i> +8%
-                    </small>
+            <div class="modern-stat-card bg-gradient-dark">
+                <div class="card-icon">
+                    <i class="bi bi-building-gear"></i>
                 </div>
-                <h3 class="stat-number mb-1">{{ active_leads }}</h3>
-                <p class="text-muted mb-0 small">Active Clients</p>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ commercial_count }}</h3>
+                    <p class="stat-label">Commercial Units</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+3%</span>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card animate-fade-in-up animate-delay-3">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="bg-warning bg-gradient rounded-3 p-2">
-                        <i class="bi bi-briefcase text-white fs-4"></i>
-                    </div>
-                    <small class="text-warning fw-semibold">
-                        <i class="bi bi-dash"></i> 0%
-                    </small>
+            <div class="modern-stat-card bg-gradient-medical">
+                <div class="card-icon">
+                    <i class="bi bi-hospital"></i>
                 </div>
-                <h3 class="stat-number mb-1">{{ pending_deals }}</h3>
-                <p class="text-muted mb-0 small">Pending Deals</p>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ medical_count }}</h3>
+                    <p class="stat-label">Medical Units</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+2%</span>
+                    </div>
+                </div>
             </div>
         </div>
         
         <div class="col-xl-3 col-md-6">
-            <div class="stat-card animate-fade-in-up animate-delay-4">
-                <div class="d-flex align-items-center justify-content-between mb-3">
-                    <div class="bg-info bg-gradient rounded-3 p-2">
-                        <i class="bi bi-currency-dollar text-white fs-4"></i>
-                    </div>
-                    <small class="text-success fw-semibold">
-                        <i class="bi bi-arrow-up"></i> +24%
-                    </small>
+            <div class="modern-stat-card bg-gradient-office">
+                <div class="card-icon">
+                    <i class="bi bi-briefcase"></i>
                 </div>
-                <h3 class="stat-number mb-1">{{ monthly_revenue }}</h3>
-                <p class="text-muted mb-0 small">Portfolio Value</p>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ office_count }}</h3>
+                    <p class="stat-label">Office Units</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+4%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="modern-stat-card bg-gradient-primary">
+                <div class="card-icon">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ total_properties }}</h3>
+                    <p class="stat-label">Total Properties</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+12%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="modern-stat-card bg-gradient-success">
+                <div class="card-icon">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ active_leads }}</h3>
+                    <p class="stat-label">Active Clients</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+8%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="modern-stat-card bg-gradient-warning">
+                <div class="card-icon">
+                    <i class="bi bi-briefcase"></i>
+                </div>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ pending_deals }}</h3>
+                    <p class="stat-label">Pending Deals</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-dash"></i>
+                        <span>0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-xl-3 col-md-6">
+            <div class="modern-stat-card bg-gradient-projects">
+                <div class="card-icon">
+                    <i class="bi bi-diagram-3"></i>
+                </div>
+                <div class="card-content">
+                    <h3 class="stat-number">{{ total_projects }}</h3>
+                    <p class="stat-label">Total Projects</p>
+                    <div class="stat-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        <span>+6%</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -95,39 +464,55 @@
     <!-- Quick Actions -->
     <div class="row g-4 mb-5">
         <div class="col-12">
-            <div class="card-modern p-4 animate-fade-in-up">
-                <h4 class="fw-bold mb-4">
-                    <i class="bi bi-lightning-charge text-primary me-2"></i>
-                    Quick Actions
-                </h4>
-                <div class="row g-3">
-                    <div class="col-xl-3 col-md-6">
-                        <a href="#" class="action-btn interactive">
-                            <i class="bi bi-plus-circle-fill text-primary fs-3 mb-2"></i>
-                            <div class="fw-semibold">Add Property</div>
-                            <small class="text-muted">List new property</small>
-                        </a>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <a href="#" class="action-btn interactive">
-                            <i class="bi bi-person-plus-fill text-success fs-3 mb-2"></i>
-                            <div class="fw-semibold">Add Client</div>
-                            <small class="text-muted">Register new client</small>
-                        </a>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <a href="#" class="action-btn interactive">
-                            <i class="bi bi-clipboard-check-fill text-warning fs-3 mb-2"></i>
-                            <div class="fw-semibold">Create Deal</div>
-                            <small class="text-muted">Start new transaction</small>
-                        </a>
-                    </div>
-                    <div class="col-xl-3 col-md-6">
-                        <a href="/admin/" class="action-btn interactive">
-                            <i class="bi bi-gear-fill text-info fs-3 mb-2"></i>
-                            <div class="fw-semibold">Admin Panel</div>
-                            <small class="text-muted">System management</small>
-                        </a>
+            <div class="modern-card">
+                <div class="card-header">
+                    <h4 class="card-title">
+                        <i class="bi bi-lightning-charge"></i>
+                        Quick Actions
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-4">
+                        <div class="col-xl-3 col-md-6">
+                            <div class="action-card">
+                                <div class="action-icon primary">
+                                    <i class="bi bi-plus-circle-fill"></i>
+                                </div>
+                                <h5>Add Property</h5>
+                                <p>List new property in the system</p>
+                                <a href="#" class="action-link">Get Started <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="action-card">
+                                <div class="action-icon success">
+                                    <i class="bi bi-person-plus-fill"></i>
+                                </div>
+                                <h5>Add Client</h5>
+                                <p>Register new client profile</p>
+                                <a href="#" class="action-link">Get Started <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="action-card">
+                                <div class="action-icon warning">
+                                    <i class="bi bi-clipboard-check-fill"></i>
+                                </div>
+                                <h5>Create Deal</h5>
+                                <p>Start new transaction process</p>
+                                <a href="#" class="action-link">Get Started <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="action-card">
+                                <div class="action-icon info">
+                                    <i class="bi bi-gear-fill"></i>
+                                </div>
+                                <h5>Admin Panel</h5>
+                                <p>System management tools</p>
+                                <a href="/admin/" class="action-link">Get Started <i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -138,81 +523,89 @@
     <div class="row g-4 mb-5">
         <!-- Recent Activity -->
         <div class="col-lg-8">
-            <div class="card-modern p-4 h-100 animate-fade-in-up">
-                <h5 class="fw-bold mb-4">
-                    <i class="bi bi-clock-history text-primary me-2"></i>
-                    Recent Activity
-                </h5>
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item border-0 px-0 py-3">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-primary bg-gradient rounded-circle p-2 me-3">
-                                <i class="bi bi-building text-white"></i>
+            <div class="modern-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="bi bi-clock-history"></i>
+                        Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-timeline">
+                        <div class="activity-item">
+                            <div class="activity-icon primary">
+                                <i class="bi bi-building"></i>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">New property added</div>
-                                <small class="text-muted">Luxury apartment in Downtown</small>
+                            <div class="activity-content">
+                                <h6>New property added</h6>
+                                <p>Luxury apartment in Downtown</p>
+                                <span class="activity-time">2 hours ago</span>
                             </div>
-                            <small class="text-muted">2 hours ago</small>
                         </div>
-                    </div>
-                    <div class="list-group-item border-0 px-0 py-3">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-success bg-gradient rounded-circle p-2 me-3">
-                                <i class="bi bi-person-check text-white"></i>
+                        <div class="activity-item">
+                            <div class="activity-icon success">
+                                <i class="bi bi-person-check"></i>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">Client meeting completed</div>
-                                <small class="text-muted">Meeting with John Smith</small>
+                            <div class="activity-content">
+                                <h6>Client meeting completed</h6>
+                                <p>Meeting with John Smith</p>
+                                <span class="activity-time">4 hours ago</span>
                             </div>
-                            <small class="text-muted">4 hours ago</small>
                         </div>
-                    </div>
-                    <div class="list-group-item border-0 px-0 py-3">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-warning bg-gradient rounded-circle p-2 me-3">
-                                <i class="bi bi-handshake text-white"></i>
+                        <div class="activity-item">
+                            <div class="activity-icon warning">
+                                <i class="bi bi-handshake"></i>
                             </div>
-                            <div class="flex-grow-1">
-                                <div class="fw-semibold">Deal status updated</div>
-                                <small class="text-muted">Villa sale moved to closing</small>
+                            <div class="activity-content">
+                                <h6>Deal status updated</h6>
+                                <p>Villa sale moved to closing</p>
+                                <span class="activity-time">1 day ago</span>
                             </div>
-                            <small class="text-muted">1 day ago</small>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         
-        <!-- Quick Stats -->
+        <!-- Quick Insights -->
         <div class="col-lg-4">
-            <div class="card-modern p-4 h-100 animate-fade-in-up">
-                <h5 class="fw-bold mb-4">
-                    <i class="bi bi-graph-up text-primary me-2"></i>
-                    Quick Insights
-                </h5>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted">Portfolio Value</span>
-                    <span class="fw-bold fs-5 text-primary">$15.7M</span>
+            <div class="modern-card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="bi bi-graph-up"></i>
+                        Quick Insights
+                    </h5>
                 </div>
-                <div class="progress mb-4" style="height: 8px;">
-                    <div class="progress-bar bg-primary" role="progressbar" style="width: 78%"></div>
-                </div>
-                
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted">Active Listings</span>
-                    <span class="fw-bold fs-5 text-success">47</span>
-                </div>
-                <div class="progress mb-4" style="height: 8px;">
-                    <div class="progress-bar bg-success" role="progressbar" style="width: 65%"></div>
-                </div>
-                
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <span class="text-muted">Conversion Rate</span>
-                    <span class="fw-bold fs-5 text-warning">34%</span>
-                </div>
-                <div class="progress" style="height: 8px;">
-                    <div class="progress-bar bg-warning" role="progressbar" style="width: 34%"></div>
+                <div class="card-body">
+                    <div class="insight-item">
+                        <div class="insight-header">
+                            <span class="insight-label">Portfolio Value</span>
+                            <span class="insight-value primary">$15.7M</span>
+                        </div>
+                        <div class="insight-progress">
+                            <div class="progress-bar primary" style="width: 78%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-item">
+                        <div class="insight-header">
+                            <span class="insight-label">Active Listings</span>
+                            <span class="insight-value success">47</span>
+                        </div>
+                        <div class="insight-progress">
+                            <div class="progress-bar success" style="width: 65%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="insight-item">
+                        <div class="insight-header">
+                            <span class="insight-label">Conversion Rate</span>
+                            <span class="insight-value warning">34%</span>
+                        </div>
+                        <div class="insight-progress">
+                            <div class="progress-bar warning" style="width: 34%"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
