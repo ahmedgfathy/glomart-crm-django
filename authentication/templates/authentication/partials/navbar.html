@@ -3,15 +3,15 @@
 <!-- Dark Header with Logo Only -->
 <nav class="navbar navbar-dark bg-dark fixed-top">
     <div class="container-fluid px-4">
-        <!-- Logo Only Brand Section -->
-        <a class="navbar-brand d-flex align-items-center" href="{% url 'authentication:dashboard' %}">
+        <!-- Logo positioned naturally with some breathing room -->
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'authentication:dashboard' %}" style="margin-left: 20px;">
             <div class="logo-container">
                 <img src="{% static 'images/logo.png' %}" alt="CRM Logo" class="logo">
             </div>
         </a>
         
         <!-- Right Side - User Info & Actions -->
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-3 ms-auto">
             <!-- Email -->
             <a href="https://mail.glomartrealestates.com/" target="_blank" class="btn btn-outline-secondary border-0" title="Open Email">
                 <i class="bi bi-envelope"></i>

@@ -269,7 +269,7 @@
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{% url 'properties:property_list' %}">Properties</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'properties:property_list' %}" id="backToPropertiesList">Properties</a></li>
             <li class="breadcrumb-item active">{{ property.property_number|default:property.property_id }}</li>
         </ol>
     </nav>
@@ -979,6 +979,22 @@
 
 {% block extra_js %}
 <script>
+// Handle back to properties list with preserved filters
+document.addEventListener('DOMContentLoaded', function() {
+    const backLink = document.getElementById('backToPropertiesList');
+    if (backLink) {
+        backLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const storedFilters = sessionStorage.getItem('propertyListFilters');
+            if (storedFilters) {
+                window.location.href = "{% url 'properties:property_list' %}" + storedFilters;
+            } else {
+                window.location.href = "{% url 'properties:property_list' %}";
+            }
+        });
+    }
+});
+
 function likeProperty(propertyId) {
     fetch(`/properties/${propertyId}/like/`, {
         method: 'POST',

@@ -186,32 +186,26 @@ class PropertyCreateForm(forms.ModelForm):
         
         # Add empty option for select fields
         self.fields['region'].empty_label = "Select a region"
-        self.fields['property_type'].empty_label = "Select property type"
-        self.fields['category'].empty_label = "Select category"
+        self.fields['property_type'].empty_label = "Select property type (optional)"
+        self.fields['category'].empty_label = "Select category (optional)"
         self.fields['compound'].empty_label = "Select compound (optional)"
-        self.fields['status'].empty_label = "Select status"
-        self.fields['activity'].empty_label = "Select activity"
+        self.fields['status'].empty_label = "Select status (optional)"
+        self.fields['activity'].empty_label = "Select activity (optional)"
         self.fields['project'].empty_label = "Select project (optional)"
-        self.fields['currency'].empty_label = "Select currency"
+        self.fields['currency'].empty_label = "Select currency (optional)"
         
-        # Make some fields not required
-        self.fields['compound'].required = False
-        self.fields['project'].required = False
-        self.fields['building'].required = False
-        self.fields['unit_number'].required = False
-        self.fields['apartment_number'].required = False
-        self.fields['floor_number'].required = False
-        self.fields['secondary_phone'].required = False
-        self.fields['owner_email'].required = False
-        self.fields['notes'].required = False
-        self.fields['unit_features'].required = False
-        self.fields['garage_type'].required = False
-        self.fields['garden_type'].required = False
-        self.fields['pool_type'].required = False
-        self.fields['terrace_type'].required = False
-        self.fields['payment_frequency'].required = False
-        self.fields['down_payment'].required = False
-        self.fields['monthly_payment'].required = False
+        # Set required fields - only essential ones
+        required_fields = ['name', 'region', 'owner_name', 'mobile_number']
+        
+        # Make all fields optional except the required ones
+        for field_name, field in self.fields.items():
+            if field_name not in required_fields:
+                field.required = False
+        
+        # Ensure required fields are marked as required
+        for field_name in required_fields:
+            if field_name in self.fields:
+                self.fields[field_name].required = True
 
     def clean_property_number(self):
         """Validate property number uniqueness"""

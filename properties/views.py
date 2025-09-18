@@ -14,7 +14,7 @@ from datetime import datetime
 from .models import (
     Property, Region, FinishingType, UnitPurpose, PropertyType, 
     PropertyCategory, Compound, PropertyStatus, PropertyActivity, 
-    Project, Currency, PropertyHistory
+    Project, Currency, PropertyHistory, UserPropertyPreferences
 )
 from .forms import PropertyCreateForm
 
@@ -97,6 +97,9 @@ def property_list(request):
     statuses = PropertyStatus.objects.filter(is_active=True).order_by('name')
     activities = PropertyActivity.objects.filter(is_active=True).order_by('name')
     
+    # Get user preferences
+    user_preferences = UserPropertyPreferences.get_for_user(request.user)
+    
     context = {
         'properties': page_obj,
         'total_properties': paginator.count,
@@ -115,6 +118,7 @@ def property_list(request):
             'rooms': rooms,
         },
         'page_size': page_size,
+        'user_view_preference': user_preferences.view_mode,
     }
     
     return render(request, 'properties/property_list.html', context)
@@ -203,13 +207,20 @@ def property_edit(request, property_id):
     property_obj = get_object_or_404(Property, property_id=property_id)
     
     if request.method == 'POST':
-        # TODO: Implement property edit form processing
-        messages.success(request, 'Property editing form will be implemented soon.')
-        return redirect('properties:property_detail', property_id=property_id)
+        form = PropertyCreateForm(request.POST, instance=property_obj)
+        if form.is_valid():
+            property_obj = form.save()
+            messages.success(request, f'Property {property_obj.name} has been updated successfully!')
+            return redirect('properties:property_detail', property_id=property_id)
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = PropertyCreateForm(instance=property_obj)
     
     # Get all the context data needed for the form
     context = {
         'property': property_obj,
+        'form': form,
         'regions': Region.objects.filter(is_active=True).order_by('name'),
         'finishing_types': FinishingType.objects.filter(is_active=True).order_by('name'),
         'unit_purposes': UnitPurpose.objects.filter(is_active=True).order_by('name'),
@@ -563,5 +574,31 @@ def property_import(request):
             
         except Exception as e:
             return JsonResponse({'success': False, 'error': f'Import failed: {str(e)}'})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@login_required
+def save_view_preference(request):
+    """Save user's preferred view mode (grid/list)"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            view_mode = data.get('view_mode')
+            
+            if view_mode not in ['grid', 'list']:
+                return JsonResponse({'success': False, 'error': 'Invalid view mode'})
+            
+            # Get or create user preferences
+            preferences = UserPropertyPreferences.get_for_user(request.user)
+            preferences.view_mode = view_mode
+            preferences.save()
+            
+            return JsonResponse({'success': True, 'view_mode': view_mode})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'success': False, 'error': 'Invalid JSON'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})

@@ -14,7 +14,8 @@ from datetime import datetime, timedelta
 from .models import (
     Lead, LeadSource, LeadStatus, LeadNote, 
     LeadActivity, LeadDocument, LeadTag,
-    LeadType, LeadPriority, LeadTemperature
+    LeadType, LeadPriority, LeadTemperature,
+    UserLeadPreferences
 )
 from authentication.models import Module, Permission
 
@@ -111,8 +112,10 @@ def leads_list_view(request):
                 Q(phone__icontains=word) |
                 Q(mobile__icontains=word) |
                 Q(company__icontains=word) |
-                Q(address__icontains=word) |
-                Q(city__icontains=word) |
+                Q(title__icontains=word) |
+                Q(preferred_locations__icontains=word) |
+                Q(property_type__icontains=word) |
+                Q(requirements__icontains=word) |
                 Q(notes__icontains=word)
             )
             search_filter &= word_filter
@@ -125,8 +128,10 @@ def leads_list_view(request):
             Q(phone__icontains=search_query) |
             Q(mobile__icontains=search_query) |
             Q(company__icontains=search_query) |
-            Q(address__icontains=search_query) |
-            Q(city__icontains=search_query) |
+            Q(title__icontains=search_query) |
+            Q(preferred_locations__icontains=search_query) |
+            Q(property_type__icontains=search_query) |
+            Q(requirements__icontains=search_query) |
             Q(notes__icontains=search_query)
         )
         
@@ -176,6 +181,9 @@ def leads_list_view(request):
         qualified_leads = user_leads.filter(is_qualified=True).count()
         unassigned_leads = 0  # User can't see unassigned leads
     
+    # Get user column preferences
+    user_preferences = UserLeadPreferences.get_for_user(request.user)
+    
     context = {
         'page_obj': page_obj,
         'leads': page_obj.object_list,
@@ -188,6 +196,8 @@ def leads_list_view(request):
         'total_leads': total_leads,
         'qualified_leads': qualified_leads,
         'unassigned_leads': unassigned_leads,
+        'user_preferences': user_preferences,
+        'visible_columns': user_preferences.get_visible_columns(),
         'filters': {
             'status': status_filter,
             'source': source_filter,
@@ -655,33 +665,68 @@ def update_lead_status_api(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            lead_id = data.get('lead_id')
             status_id = data.get('status_id')
+            is_bulk = data.get('bulk', False)
             
-            lead = get_object_or_404(Lead, id=lead_id)
-            old_status = lead.status.name
-            lead.status_id = status_id
-            lead.save()
-            
-            new_status = lead.status.name
-            
-            # Create activity for status change
-            LeadActivity.objects.create(
-                lead=lead,
-                user=request.user,
-                activity_type='status_change',
-                title='Status Changed',
-                description=f'Status changed from "{old_status}" to "{new_status}"',
-                is_completed=True,
-                completed_at=timezone.now()
-            )
-            
-            return JsonResponse({
-                'success': True,
-                'message': f'Status updated to {new_status}',
-                'new_status': new_status,
-                'new_color': lead.status.color
-            })
+            if is_bulk:
+                # Handle bulk status update
+                lead_ids = data.get('lead_ids', [])
+                if not lead_ids:
+                    return JsonResponse({'success': False, 'error': 'No leads selected'})
+                
+                leads = Lead.objects.filter(id__in=lead_ids)
+                status = get_object_or_404(LeadStatus, id=status_id)
+                
+                updated_count = 0
+                for lead in leads:
+                    old_status = lead.status.name if lead.status else 'None'
+                    lead.status = status
+                    lead.save()
+                    updated_count += 1
+                    
+                    # Create activity for status change
+                    LeadActivity.objects.create(
+                        lead=lead,
+                        user=request.user,
+                        activity_type='status_change',
+                        title='Bulk Status Change',
+                        description=f'Status changed from "{old_status}" to "{status.name}" via bulk operation',
+                        is_completed=True,
+                        completed_at=timezone.now()
+                    )
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'{updated_count} leads updated to {status.name}',
+                    'updated_count': updated_count
+                })
+            else:
+                # Handle single lead status update
+                lead_id = data.get('lead_id')
+                lead = get_object_or_404(Lead, id=lead_id)
+                old_status = lead.status.name if lead.status else 'None'
+                
+                status = get_object_or_404(LeadStatus, id=status_id)
+                lead.status = status
+                lead.save()
+                
+                # Create activity for status change
+                LeadActivity.objects.create(
+                    lead=lead,
+                    user=request.user,
+                    activity_type='status_change',
+                    title='Status Changed',
+                    description=f'Status changed from "{old_status}" to "{status.name}"',
+                    is_completed=True,
+                    completed_at=timezone.now()
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Status updated to {status.name}',
+                    'new_status': status.name,
+                    'new_color': status.color
+                })
             
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
@@ -1064,11 +1109,23 @@ def export_leads_view(request):
         'Priority', 'Score', 'Created', 'Assigned To'
     ])
     
-    # Restrict export based on user permissions
-    if request.user.is_superuser:
-        leads = Lead.objects.select_related('status', 'source', 'assigned_to').all()
+    # Check if specific leads are selected for export
+    if request.method == 'POST':
+        lead_ids = request.POST.getlist('lead_ids')
+        if lead_ids:
+            leads = Lead.objects.select_related('status', 'source', 'assigned_to').filter(id__in=lead_ids)
+        else:
+            # Fallback to all accessible leads
+            if request.user.is_superuser:
+                leads = Lead.objects.select_related('status', 'source', 'assigned_to').all()
+            else:
+                leads = Lead.objects.select_related('status', 'source', 'assigned_to').filter(assigned_to=request.user)
     else:
-        leads = Lead.objects.select_related('status', 'source', 'assigned_to').filter(assigned_to=request.user)
+        # GET request - export all accessible leads
+        if request.user.is_superuser:
+            leads = Lead.objects.select_related('status', 'source', 'assigned_to').all()
+        else:
+            leads = Lead.objects.select_related('status', 'source', 'assigned_to').filter(assigned_to=request.user)
     
     for lead in leads:
         writer.writerow([
@@ -1078,7 +1135,7 @@ def export_leads_view(request):
             lead.company,
             lead.status.name if lead.status else '',
             lead.source.name if lead.source else '',
-            lead.get_priority_display(),
+            lead.priority.name if lead.priority else '',
             lead.score,
             lead.created_at.strftime('%Y-%m-%d'),
             lead.assigned_to.get_full_name() if lead.assigned_to else 'Unassigned'
@@ -1261,3 +1318,46 @@ def import_leads_view(request):
             messages.error(request, f'Error importing leads: {str(e)}')
     
     return redirect('leads:leads_list')
+
+
+@csrf_exempt
+@login_required
+def save_column_preferences(request):
+    """Save user's column display preferences via AJAX"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            preferences = UserLeadPreferences.get_for_user(request.user)
+            
+            # Update column visibility preferences
+            preferences.show_checkbox = data.get('show_checkbox', True)
+            preferences.show_name = data.get('show_name', True)  # Always show name
+            preferences.show_mobile = data.get('show_mobile', True)
+            preferences.show_email = data.get('show_email', True)
+            preferences.show_company = data.get('show_company', True)
+            preferences.show_status = data.get('show_status', True)
+            preferences.show_source = data.get('show_source', False)
+            preferences.show_priority = data.get('show_priority', False)
+            preferences.show_temperature = data.get('show_temperature', False)
+            preferences.show_score = data.get('show_score', False)
+            preferences.show_assigned_to = data.get('show_assigned_to', True)
+            preferences.show_created_at = data.get('show_created_at', False)
+            preferences.show_last_contacted = data.get('show_last_contacted', False)
+            preferences.show_budget = data.get('show_budget', False)
+            preferences.show_property_type = data.get('show_property_type', False)
+            preferences.show_actions = data.get('show_actions', True)  # Always show actions
+            
+            preferences.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Column preferences saved successfully!'
+            })
+            
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

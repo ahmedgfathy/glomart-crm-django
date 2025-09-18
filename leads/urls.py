@@ -41,6 +41,7 @@ urlpatterns = [
     path('api/quick-note/', views.add_quick_note_api, name='quick_note_api'),
     path('api/archive/', views.archive_lead_api, name='archive_lead_api'),
     path('api/search/', views.leads_search_api, name='search_api'),
+    path('api/save-column-preferences/', views.save_column_preferences, name='save_column_preferences'),
     
     # Source and status management
     path('sources/', views.lead_sources_view, name='sources'),

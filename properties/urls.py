@@ -27,5 +27,6 @@ urlpatterns = [
     # API endpoints for dynamic loading
     path('api/regions/', views.api_regions, name='api_regions'),
     path('api/compounds/', views.api_compounds, name='api_compounds'),
+    path('api/save-view-preference/', views.save_view_preference, name='save_view_preference'),
     path('<str:property_id>/images/', views.property_images_api, name='property_images_api'),
 ]

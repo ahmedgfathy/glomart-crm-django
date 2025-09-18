@@ -518,3 +518,92 @@ class LeadAudit(models.Model):
             severity=severity,
             **kwargs
         )
+
+
+class UserLeadPreferences(models.Model):
+    """Store user preferences for lead list column display"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='lead_preferences')
+    
+    # Column visibility preferences (default to True for essential columns)
+    show_checkbox = models.BooleanField(default=True)
+    show_name = models.BooleanField(default=True)  # Always show name
+    show_mobile = models.BooleanField(default=True)
+    show_email = models.BooleanField(default=True)
+    show_company = models.BooleanField(default=True)
+    show_status = models.BooleanField(default=True)
+    show_source = models.BooleanField(default=False)
+    show_priority = models.BooleanField(default=False)
+    show_temperature = models.BooleanField(default=False)
+    show_score = models.BooleanField(default=False)
+    show_assigned_to = models.BooleanField(default=True)
+    show_created_at = models.BooleanField(default=False)
+    show_last_contacted = models.BooleanField(default=False)
+    show_budget = models.BooleanField(default=False)
+    show_property_type = models.BooleanField(default=False)
+    show_actions = models.BooleanField(default=True)  # Always show actions
+    
+    # Column order preferences (JSON field to store column order)
+    column_order = models.JSONField(default=list, blank=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "User Lead Preference"
+        verbose_name_plural = "User Lead Preferences"
+    
+    def __str__(self):
+        return f"{self.user.username} - Lead Preferences"
+    
+    @classmethod
+    def get_for_user(cls, user):
+        """Get or create preferences for a user"""
+        preferences, created = cls.objects.get_or_create(
+            user=user,
+            defaults={
+                'show_name': True,
+                'show_mobile': True,
+                'show_email': True,
+                'show_status': True,
+                'show_assigned_to': True,
+                'show_actions': True,
+            }
+        )
+        return preferences
+    
+    def get_visible_columns(self):
+        """Return list of visible column names"""
+        visible_columns = []
+        if self.show_checkbox:
+            visible_columns.append('checkbox')
+        if self.show_name:
+            visible_columns.append('name')
+        if self.show_mobile:
+            visible_columns.append('mobile')
+        if self.show_email:
+            visible_columns.append('email')
+        if self.show_company:
+            visible_columns.append('company')
+        if self.show_status:
+            visible_columns.append('status')
+        if self.show_source:
+            visible_columns.append('source')
+        if self.show_priority:
+            visible_columns.append('priority')
+        if self.show_temperature:
+            visible_columns.append('temperature')
+        if self.show_score:
+            visible_columns.append('score')
+        if self.show_assigned_to:
+            visible_columns.append('assigned_to')
+        if self.show_created_at:
+            visible_columns.append('created_at')
+        if self.show_last_contacted:
+            visible_columns.append('last_contacted')
+        if self.show_budget:
+            visible_columns.append('budget')
+        if self.show_property_type:
+            visible_columns.append('property_type')
+        if self.show_actions:
+            visible_columns.append('actions')
+        return visible_columns

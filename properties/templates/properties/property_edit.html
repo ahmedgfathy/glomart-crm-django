@@ -1,8 +1,6 @@
 {% extends 'app_layout.html' %}
 {% load static %}
-{% load prope            <a href="{% url 'properties:property_detail' property.property_id %}" class="btn btn-gradient">
-                <i class="bi bi-arrow-left me-2"></i>Back to Property
-            </a>_filters %}
+{% load property_filters %}
 
 {% block title %}Edit Property - {{ property.property_number|default:property.property_id }}{% endblock %}
 

@@ -280,27 +280,26 @@
 
             <!-- Price Range -->
             <div class="col-md-1">
-                <label for="min_price" class="form-label">Min Price</label>
+                <label for="min_price" class="form-label">Min</label>
                 <input type="number" class="form-control" id="min_price" name="min_price" 
                        value="{{ current_filters.min_price }}" placeholder="0">
             </div>
 
             <div class="col-md-1">
-                <label for="max_price" class="form-label">Max Price</label>
+                <label for="max_price" class="form-label">Max</label>
                 <input type="number" class="form-control" id="max_price" name="max_price" 
                        value="{{ current_filters.max_price }}" placeholder="∞">
             </div>
 
-            <!-- Filter Buttons -->
+            <!-- Clear Filter Button (shown only when filters are active) -->
             <div class="col-12">
+                {% if current_filters.search or current_filters.region or current_filters.property_type or current_filters.status or current_filters.min_price or current_filters.max_price %}
                 <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-gradient">
-                        <i class="bi bi-funnel me-1"></i>Apply Filters
-                    </button>
-                    <a href="{% url 'properties:property_list' %}" class="btn btn-gradient">
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
                         <i class="bi bi-x-circle me-1"></i>Clear Filters
-                    </a>
+                    </button>
                 </div>
+                {% endif %}
             </div>
         </form>
     </div>
@@ -313,6 +312,12 @@
             </span>
         </div>
         <div class="d-flex align-items-center gap-3">
+            <!-- Select All for Grid View -->
+            <div class="d-flex align-items-center gap-2" id="selectAllContainer">
+                <input type="checkbox" class="form-check-input" id="selectAll">
+                <label for="selectAll" class="form-check-label text-muted small">Select All</label>
+            </div>
+            
             <!-- Page Size -->
             <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small">Show:</span>
@@ -326,7 +331,7 @@
 
             <!-- View Toggle -->
             <div class="view-toggle">
-                <button type="button" class="btn btn-sm active" onclick="switchView('grid')">
+                <button type="button" class="btn btn-sm" onclick="switchView('grid')">
                     <i class="bi bi-grid-3x3-gap"></i>
                 </button>
                 <button type="button" class="btn btn-sm" onclick="switchView('list')">
@@ -340,6 +345,10 @@
     <div id="propertiesContainer" class="property-grid">
         {% for property in properties %}
         <div class="property-card card h-100" onclick="viewProperty('{{ property.property_id }}')">
+            <!-- Add checkbox for selection -->
+            <div class="card-checkbox" onclick="event.stopPropagation();" style="position: absolute; top: 10px; left: 10px; z-index: 10;">
+                <input type="checkbox" class="form-check-input property-checkbox" value="{{ property.property_id }}">
+            </div>
             <div class="card-body">
                 <!-- Property Header -->
                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -458,6 +467,104 @@
         {% endfor %}
     </div>
 
+    <!-- Properties Table View (hidden by default) -->
+    <div id="propertiesTable" class="d-none">
+        <div class="card-modern">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
+                        <tr>
+                            <th width="50">
+                                <input type="checkbox" class="form-check-input" id="selectAllTable">
+                            </th>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Region</th>
+                            <th>Status</th>
+                            <th>Rooms/Baths</th>
+                            <th>Space</th>
+                            <th>Price</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for property in properties %}
+                        <tr class="property-row" style="cursor: pointer;" onclick="viewProperty('{{ property.property_id }}')">
+                            <td onclick="event.stopPropagation();">
+                                <input type="checkbox" class="form-check-input property-checkbox-table" value="{{ property.property_id }}">
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <img src="{{ property.get_image_url }}" alt="Property" class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" 
+                                         onerror="this.src='/static/images/property-placeholder.svg';">
+                                    <div>
+                                        <div class="fw-semibold">{{ property.property_number|default:property.property_id }}</div>
+                                        <small class="text-muted">{{ property.name|default:"Unnamed Property"|truncatechars:30 }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ property.property_type.name|default:"No Type" }}</td>
+                            <td>
+                                <i class="bi bi-geo-alt me-1"></i>
+                                {{ property.region.name|default:"No Region" }}
+                            </td>
+                            <td>
+                                <span class="badge" style="background-color: #3498db; color: white;">
+                                    {{ property.status.name|default:"No Status" }}
+                                </span>
+                            </td>
+                            <td>
+                                <small>{{ property.rooms|default:"-" }} rooms / {{ property.bathrooms|default:"-" }} baths</small>
+                            </td>
+                            <td>{{ property.total_space|default:"-" }} m²</td>
+                            <td>
+                                {% if property.total_price %}
+                                    {% if property.currency %}
+                                        {{ property.total_price|currency_format:property.currency.symbol }}
+                                    {% else %}
+                                        {{ property.total_price|currency_format }}
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Price not set</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center" onclick="event.stopPropagation();">
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="viewProperty('{{ property.property_id }}')">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="likeProperty('{{ property.property_id }}')">
+                                    <i class="bi bi-heart{% if property.is_liked %}-fill{% endif %}"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Bar (hidden by default) -->
+    <div id="bulkActions" class="bulk-actions mb-3 p-3 rounded" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+        <div class="d-flex justify-content-between align-items-center">
+            <span><span id="selectedCount">0</span> properties selected</span>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="bulkAssign()">
+                    <i class="bi bi-person-plus me-1"></i>Assign
+                </button>
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="bulkChangeStatus()">
+                    <i class="bi bi-arrow-repeat me-1"></i>Change Status
+                </button>
+                <button type="button" class="btn btn-outline-light btn-sm" onclick="bulkExport()">
+                    <i class="bi bi-download me-1"></i>Export
+                </button>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="bulkDelete()">
+                    <i class="bi bi-trash me-1"></i>Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Pagination -->
     {% if properties.has_other_pages %}
     <div class="d-flex justify-content-center mt-4">
@@ -502,7 +609,20 @@
 {% block extra_js %}
 <script>
 function viewProperty(propertyId) {
+    // Store current filters in sessionStorage to persist them
+    const currentUrl = new URL(window.location);
+    const filterParams = currentUrl.search;
+    if (filterParams) {
+        sessionStorage.setItem('propertyListFilters', filterParams);
+    }
     window.location.href = "{% url 'properties:property_detail' '0' %}".replace('0', propertyId);
+}
+
+function clearFilters() {
+    // Clear stored filters from sessionStorage
+    sessionStorage.removeItem('propertyListFilters');
+    // Navigate to clean property list page
+    window.location.href = "{% url 'properties:property_list' %}";
 }
 
 function likeProperty(propertyId) {
@@ -526,7 +646,8 @@ function likeProperty(propertyId) {
 }
 
 function switchView(viewType) {
-    const container = document.getElementById('propertiesContainer');
+    const gridContainer = document.getElementById('propertiesContainer');
+    const tableContainer = document.getElementById('propertiesTable');
     const buttons = document.querySelectorAll('.view-toggle .btn');
     
     // Update button states
@@ -535,9 +656,61 @@ function switchView(viewType) {
     
     // Switch view
     if (viewType === 'list') {
-        container.className = 'property-list-view';
+        gridContainer.classList.add('d-none');
+        tableContainer.classList.remove('d-none');
     } else {
-        container.className = 'property-grid';
+        gridContainer.classList.remove('d-none');
+        tableContainer.classList.add('d-none');
+    }
+    
+    // Save user preference
+    saveViewPreference(viewType);
+}
+
+function saveViewPreference(viewMode) {
+    fetch("{% url 'properties:save_view_preference' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify({
+            view_mode: viewMode
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.success) {
+            console.error('Failed to save view preference:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving view preference:', error);
+    });
+}
+
+function applyUserViewPreference() {
+    const userPreference = "{{ user_view_preference }}";
+    const gridContainer = document.getElementById('propertiesContainer');
+    const tableContainer = document.getElementById('propertiesTable');
+    const buttons = document.querySelectorAll('.view-toggle .btn');
+    
+    // Apply the saved preference
+    if (userPreference === 'list') {
+        gridContainer.classList.add('d-none');
+        tableContainer.classList.remove('d-none');
+        
+        // Update button states
+        buttons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.view-toggle .btn[onclick*="list"]').classList.add('active');
+    } else {
+        // Default to grid view
+        gridContainer.classList.remove('d-none');
+        tableContainer.classList.add('d-none');
+        
+        // Update button states
+        buttons.forEach(btn => btn.classList.remove('active'));
+        document.querySelector('.view-toggle .btn[onclick*="grid"]').classList.add('active');
     }
 }
 
@@ -605,10 +778,45 @@ function changePropertyImage(propertyId, direction) {
 
 // Auto-submit form on filter change
 document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('propertyFilters');
+    
+    // Restore filters from sessionStorage if coming back from property detail
+    const storedFilters = sessionStorage.getItem('propertyListFilters');
+    if (storedFilters && !window.location.search) {
+        // Only restore if current URL has no parameters (fresh page load)
+        window.location.href = window.location.pathname + storedFilters;
+        return;
+    }
+    
+    // Auto-submit for select dropdowns
     const selects = document.querySelectorAll('#propertyFilters select:not([onchange])');
     selects.forEach(select => {
         select.addEventListener('change', function() {
-            document.getElementById('propertyFilters').submit();
+            form.submit();
+        });
+    });
+    
+    // Auto-submit for search input with debounce
+    const searchInput = document.getElementById('search');
+    let searchTimeout;
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                form.submit();
+            }, 500); // 500ms delay for search
+        });
+    }
+    
+    // Auto-submit for price inputs with debounce
+    const priceInputs = document.querySelectorAll('#min_price, #max_price');
+    let priceTimeout;
+    priceInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(priceTimeout);
+            priceTimeout = setTimeout(() => {
+                form.submit();
+            }, 800); // 800ms delay for price inputs
         });
     });
     
@@ -617,6 +825,136 @@ document.addEventListener('DOMContentLoaded', function() {
         const propertyId = img.getAttribute('data-property-id');
         loadPropertyImages(propertyId);
     });
+    
+    // Apply user's saved view preference
+    applyUserViewPreference();
+    
+    // Initialize bulk actions
+    initializeBulkActions();
+});
+
+// Bulk Actions Functionality
+function initializeBulkActions() {
+    // Handle select all for grid view
+    const selectAllGrid = document.getElementById('selectAll');
+    if (selectAllGrid) {
+        selectAllGrid.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.property-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActions();
+        });
+    }
+    
+    // Handle select all for table view
+    const selectAllTable = document.getElementById('selectAllTable');
+    if (selectAllTable) {
+        selectAllTable.addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.property-checkbox-table');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            updateBulkActions();
+        });
+    }
+    
+    // Handle individual checkbox changes
+    document.addEventListener('change', function(e) {
+        if (e.target.classList.contains('property-checkbox') || e.target.classList.contains('property-checkbox-table')) {
+            updateBulkActions();
+            
+            // Update select all state
+            const allGridCheckboxes = document.querySelectorAll('.property-checkbox');
+            const allTableCheckboxes = document.querySelectorAll('.property-checkbox-table');
+            const checkedGridCheckboxes = document.querySelectorAll('.property-checkbox:checked');
+            const checkedTableCheckboxes = document.querySelectorAll('.property-checkbox-table:checked');
+            
+            if (selectAllGrid) {
+                selectAllGrid.checked = allGridCheckboxes.length > 0 && checkedGridCheckboxes.length === allGridCheckboxes.length;
+            }
+            if (selectAllTable) {
+                selectAllTable.checked = allTableCheckboxes.length > 0 && checkedTableCheckboxes.length === allTableCheckboxes.length;
+            }
+        }
+    });
+}
+
+function updateBulkActions() {
+    const checkedCheckboxes = document.querySelectorAll('.property-checkbox:checked, .property-checkbox-table:checked');
+    const bulkActions = document.getElementById('bulkActions');
+    const selectedCount = document.getElementById('selectedCount');
+    
+    if (checkedCheckboxes.length > 0) {
+        bulkActions.style.display = 'block';
+        selectedCount.textContent = checkedCheckboxes.length;
+    } else {
+        bulkActions.style.display = 'none';
+    }
+}
+
+function getSelectedProperties() {
+    const checkboxes = document.querySelectorAll('.property-checkbox:checked, .property-checkbox-table:checked');
+    return Array.from(checkboxes).map(cb => cb.value);
+}
+
+function bulkAssign() {
+    const selectedProperties = getSelectedProperties();
+    if (selectedProperties.length === 0) {
+        alert('Please select properties to assign.');
+        return;
+    }
+    
+    // TODO: Implement bulk assign functionality
+    alert(`Assign ${selectedProperties.length} properties - Feature coming soon!`);
+}
+
+function bulkChangeStatus() {
+    const selectedProperties = getSelectedProperties();
+    if (selectedProperties.length === 0) {
+        alert('Please select properties to change status.');
+        return;
+    }
+    
+    // TODO: Implement bulk status change functionality
+    alert(`Change status for ${selectedProperties.length} properties - Feature coming soon!`);
+}
+
+function bulkExport() {
+    const selectedProperties = getSelectedProperties();
+    if (selectedProperties.length === 0) {
+        alert('Please select properties to export.');
+        return;
+    }
+    
+    // TODO: Implement bulk export functionality
+    const propertyIds = selectedProperties.join(',');
+    window.location.href = `/properties/bulk/export/?properties=${propertyIds}`;
+}
+
+function bulkDelete() {
+    const selectedProperties = getSelectedProperties();
+    if (selectedProperties.length === 0) {
+        alert('Please select properties to delete.');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${selectedProperties.length} properties? This action cannot be undone.`)) {
+        // TODO: Implement bulk delete functionality
+        alert(`Delete ${selectedProperties.length} properties - Feature coming soon!`);
+    }
+}
+</script>
+
+<!-- Add select all checkbox to grid view (if needed) -->
+<script>
+// Add select all functionality to grid view if needed
+document.addEventListener('DOMContentLoaded', function() {
+    // Add a select all checkbox for grid view if it doesn't exist
+    const viewToggle = document.querySelector('.view-toggle');
+    if (viewToggle && !document.getElementById('selectAll')) {
+        // We can add it dynamically if needed or it can be added to the template
+    }
 });
 </script>
 

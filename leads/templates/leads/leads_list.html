@@ -12,6 +12,9 @@
                 <h2 class="fw-bold mb-2">
                     <i class="bi bi-person-lines-fill text-primary me-3"></i>
                     Lead Management
+                    <button type="button" class="btn btn-link p-0 ms-2" data-bs-toggle="modal" data-bs-target="#columnCustomizationModal" style="border: none; background: none; color: #6c757d;" title="Customize Columns">
+                        <i class="bi bi-gear-fill" style="font-size: 1.2rem;"></i>
+                    </button>
                 </h2>
                 <p class="text-muted mb-0">Manage your leads and track their progress through the sales pipeline</p>
             </div>
@@ -129,13 +132,13 @@
                     </button>
                 </div>
             </form>
-            {% if filters.search or filters.status or filters.assigned or filters.priority or filters.source %}
-            <div class="mt-3">
+            <div class="mt-3 d-flex gap-2">
+                {% if filters.search or filters.status or filters.assigned or filters.priority or filters.source %}
                 <button type="button" class="btn btn-outline-secondary btn-sm" onclick="clearFilters()">
                     <i class="bi bi-x-circle me-1"></i>Clear Filters
                 </button>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
 </div>
@@ -169,27 +172,27 @@
                 <table class="table table-hover mb-0">
                     <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
                         <tr>
-                            <th width="50">
+                            <th width="50" class="column-checkbox">
                                 <input type="checkbox" class="form-check-input" id="selectAll">
                             </th>
-                            <th>Lead</th>
-                            <th>Contact</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Assigned To</th>
-                            <th>Score</th>
-                            <th>Source</th>
-                            <th>Created</th>
-                            <th class="text-center">Actions</th>
+                            <th class="column-name">Lead</th>
+                            <th class="column-contact">Contact</th>
+                            <th class="column-status">Status</th>
+                            <th class="column-priority">Priority</th>
+                            <th class="column-assigned">Assigned To</th>
+                            <th class="column-score">Score</th>
+                            <th class="column-source">Source</th>
+                            <th class="column-created">Created</th>
+                            <th class="text-center column-actions">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for lead in leads %}
                         <tr class="lead-row" style="cursor: pointer;" onclick="window.location.href='{% url 'leads:lead_detail' lead.id %}'">
-                            <td onclick="event.stopPropagation();">
+                            <td onclick="event.stopPropagation();" class="column-checkbox">
                                 <input type="checkbox" class="form-check-input lead-checkbox" value="{{ lead.id }}">
                             </td>
-                            <td>
+                            <td class="column-name">
                                 <div class="d-flex align-items-center">
                                     <div class="bg-primary rounded-circle p-2 me-3">
                                         {% if lead.first_name %}
@@ -209,7 +212,7 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td class="column-contact">
                                 <div>
                                     {% if lead.email %}
                                     <div class="mb-1">
@@ -231,7 +234,7 @@
                                     {% endif %}
                                 </div>
                             </td>
-                            <td>
+                            <td class="column-status">
                                 {% if lead.status %}
                                 <span class="badge" style="background-color: {{ lead.status.color }}; color: white;">
                                     {{ lead.status.name }}
@@ -240,7 +243,7 @@
                                 <span class="badge bg-secondary">No Status</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-priority">
                                 {% if lead.priority %}
                                 <div class="d-flex align-items-center">
                                     {% if lead.priority.name == 'High' %}
@@ -257,7 +260,7 @@
                                 <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-assigned">
                                 {% if lead.assigned_to %}
                                 <div class="d-flex align-items-center">
                                     <div class="bg-info rounded-circle p-1 me-2" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
@@ -274,7 +277,7 @@
                                 <span class="text-muted">Unassigned</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-score">
                                 <div class="d-flex align-items-center">
                                     <span class="badge bg-warning text-dark me-2">{{ lead.score }}%</span>
                                     <div class="progress" style="width: 60px; height: 6px;">
@@ -288,17 +291,17 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td class="column-source">
                                 {% if lead.source %}
                                 <span class="badge bg-light text-dark">{{ lead.source.name }}</span>
                                 {% else %}
                                 <span class="text-muted">-</span>
                                 {% endif %}
                             </td>
-                            <td>
+                            <td class="column-created">
                                 {{ lead.created_at|date:"M d, Y" }}
                             </td>
-                            <td class="text-center" onclick="event.stopPropagation();">
+                            <td class="text-center column-actions" onclick="event.stopPropagation();">
                                 <div class="dropdown dropstart">
                                     <button class="btn btn-sm btn-outline-secondary dropdown-toggle border-0" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bi bi-three-dots"></i>
@@ -502,7 +505,9 @@ function bulkAssign() {
         showNotification('Please select leads first', 'warning');
         return;
     }
-    showNotification(`Bulk assign feature for ${selectedLeads.length} leads`, 'info');
+    
+    // Show modal to select user
+    showAssignModal(selectedLeads);
 }
 
 function bulkStatusChange() {
@@ -511,7 +516,9 @@ function bulkStatusChange() {
         showNotification('Please select leads first', 'warning');
         return;
     }
-    showNotification(`Bulk status change for ${selectedLeads.length} leads`, 'info');
+    
+    // Show modal to select status
+    showStatusChangeModal(selectedLeads);
 }
 
 function bulkDelete() {
@@ -520,18 +527,67 @@ function bulkDelete() {
         showNotification('Please select leads first', 'warning');
         return;
     }
-    if (confirm(`Are you sure you want to delete ${selectedLeads.length} lead(s)?`)) {
-        showNotification(`Delete ${selectedLeads.length} leads confirmed`, 'success');
+    
+    if (confirm(`Are you sure you want to delete ${selectedLeads.length} lead(s)? This action cannot be undone.`)) {
+        // Create form and submit
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{% url "leads:bulk_delete" %}';
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        form.appendChild(csrfInput);
+        
+        // Add lead IDs
+        selectedLeads.forEach(leadId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'lead_ids';
+            input.value = leadId;
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
     }
 }
 
 function bulkExport() {
     const selectedLeads = getSelectedLeads();
     if (selectedLeads.length === 0) {
-        showNotification('Please select leads first', 'warning');
+        // Export all leads if none selected
+        window.location.href = '{% url "leads:export_leads" %}';
         return;
     }
-    showNotification(`Exporting ${selectedLeads.length} leads`, 'success');
+    
+    // Create form for selected leads export
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "leads:export_leads" %}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+    
+    // Add lead IDs
+    selectedLeads.forEach(leadId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'lead_ids';
+        input.value = leadId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
 }
 
 function getSelectedLeads() {
@@ -539,12 +595,121 @@ function getSelectedLeads() {
     return Array.from(checkedBoxes).map(cb => cb.value);
 }
 
+let selectedLeadsForBulkAction = [];
+
+function showAssignModal(selectedLeads) {
+    selectedLeadsForBulkAction = selectedLeads;
+    const modal = new bootstrap.Modal(document.getElementById('bulkAssignModal'));
+    document.querySelector('#bulkAssignModal .modal-title').textContent = `Assign ${selectedLeads.length} Lead(s)`;
+    modal.show();
+}
+
+function showStatusChangeModal(selectedLeads) {
+    selectedLeadsForBulkAction = selectedLeads;
+    const modal = new bootstrap.Modal(document.getElementById('bulkStatusModal'));
+    document.querySelector('#bulkStatusModal .modal-title').textContent = `Change Status for ${selectedLeads.length} Lead(s)`;
+    modal.show();
+}
+
+function submitBulkAssign() {
+    const userSelect = document.getElementById('assignUser');
+    const userId = userSelect.value;
+    
+    if (!userId) {
+        showNotification('Please select a user', 'warning');
+        return;
+    }
+    
+    if (selectedLeadsForBulkAction.length === 0) {
+        showNotification('No leads selected', 'warning');
+        return;
+    }
+    
+    // Create form and submit
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '{% url "leads:bulk_assign" %}';
+    
+    // Add CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = csrfToken;
+    form.appendChild(csrfInput);
+    
+    // Add user ID
+    const userInput = document.createElement('input');
+    userInput.type = 'hidden';
+    userInput.name = 'assigned_to';
+    userInput.value = userId;
+    form.appendChild(userInput);
+    
+    // Add lead IDs
+    selectedLeadsForBulkAction.forEach(leadId => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'lead_ids';
+        input.value = leadId;
+        form.appendChild(input);
+    });
+    
+    document.body.appendChild(form);
+    form.submit();
+}
+
+function submitBulkStatus() {
+    const statusSelect = document.getElementById('statusSelect');
+    const statusId = statusSelect.value;
+    
+    if (!statusId) {
+        showNotification('Please select a status', 'warning');
+        return;
+    }
+    
+    if (selectedLeadsForBulkAction.length === 0) {
+        showNotification('No leads selected', 'warning');
+        return;
+    }
+    
+    // Use API endpoint for bulk status update
+    fetch('{% url "leads:update_status_api" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({
+            lead_ids: selectedLeadsForBulkAction,
+            status_id: statusId,
+            bulk: true
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Status updated successfully!', 'success');
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('bulkStatusModal'));
+            modal.hide();
+            // Reload page to see changes
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification('Error updating status: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        showNotification('Error updating status', 'error');
+        console.error('Error:', error);
+    });
+}
+
 function quickAssign(leadId) {
-    showNotification(`Quick assign for lead ${leadId}`, 'info');
+    showAssignModal([leadId]);
 }
 
 function quickStatusChange(leadId) {
-    showNotification(`Quick status change for lead ${leadId}`, 'info');
+    showStatusChangeModal([leadId]);
 }
 
 // Filter Management
@@ -610,6 +775,7 @@ window.clearFilters = clearFilters;
 // Initialize search and filters
 document.addEventListener('DOMContentLoaded', function() {
     initializeSearch();
+    initializeColumnCustomization();
     
     // Auto-submit filters when changed
     const filterSelects = document.querySelectorAll('#filterForm select');
@@ -728,6 +894,327 @@ function submitImport() {
         bootstrap.Modal.getInstance(document.getElementById('importModal')).hide();
     });
 }
+
+// Column Customization Functions
+function initializeColumnCustomization() {
+    // Add event listeners to column toggle checkboxes
+    const columnToggles = document.querySelectorAll('.column-toggle');
+    columnToggles.forEach(toggle => {
+        toggle.addEventListener('change', function() {
+            const columnName = this.dataset.column;
+            const isVisible = this.checked;
+            
+            // Update column visibility immediately
+            toggleColumnVisibility(columnName, isVisible);
+            
+            // Save preferences
+            saveColumnPreferences();
+        });
+    });
+    
+    // Apply current preferences on page load
+    applyColumnPreferences();
+}
+
+function toggleColumnVisibility(columnName, isVisible) {
+    // Map column names to CSS selectors
+    const columnSelectors = {
+        'checkbox': '.column-checkbox',
+        'name': '.column-name, .column-lead',
+        'mobile': '.column-contact',
+        'email': '.column-contact',
+        'company': '.column-company',
+        'status': '.column-status',
+        'priority': '.column-priority',
+        'temperature': '.column-temperature',
+        'assigned': '.column-assigned',
+        'score': '.column-score',
+        'source': '.column-source',
+        'budget': '.column-budget',
+        'property-type': '.column-property-type',
+        'created': '.column-created',
+        'actions': '.column-actions'
+    };
+    
+    const selector = columnSelectors[columnName];
+    if (selector) {
+        const elements = document.querySelectorAll(selector);
+        elements.forEach(element => {
+            element.style.display = isVisible ? '' : 'none';
+        });
+    }
+}
+
+function applyColumnPreferences() {
+    // Get current checkbox states and apply them
+    const columnToggles = document.querySelectorAll('.column-toggle:not([disabled])');
+    columnToggles.forEach(toggle => {
+        const columnName = toggle.dataset.column;
+        const isVisible = toggle.checked;
+        toggleColumnVisibility(columnName, isVisible);
+    });
+}
+
+function saveColumnPreferences() {
+    const preferences = {};
+    
+    // Collect all checkbox states
+    const columnToggles = document.querySelectorAll('.column-toggle');
+    columnToggles.forEach(toggle => {
+        const fieldName = 'show_' + toggle.dataset.column.replace('-', '_');
+        preferences[fieldName] = toggle.checked;
+    });
+    
+    // Always ensure essential columns are enabled
+    preferences.show_name = true;
+    preferences.show_actions = true;
+    
+    // Send to server
+    fetch('{% url "leads:save_column_preferences" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(preferences)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Optionally show a subtle success indicator
+            console.log('Column preferences saved');
+        } else {
+            console.error('Failed to save column preferences:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving column preferences:', error);
+    });
+}
+
+function resetColumnDefaults() {
+    // Reset to default preferences
+    const defaults = {
+        'show_checkbox': true,
+        'show_name': true,
+        'show_mobile': true,
+        'show_email': true,
+        'show_company': true,
+        'show_status': true,
+        'show_source': false,
+        'show_priority': false,
+        'show_temperature': false,
+        'show_score': false,
+        'show_assigned_to': true,
+        'show_created_at': false,
+        'show_budget': false,
+        'show_property_type': false,
+        'show_actions': true
+    };
+    
+    // Update checkboxes
+    Object.keys(defaults).forEach(key => {
+        const columnName = key.replace('show_', '').replace('_', '-');
+        const checkbox = document.querySelector(`[data-column="${columnName}"]`);
+        if (checkbox && !checkbox.disabled) {
+            checkbox.checked = defaults[key];
+            toggleColumnVisibility(columnName, defaults[key]);
+        }
+    });
+    
+    // Save the defaults
+    saveColumnPreferences();
+    
+    // Close modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('columnCustomizationModal'));
+    if (modal) {
+        modal.hide();
+    }
+    
+    showNotification('Column preferences reset to defaults', 'success');
+}
 </script>
+
+<!-- Static Modals for Bulk Actions -->
+<!-- Bulk Assign Modal -->
+<div class="modal fade" id="bulkAssignModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Selected Lead(s)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkAssignForm">
+                    <div class="mb-3">
+                        <label for="assignUser" class="form-label">Assign to User:</label>
+                        <select class="form-select" id="assignUser" name="assigned_to" required>
+                            <option value="">Select User...</option>
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.get_full_name|default:user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitBulkAssign()">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Status Change Modal -->
+<div class="modal fade" id="bulkStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Change Status for Selected Lead(s)</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="bulkStatusForm">
+                    <div class="mb-3">
+                        <label for="statusSelect" class="form-label">New Status:</label>
+                        <select class="form-select" id="statusSelect" name="status_id" required>
+                            <option value="">Select Status...</option>
+                            {% for status in statuses %}
+                            <option value="{{ status.id }}">{{ status.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="submitBulkStatus()">Update Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Column Customization Modal -->
+<div class="modal fade" id="columnCustomizationModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Customize Table Columns</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-4">Choose which columns to display in the leads table. Your preferences will be saved automatically.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Essential Columns</h6>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_name" data-column="name" checked disabled>
+                            <label class="form-check-label" for="show_name">
+                                Lead Name <span class="text-muted">(Always visible)</span>
+                            </label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_mobile" data-column="mobile" 
+                                   {% if user_preferences.show_mobile %}checked{% endif %}>
+                            <label class="form-check-label" for="show_mobile">Mobile</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_email" data-column="email" 
+                                   {% if user_preferences.show_email %}checked{% endif %}>
+                            <label class="form-check-label" for="show_email">Email</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_status" data-column="status" 
+                                   {% if user_preferences.show_status %}checked{% endif %}>
+                            <label class="form-check-label" for="show_status">Status</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_actions" data-column="actions" checked disabled>
+                            <label class="form-check-label" for="show_actions">
+                                Actions <span class="text-muted">(Always visible)</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3">Optional Columns</h6>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_company" data-column="company" 
+                                   {% if user_preferences.show_company %}checked{% endif %}>
+                            <label class="form-check-label" for="show_company">Company</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_source" data-column="source" 
+                                   {% if user_preferences.show_source %}checked{% endif %}>
+                            <label class="form-check-label" for="show_source">Source</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_priority" data-column="priority" 
+                                   {% if user_preferences.show_priority %}checked{% endif %}>
+                            <label class="form-check-label" for="show_priority">Priority</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_temperature" data-column="temperature" 
+                                   {% if user_preferences.show_temperature %}checked{% endif %}>
+                            <label class="form-check-label" for="show_temperature">Temperature</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_score" data-column="score" 
+                                   {% if user_preferences.show_score %}checked{% endif %}>
+                            <label class="form-check-label" for="show_score">Score</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_assigned_to" data-column="assigned" 
+                                   {% if user_preferences.show_assigned_to %}checked{% endif %}>
+                            <label class="form-check-label" for="show_assigned_to">Assigned To</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_created_at" data-column="created" 
+                                   {% if user_preferences.show_created_at %}checked{% endif %}>
+                            <label class="form-check-label" for="show_created_at">Created Date</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_budget" data-column="budget" 
+                                   {% if user_preferences.show_budget %}checked{% endif %}>
+                            <label class="form-check-label" for="show_budget">Budget</label>
+                        </div>
+                        
+                        <div class="form-check mb-2">
+                            <input class="form-check-input column-toggle" type="checkbox" id="show_property_type" data-column="property-type" 
+                                   {% if user_preferences.show_property_type %}checked{% endif %}>
+                            <label class="form-check-label" for="show_property_type">Property Type</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-light rounded">
+                    <small class="text-muted">
+                        <i class="bi bi-info-circle me-1"></i>
+                        Your column preferences are saved automatically and will persist across sessions.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="resetColumnDefaults()">Reset to Defaults</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 </div>
 {% endblock %}

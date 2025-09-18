@@ -390,3 +390,28 @@ class PropertyHistory(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+
+class UserPropertyPreferences(models.Model):
+    """Store user preferences for property list view"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='property_preferences')
+    view_mode = models.CharField(
+        max_length=10, 
+        choices=[('grid', 'Grid View'), ('list', 'List View')], 
+        default='grid'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    @classmethod
+    def get_for_user(cls, user):
+        """Get or create preferences for user"""
+        preferences, created = cls.objects.get_or_create(user=user)
+        return preferences
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.view_mode} view"
+    
+    class Meta:
+        verbose_name = 'User Property Preference'
+        verbose_name_plural = 'User Property Preferences'

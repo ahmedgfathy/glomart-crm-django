@@ -192,7 +192,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <div class="col-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{% url 'authentication:dashboard' %}">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'leads:leads_list' %}">Leads</a></li>
                     <li class="breadcrumb-item"><a href="{% url 'leads:lead_detail' lead.id %}">{{ lead.full_name }}</a></li>
                     <li class="breadcrumb-item active">Edit Lead</li>
