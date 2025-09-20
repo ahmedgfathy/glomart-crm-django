@@ -8,6 +8,7 @@ set -e
 SERVER="5.180.148.92"
 USER="root"
 DOMAIN="sys.glomartrealestates.com"
+SSH_KEY="$HOME/.ssh/glomart_deploy"
 
 # Color codes
 GREEN='\033[0;32m'
@@ -40,24 +41,32 @@ fi
 
 # Upload deployment scripts
 print_status "📤 Uploading deployment files to server..."
-ssh $USER@$SERVER "mkdir -p /root/glomart-deployment"
-scp -r deployment/* $USER@$SERVER:/root/glomart-deployment/
+ssh -i $SSH_KEY $USER@$SERVER "mkdir -p /root/glomart-deployment"
+scp -i $SSH_KEY -r deployment/* $USER@$SERVER:/root/glomart-deployment/
 
 # Upload application code
 print_status "📤 Uploading application code..."
-ssh $USER@$SERVER "mkdir -p /tmp/glomart-app"
-scp -r . $USER@$SERVER:/tmp/glomart-app/ --exclude='.git' --exclude='venv' --exclude='__pycache__' --exclude='*.pyc'
+ssh -i $SSH_KEY $USER@$SERVER "mkdir -p /tmp/glomart-app"
+rsync -avz -e "ssh -i $SSH_KEY" \
+    --exclude='.git' \
+    --exclude='venv' \
+    --exclude='__pycache__' \
+    --exclude='*.pyc' \
+    --exclude='db.sqlite3' \
+    --exclude='.DS_Store' \
+    --exclude='node_modules' \
+    . $USER@$SERVER:/tmp/glomart-app/
 
 # Make scripts executable
 print_status "🔧 Setting up permissions..."
-ssh $USER@$SERVER "chmod +x /root/glomart-deployment/*.sh"
+ssh -i $SSH_KEY $USER@$SERVER "chmod +x /root/glomart-deployment/*.sh"
 
 # Run automated deployment
 print_status "🚀 Starting automated deployment on server..."
-ssh $USER@$SERVER "cd /root/glomart-deployment && ./automated-deployment.sh"
+ssh -i $SSH_KEY $USER@$SERVER "cd /root/glomart-deployment && ./automated-deployment.sh"
 
 print_status "📱 Setting up Django application..."
-ssh $USER@$SERVER << 'EOF'
+ssh -i $SSH_KEY $USER@$SERVER << 'EOF'
 # Copy application files
 sudo -u django-user cp -r /tmp/glomart-app/* /var/www/glomart-crm/
 sudo -u django-user chown -R django-user:django-user /var/www/glomart-crm
@@ -101,7 +110,7 @@ rm -rf /tmp/glomart-app
 EOF
 
 print_status "🔒 Finalizing SSL setup..."
-ssh $USER@$SERVER "certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@glomartrealestates.com" || print_warning "SSL setup may need manual configuration"
+ssh -i $SSH_KEY $USER@$SERVER "certbot --nginx -d $DOMAIN --non-interactive --agree-tos --email admin@glomartrealestates.com" || print_warning "SSL setup may need manual configuration"
 
 print_status "✅ DEPLOYMENT COMPLETED!"
 echo "================================================="
