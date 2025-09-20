@@ -77,7 +77,7 @@ def permissions_context(request):
                             })
                         
                         # Check properties permissions
-                        properties_module = Module.objects.filter(name='property').first()
+                        properties_module = Module.objects.filter(name='properties').first()
                         if properties_module:
                             properties_permissions = profile.permissions.filter(
                                 module=properties_module,

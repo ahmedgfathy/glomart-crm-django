@@ -31,4 +31,19 @@ urlpatterns = [
     path('profiles/<int:profile_id>/delete/', views.delete_profile_view, name='delete_profile'),
     path('profiles/<int:profile_id>/permissions/', views.update_profile_permissions, name='update_permissions'),
     path('auth-check/', views.auth_check_view, name='auth_check'),
+    
+    # Field Permissions Management
+    path('field-permissions/', views.field_permissions_dashboard, name='field_permissions_dashboard'),
+    path('field-permissions/matrix/', views.field_permissions_matrix, name='field_permissions_matrix'),
+    path('field-permissions/profile/<int:profile_id>/', views.profile_field_editor, name='profile_field_editor'),
+    path('field-permissions/bulk-update/', views.bulk_update_permissions, name='bulk_update_field_permissions'),
+    path('field-permissions/test-user/', views.test_user_permissions, name='test_user_permissions'),
+    path('field-permissions/data-filters/', views.data_filters_manager, name='data_filters_manager'),
+    path('field-permissions/data-filters/create/', views.create_data_filter, name='create_data_filter'),
+    path('field-permissions/data-filters/<int:filter_id>/edit/', views.edit_data_filter, name='edit_data_filter'),
+    path('field-permissions/data-filters/<int:filter_id>/delete/', views.delete_data_filter, name='delete_data_filter'),
+    path('field-permissions/dropdown-restrictions/', views.dropdown_restrictions_manager, name='dropdown_restrictions_manager'),
+    path('field-permissions/dropdown-restrictions/create/', views.create_dropdown_restriction, name='create_dropdown_restriction'),
+    path('field-permissions/dropdown-restrictions/<int:restriction_id>/edit/', views.edit_dropdown_restriction, name='edit_dropdown_restriction'),
+    path('field-permissions/dropdown-restrictions/<int:restriction_id>/delete/', views.delete_dropdown_restriction, name='delete_dropdown_restriction'),
 ]

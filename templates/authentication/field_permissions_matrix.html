@@ -1,0 +1,619 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+{% load permission_tags %}
+
+{% block title %}Field Permissions Matrix{% endblock %}
+
+{% block extra_css %}
+<style>
+    .permission-matrix {
+        overflow-x: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+    }
+    .matrix-table {
+        min-width: 1200px;
+        white-space: nowrap;
+    }
+    .matrix-table th,
+    .matrix-table td {
+        padding: 0.5rem;
+        vertical-align: middle;
+        border: 1px solid #e0e0e0;
+        font-size: 0.85rem;
+    }
+    .matrix-table th {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    .matrix-table th.field-header {
+        position: sticky;
+        left: 0;
+        background-color: #f8f9fa;
+        min-width: 150px;
+        max-width: 200px;
+    }
+    .matrix-table td.field-name {
+        position: sticky;
+        left: 0;
+        background-color: white;
+        font-weight: 500;
+        min-width: 150px;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .permission-cell {
+        text-align: center;
+        width: 40px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .permission-cell:hover {
+        background-color: #f8f9fa;
+    }
+    .permission-checkbox {
+        margin: 0;
+        cursor: pointer;
+    }
+    .profile-header {
+        writing-mode: vertical-lr;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        min-height: 100px;
+        text-align: center;
+        font-weight: 500;
+        color: #495057;
+    }
+    .module-separator {
+        background-color: #6c757d !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+    }
+    .field-type-badge {
+        display: inline-block;
+        padding: 0.15rem 0.4rem;
+        margin-left: 0.5rem;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    .type-text { background-color: #e3f2fd; color: #1976d2; }
+    .type-choice { background-color: #fff3e0; color: #f57c00; }
+    .type-number { background-color: #e8f5e8; color: #388e3c; }
+    .type-date { background-color: #fce4ec; color: #c2185b; }
+    .type-boolean { background-color: #f3e5f5; color: #7b1fa2; }
+    .type-foreign { background-color: #fff8e1; color: #f9a825; }
+    
+    .bulk-actions {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .filter-controls {
+        background-color: white;
+        padding: 1rem;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .legend {
+        background-color: #f8f9fa;
+        padding: 0.75rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+    
+    .permission-summary {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        z-index: 1000;
+        display: none;
+    }
+    
+    .changes-pending {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 0.75rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Field Permissions Matrix</h1>
+                    <p class="text-muted">Complete overview of field-level permissions across all profiles</p>
+                </div>
+                <div>
+                    <button id="saveChanges" class="btn btn-success" style="display: none;">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
+                    <a href="{% url 'authentication:field_permissions_dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Changes Pending Alert -->
+    <div id="changesPending" class="changes-pending" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-exclamation-triangle"></i>
+                <strong>Unsaved Changes</strong> - You have <span id="changesCount">0</span> pending permission changes.
+            </div>
+            <div>
+                <button id="discardChanges" class="btn btn-sm btn-outline-secondary me-2">Discard</button>
+                <button id="saveChangesTop" class="btn btn-sm btn-primary">Save All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Controls -->
+    <div class="filter-controls">
+        <div class="row">
+            <div class="col-md-3">
+                <label class="form-label">Filter by Module</label>
+                <select id="moduleFilter" class="form-select form-select-sm">
+                    <option value="">All Modules</option>
+                    <option value="leads">Leads</option>
+                    <option value="property">Properties</option>
+                    <option value="projects">Projects</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Field Type</label>
+                <select id="fieldTypeFilter" class="form-select form-select-sm">
+                    <option value="">All Types</option>
+                    <option value="text">Text Fields</option>
+                    <option value="choice">Choice Fields</option>
+                    <option value="number">Number Fields</option>
+                    <option value="date">Date Fields</option>
+                    <option value="boolean">Boolean Fields</option>
+                    <option value="foreign">Foreign Keys</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Filter by Profile</label>
+                <select id="profileFilter" class="form-select form-select-sm">
+                    <option value="">All Profiles</option>
+                    {% for profile in profiles %}
+                    <option value="{{ profile.id }}">{{ profile.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Permission Type</label>
+                <select id="permissionTypeFilter" class="form-select form-select-sm">
+                    <option value="">All Permissions</option>
+                    <option value="view">View Only</option>
+                    <option value="edit">Edit Only</option>
+                    <option value="both">View & Edit</option>
+                    <option value="none">No Access</option>
+                </select>
+            </div>
+        </div>
+        <div class="row mt-2">
+            <div class="col-12">
+                <button id="applyFilters" class="btn btn-primary btn-sm">Apply Filters</button>
+                <button id="clearFilters" class="btn btn-outline-secondary btn-sm">Clear</button>
+                <button id="expandAll" class="btn btn-outline-info btn-sm">Expand All</button>
+                <button id="collapseAll" class="btn btn-outline-info btn-sm">Collapse All</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Bulk Actions</h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="bulkSetPermission('view', true)">
+                        Enable View All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="bulkSetPermission('edit', true)">
+                        Enable Edit All
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="bulkSetPermission('both', false)">
+                        Disable All
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6>Legend</h6>
+                <div class="legend">
+                    <span class="me-3">✅ = Permission Granted</span>
+                    <span class="me-3">❌ = Permission Denied</span>
+                    <span class="me-3">🔒 = Inherited</span>
+                    <span>⚠️ = Restricted</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Permission Matrix -->
+    <div class="permission-matrix">
+        <table class="table table-sm matrix-table" id="permissionMatrix">
+            <thead>
+                <tr>
+                    <th class="field-header">Field Name</th>
+                    {% for profile in profiles %}
+                    <th class="profile-header" colspan="2" title="{{ profile.name }}">
+                        {{ profile.name }}
+                    </th>
+                    {% endfor %}
+                </tr>
+                <tr>
+                    <th class="field-header">Type</th>
+                    {% for profile in profiles %}
+                    <th class="permission-cell">View</th>
+                    <th class="permission-cell">Edit</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for module, fields in field_data.items %}
+                <tr class="module-separator">
+                    <td colspan="{{ columns_count }}" class="module-separator">
+                        📁 {{ module|title }} Module ({{ fields|length }} fields)
+                    </td>
+                </tr>
+                {% for field in fields %}
+                <tr class="field-row" data-module="{{ module }}" data-field="{{ field.name }}" data-type="{{ field.type }}">
+                    <td class="field-name" title="{{ field.help_text|default:field.name }}">
+                        {{ field.verbose_name|default:field.name }}
+                        <span class="field-type-badge type-{{ field.type }}">{{ field.type }}</span>
+                        {% if field.required %}
+                        <i class="fas fa-asterisk text-danger" style="font-size: 0.6rem;" title="Required field"></i>
+                        {% endif %}
+                    </td>
+                    {% for profile in profiles %}
+                    <td class="permission-cell view-cell" data-profile="{{ profile.id }}" data-field="{{ field.name }}" data-permission="view">
+                        <input type="checkbox" class="permission-checkbox view-permission" 
+                               data-profile="{{ profile.id }}" 
+                               data-field="{{ field.name }}" 
+                               data-module="{{ module }}"
+                               data-permission="view"
+                               {% with profile_permissions=field.permissions|lookup:profile.id %}{% if profile_permissions.can_view %}checked{% endif %}{% endwith %}>
+                    </td>
+                    <td class="permission-cell edit-cell" data-profile="{{ profile.id }}" data-field="{{ field.name }}" data-permission="edit">
+                        <input type="checkbox" class="permission-checkbox edit-permission" 
+                               data-profile="{{ profile.id }}" 
+                               data-field="{{ field.name }}" 
+                               data-module="{{ module }}"
+                               data-permission="edit"
+                               {% with profile_permissions=field.permissions|lookup:profile.id %}{% if profile_permissions.can_edit %}checked{% endif %}{% endwith %}>
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Summary Panel -->
+    <div class="permission-summary" id="summaryPanel">
+        <h6>Permission Summary</h6>
+        <div id="summaryContent">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Save Modal -->
+<div class="modal fade" id="confirmSaveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Changes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to save <strong id="confirmChangesCount">0</strong> permission changes?</p>
+                <div id="changesList" class="mt-3">
+                    <!-- Changes will be listed here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSave">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let pendingChanges = {};
+let originalState = {};
+
+// Initialize matrix functionality
+document.addEventListener('DOMContentLoaded', function() {
+    initializeMatrix();
+    setupEventListeners();
+    captureOriginalState();
+});
+
+function initializeMatrix() {
+    // Store original checkbox states
+    document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+        const key = `${checkbox.dataset.profile}-${checkbox.dataset.field}-${checkbox.dataset.permission}`;
+        originalState[key] = checkbox.checked;
+    });
+}
+
+function setupEventListeners() {
+    // Permission checkbox changes
+    document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            handlePermissionChange(this);
+        });
+    });
+
+    // Filter controls
+    document.getElementById('applyFilters').addEventListener('click', applyFilters);
+    document.getElementById('clearFilters').addEventListener('click', clearFilters);
+    
+    // Bulk actions
+    document.getElementById('saveChanges').addEventListener('click', showSaveConfirmation);
+    document.getElementById('saveChangesTop').addEventListener('click', showSaveConfirmation);
+    document.getElementById('discardChanges').addEventListener('click', discardChanges);
+    
+    // Confirm save
+    document.getElementById('confirmSave').addEventListener('click', saveAllChanges);
+}
+
+function captureOriginalState() {
+    document.querySelectorAll('.permission-checkbox').forEach(checkbox => {
+        const key = getChangeKey(checkbox);
+        originalState[key] = checkbox.checked;
+    });
+}
+
+function getChangeKey(checkbox) {
+    return `${checkbox.dataset.profile}-${checkbox.dataset.field}-${checkbox.dataset.permission}`;
+}
+
+function handlePermissionChange(checkbox) {
+    const key = getChangeKey(checkbox);
+    const originalValue = originalState[key];
+    const currentValue = checkbox.checked;
+    
+    if (originalValue !== currentValue) {
+        // Add to pending changes
+        pendingChanges[key] = {
+            profile_id: checkbox.dataset.profile,
+            field_name: checkbox.dataset.field,
+            module: checkbox.dataset.module,
+            permission_type: checkbox.dataset.permission,
+            value: currentValue,
+            original: originalValue
+        };
+    } else {
+        // Remove from pending changes if back to original
+        delete pendingChanges[key];
+    }
+    
+    updateChangesIndicator();
+    
+    // Auto-check view when edit is checked
+    if (checkbox.dataset.permission === 'edit' && currentValue) {
+        const viewCheckbox = document.querySelector(
+            `.permission-checkbox[data-profile="${checkbox.dataset.profile}"][data-field="${checkbox.dataset.field}"][data-permission="view"]`
+        );
+        if (viewCheckbox && !viewCheckbox.checked) {
+            viewCheckbox.checked = true;
+            handlePermissionChange(viewCheckbox);
+        }
+    }
+    
+    // Auto-uncheck edit when view is unchecked
+    if (checkbox.dataset.permission === 'view' && !currentValue) {
+        const editCheckbox = document.querySelector(
+            `.permission-checkbox[data-profile="${checkbox.dataset.profile}"][data-field="${checkbox.dataset.field}"][data-permission="edit"]`
+        );
+        if (editCheckbox && editCheckbox.checked) {
+            editCheckbox.checked = false;
+            handlePermissionChange(editCheckbox);
+        }
+    }
+}
+
+function updateChangesIndicator() {
+    const changesCount = Object.keys(pendingChanges).length;
+    const pendingAlert = document.getElementById('changesPending');
+    const saveButton = document.getElementById('saveChanges');
+    const changesCountSpan = document.getElementById('changesCount');
+    
+    if (changesCount > 0) {
+        pendingAlert.style.display = 'block';
+        saveButton.style.display = 'inline-block';
+        changesCountSpan.textContent = changesCount;
+    } else {
+        pendingAlert.style.display = 'none';
+        saveButton.style.display = 'none';
+    }
+}
+
+function applyFilters() {
+    const moduleFilter = document.getElementById('moduleFilter').value;
+    const fieldTypeFilter = document.getElementById('fieldTypeFilter').value;
+    const profileFilter = document.getElementById('profileFilter').value;
+    const permissionTypeFilter = document.getElementById('permissionTypeFilter').value;
+    
+    document.querySelectorAll('.field-row').forEach(row => {
+        let visible = true;
+        
+        // Module filter
+        if (moduleFilter && row.dataset.module !== moduleFilter) {
+            visible = false;
+        }
+        
+        // Field type filter
+        if (fieldTypeFilter && row.dataset.type !== fieldTypeFilter) {
+            visible = false;
+        }
+        
+        // Permission type filter
+        if (permissionTypeFilter) {
+            const viewChecked = row.querySelector('.view-permission').checked;
+            const editChecked = row.querySelector('.edit-permission').checked;
+            
+            switch (permissionTypeFilter) {
+                case 'view':
+                    visible = visible && viewChecked && !editChecked;
+                    break;
+                case 'edit':
+                    visible = visible && editChecked;
+                    break;
+                case 'both':
+                    visible = visible && viewChecked && editChecked;
+                    break;
+                case 'none':
+                    visible = visible && !viewChecked && !editChecked;
+                    break;
+            }
+        }
+        
+        row.style.display = visible ? '' : 'none';
+    });
+}
+
+function clearFilters() {
+    document.getElementById('moduleFilter').value = '';
+    document.getElementById('fieldTypeFilter').value = '';
+    document.getElementById('profileFilter').value = '';
+    document.getElementById('permissionTypeFilter').value = '';
+    
+    document.querySelectorAll('.field-row').forEach(row => {
+        row.style.display = '';
+    });
+}
+
+function bulkSetPermission(permissionType, enabled) {
+    const visibleRows = document.querySelectorAll('.field-row:not([style*="display: none"])');
+    
+    visibleRows.forEach(row => {
+        if (permissionType === 'view' || permissionType === 'both') {
+            const viewCheckboxes = row.querySelectorAll('.view-permission');
+            viewCheckboxes.forEach(cb => {
+                if (cb.checked !== enabled) {
+                    cb.checked = enabled;
+                    handlePermissionChange(cb);
+                }
+            });
+        }
+        
+        if (permissionType === 'edit' || permissionType === 'both') {
+            const editCheckboxes = row.querySelectorAll('.edit-permission');
+            editCheckboxes.forEach(cb => {
+                if (cb.checked !== enabled) {
+                    cb.checked = enabled;
+                    handlePermissionChange(cb);
+                }
+            });
+        }
+    });
+}
+
+function showSaveConfirmation() {
+    const changesCount = Object.keys(pendingChanges).length;
+    document.getElementById('confirmChangesCount').textContent = changesCount;
+    
+    // Build changes list
+    const changesList = document.getElementById('changesList');
+    changesList.innerHTML = '';
+    
+    Object.values(pendingChanges).forEach(change => {
+        const changeItem = document.createElement('div');
+        changeItem.className = 'small text-muted mb-1';
+        changeItem.innerHTML = `
+            <strong>${change.field_name}</strong> (${change.module}) - ${change.permission_type}: 
+            ${change.original ? '✅' : '❌'} → ${change.value ? '✅' : '❌'}
+        `;
+        changesList.appendChild(changeItem);
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('confirmSaveModal'));
+    modal.show();
+}
+
+function saveAllChanges() {
+    const changes = Object.values(pendingChanges);
+    
+    fetch('{% url "authentication:bulk_update_field_permissions" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({ changes: changes })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update original state
+            changes.forEach(change => {
+                const key = `${change.profile_id}-${change.field_name}-${change.permission_type}`;
+                originalState[key] = change.value;
+            });
+            
+            // Clear pending changes
+            pendingChanges = {};
+            updateChangesIndicator();
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('confirmSaveModal'));
+            modal.hide();
+            
+            // Show success message
+            alert(`Successfully updated ${data.updated_count} field permissions!`);
+        } else {
+            alert('Error saving changes: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving changes');
+    });
+}
+
+function discardChanges() {
+    // Revert all checkboxes to original state
+    Object.keys(pendingChanges).forEach(key => {
+        const change = pendingChanges[key];
+        const checkbox = document.querySelector(
+            `.permission-checkbox[data-profile="${change.profile_id}"][data-field="${change.field_name}"][data-permission="${change.permission_type}"]`
+        );
+        if (checkbox) {
+            checkbox.checked = change.original;
+        }
+    });
+    
+    // Clear pending changes
+    pendingChanges = {};
+    updateChangesIndicator();
+}
+</script>
+{% endblock %}

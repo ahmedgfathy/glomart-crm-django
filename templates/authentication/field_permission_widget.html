@@ -1,0 +1,13 @@
+{% load rbac_tags %}
+
+<div class="field-permission-wrapper" data-field="{{ field_name }}">
+    {% if is_visible %}
+        <div class="field-content {% if is_form_field %}form-field{% else %}display-field{% endif %}">
+            <!-- Field content will be rendered here by parent template -->
+        </div>
+    {% else %}
+        <div class="field-restricted text-muted">
+            <small><i class="fas fa-lock"></i> Access restricted</small>
+        </div>
+    {% endif %}
+</div>

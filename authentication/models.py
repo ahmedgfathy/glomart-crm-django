@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericForeignKey
 
 
 class Module(models.Model):
@@ -98,6 +100,81 @@ class Profile(models.Model):
             is_active=True
         ).distinct().order_by('order', 'name')
 
+    def get_field_permissions(self, module_name, model_name):
+        """Get field permissions for a specific module and model"""
+        return self.field_permissions.filter(
+            module__name=module_name,
+            model_name=model_name,
+            is_active=True
+        )
+    
+    def can_view_field(self, module_name, model_name, field_name):
+        """Check if profile can view a specific field"""
+        try:
+            field_perm = self.field_permissions.get(
+                module__name=module_name,
+                model_name=model_name,
+                field_name=field_name,
+                is_active=True
+            )
+            return field_perm.can_view
+        except FieldPermission.DoesNotExist:
+            return True  # Default to visible if no specific permission
+    
+    def can_edit_field(self, module_name, model_name, field_name):
+        """Check if profile can edit a specific field"""
+        try:
+            field_perm = self.field_permissions.get(
+                module__name=module_name,
+                model_name=model_name,
+                field_name=field_name,
+                is_active=True
+            )
+            return field_perm.can_edit
+        except FieldPermission.DoesNotExist:
+            return True  # Default to editable if no specific permission
+    
+    def get_visible_fields(self, module_name, model_name, view_type='list'):
+        """Get list of visible fields for a view type"""
+        field_attr = f'is_visible_in_{view_type}'
+        
+        field_permissions = self.field_permissions.filter(
+            module__name=module_name,
+            model_name=model_name,
+            is_active=True
+        )
+        
+        visible_fields = []
+        for field_perm in field_permissions:
+            if getattr(field_perm, field_attr, True):
+                visible_fields.append(field_perm.field_name)
+        
+        return visible_fields
+    
+    def apply_data_filters(self, queryset, module_name, model_name):
+        """Apply all active data filters for this profile"""
+        filters = self.data_filters.filter(
+            module__name=module_name,
+            model_name=model_name,
+            is_active=True
+        ).order_by('order')
+        
+        for data_filter in filters:
+            queryset = data_filter.apply_filter(queryset)
+        
+        return queryset
+    
+    def apply_data_scope(self, queryset, module_name, user):
+        """Apply data scope restrictions for this profile"""
+        try:
+            scope = self.data_scopes.get(
+                module__name=module_name,
+                is_active=True
+            )
+            return scope.apply_scope(queryset, user)
+        except ProfileDataScope.DoesNotExist:
+            return queryset  # No scope restrictions
+
 
 class UserProfile(models.Model):
     """Extended user model with profile assignment"""
@@ -146,6 +223,190 @@ class UserProfile(models.Model):
             return Module.objects.none()
         
         return self.profile.get_accessible_modules()
+
+
+class FieldPermission(models.Model):
+    """Field-level permissions for granular access control"""
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='field_permissions')
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    
+    # Field identification
+    model_name = models.CharField(max_length=100, help_text="Model name (e.g., 'Lead', 'Property')")
+    field_name = models.CharField(max_length=100, help_text="Field name (e.g., 'budget_max', 'property_type')")
+    
+    # Permission levels for this specific field
+    can_view = models.BooleanField(default=True)
+    can_edit = models.BooleanField(default=False)
+    can_filter = models.BooleanField(default=True, help_text="Can use this field for filtering data")
+    
+    # Field display settings
+    is_visible_in_list = models.BooleanField(default=True, help_text="Show in list views")
+    is_visible_in_detail = models.BooleanField(default=True, help_text="Show in detail views")
+    is_visible_in_forms = models.BooleanField(default=True, help_text="Show in create/edit forms")
+    
+    # Conditional visibility
+    show_condition = models.JSONField(default=dict, blank=True, help_text="JSON conditions for when to show field")
+    
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['profile', 'module', 'model_name', 'field_name']
+        ordering = ['module', 'model_name', 'field_name']
+    
+    def __str__(self):
+        return f"{self.profile.name} - {self.module.display_name}.{self.model_name}.{self.field_name}"
+
+
+class DataFilter(models.Model):
+    """Data filtering rules for profile-based data access"""
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='data_filters')
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    
+    # Filter identification
+    name = models.CharField(max_length=100, help_text="Filter name (e.g., 'Commercial Properties Only')")
+    description = models.TextField(blank=True)
+    model_name = models.CharField(max_length=100, help_text="Model to filter (e.g., 'Property', 'Lead')")
+    
+    # Filter configuration
+    filter_type = models.CharField(max_length=50, choices=[
+        ('include', 'Include Only'),
+        ('exclude', 'Exclude'),
+        ('conditional', 'Conditional'),
+    ], default='include')
+    
+    # Filter conditions (JSON format for flexibility)
+    filter_conditions = models.JSONField(default=dict, help_text="JSON filter conditions")
+    
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0, help_text="Application order (lower numbers first)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['module', 'order', 'name']
+    
+    def __str__(self):
+        return f"{self.profile.name} - {self.name}"
+    
+    def apply_filter(self, queryset):
+        """Apply this filter to a queryset"""
+        if not self.is_active or not self.filter_conditions:
+            return queryset
+        
+        try:
+            if self.filter_type == 'include':
+                return queryset.filter(**self.filter_conditions)
+            elif self.filter_type == 'exclude':
+                return queryset.exclude(**self.filter_conditions)
+            elif self.filter_type == 'conditional':
+                return queryset.filter(**self.filter_conditions)
+        except Exception as e:
+            import logging
+            logging.error(f"DataFilter {self.id} error: {e}")
+            return queryset
+        
+        return queryset
+
+
+class DynamicDropdown(models.Model):
+    """Dynamic dropdown configurations for profile-based filtering"""
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='dynamic_dropdowns')
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    
+    # Dropdown identification
+    name = models.CharField(max_length=100, help_text="Dropdown name (e.g., 'Property Types', 'Lead Sources')")
+    field_name = models.CharField(max_length=100, help_text="Field this dropdown is for")
+    
+    # Data source configuration
+    source_model = models.CharField(max_length=100, help_text="Source model for dropdown options")
+    source_field = models.CharField(max_length=100, help_text="Field to use for option values")
+    display_field = models.CharField(max_length=100, help_text="Field to use for option labels")
+    
+    # Filtering and restrictions
+    allowed_values = models.JSONField(default=list, help_text="List of allowed values")
+    restricted_values = models.JSONField(default=list, help_text="List of restricted values")
+    
+    # Additional filters
+    filter_conditions = models.JSONField(default=dict, help_text="Additional filter conditions")
+    
+    # Presentation options
+    is_multi_select = models.BooleanField(default=False)
+    default_value = models.CharField(max_length=100, blank=True)
+    placeholder_text = models.CharField(max_length=100, blank=True)
+    
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['profile', 'module', 'field_name']
+        ordering = ['module', 'order', 'name']
+    
+    def __str__(self):
+        return f"{self.profile.name} - {self.name}"
+
+
+class ProfileDataScope(models.Model):
+    """Define data scope for profiles (which data they can access)"""
+    profile = models.ForeignKey(Profile, on_delete=models.CASCADE, related_name='data_scopes')
+    module = models.ForeignKey(Module, on_delete=models.CASCADE)
+    
+    # Scope identification
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    
+    # Scope type
+    scope_type = models.CharField(max_length=50, choices=[
+        ('all', 'All Data'),
+        ('own', 'Own Data Only'),
+        ('assigned', 'Assigned Data'),
+        ('team', 'Team Data'),
+        ('filtered', 'Filtered Data'),
+        ('custom', 'Custom Query'),
+    ])
+    
+    # Scope configuration
+    scope_config = models.JSONField(default=dict, help_text="Configuration for data scope")
+    custom_query = models.TextField(blank=True, help_text="Custom Django ORM query")
+    
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ['profile', 'module', 'scope_type']
+        ordering = ['module', 'order']
+    
+    def __str__(self):
+        return f"{self.profile.name} - {self.name} ({self.get_scope_type_display()})"
+    
+    def apply_scope(self, queryset, user):
+        """Apply data scope to queryset for given user"""
+        if not self.is_active:
+            return queryset
+        
+        try:
+            if self.scope_type == 'all':
+                return queryset
+            elif self.scope_type == 'own':
+                user_field = self.scope_config.get('user_field', 'created_by')
+                return queryset.filter(**{user_field: user})
+            elif self.scope_type == 'assigned':
+                user_field = self.scope_config.get('user_field', 'assigned_to')
+                return queryset.filter(**{user_field: user})
+            elif self.scope_type == 'filtered':
+                filters = self.scope_config.get('filters', {})
+                return queryset.filter(**filters)
+        except Exception as e:
+            import logging
+            logging.error(f"ProfileDataScope {self.id} error: {e}")
+            return queryset
+        
+        return queryset
 
 
 class UserActivity(models.Model):

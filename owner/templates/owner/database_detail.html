@@ -1,0 +1,627 @@
+{% extends 'app_layout.html' %}
+{% load static %}
+{% load owner_extras %}
+
+{% block title %}{{ database.display_name }} - Owner Database{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Disable text selection and copy protection */
+    body, table, td, th, p, div, span {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Disable right-click context menu */
+    .table-container, .data-table, .database-content {
+        -webkit-context-menu: none;
+        -moz-context-menu: none;
+        context-menu: none;
+    }
+    
+    .table-container {
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        overflow: hidden;
+        background: white;
+    }
+    .table-header {
+        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        color: white;
+        padding: 1rem 1.5rem;
+        border-bottom: none;
+    }
+    .data-table {
+        margin-bottom: 0;
+    }
+    .data-table th {
+        background-color: #f8f9fa;
+        border-top: none;
+        font-weight: 600;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+    .data-table td {
+        font-size: 0.85rem;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    .data-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+    .data-table tbody tr:hover td {
+        background-color: transparent;
+    }
+    .record-row {
+        cursor: pointer;
+    }
+    .record-row:hover {
+        background-color: #e3f2fd !important;
+    }
+    .pagination-container {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+    .search-container {
+        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+    .column-type-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 10px;
+    }
+    
+    /* Modal Navigation Styles */
+    .modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    #prevRecord, #nextRecord {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    #prevRecord:disabled, #nextRecord:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+    
+    #prevRecord:not(:disabled):hover, #nextRecord:not(:disabled):hover {
+        background-color: #2c3e50;
+        border-color: #2c3e50;
+        transform: scale(1.1);
+    }
+    
+    #recordPosition {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .type-int { background-color: #e3f2fd; color: #1976d2; }
+    .type-varchar { background-color: #e8f5e8; color: #388e3c; }
+    .type-text { background-color: #fff3e0; color: #f57c00; }
+    .type-datetime { background-color: #fce4ec; color: #c2185b; }
+    .type-decimal { background-color: #f3e5f5; color: #7b1fa2; }
+    
+    .stats-row {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin-bottom: 1rem;
+    }
+    .stat-item {
+        text-align: center;
+    }
+    .stat-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'owner:dashboard' %}">Owner Databases</a></li>
+                            <li class="breadcrumb-item active">{{ database.display_name }}</li>
+                        </ol>
+                    </nav>
+                    <h1 class="h3 mb-0">{{ database.display_name }}</h1>
+                    {% if database.description %}
+                    <p class="text-muted">{{ database.description }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <a href="{% url 'owner:dashboard' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="stats-row">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ total_records|floatformat:0 }}</div>
+                    <div>Total Records</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ enhanced_columns|length }}</div>
+                    <div>Columns</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ current_page }}</div>
+                    <div>Current Page</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">{{ total_pages }}</div>
+                    <div>Total Pages</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="table-container">
+        <!-- Search and Filters -->
+        <div class="search-container">
+            <form method="GET" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" 
+                               class="form-control" 
+                               name="search" 
+                               value="{{ search_query }}" 
+                               placeholder="Search across all text fields...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <select name="per_page" class="form-select">
+                        <option value="25" {% if per_page == 25 %}selected{% endif %}>25 per page</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50 per page</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100 per page</option>
+                        <option value="200" {% if per_page == 200 %}selected{% endif %}>200 per page</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-filter"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Table Header -->
+        <div class="table-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">{{ database.display_name }}</h5>
+                <span class="badge bg-light text-dark">{{ data|length }} records shown</span>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead>
+                    <tr>
+                        <th width="50">#</th>
+                        {% for column in enhanced_columns %}
+                        <th>
+                            {{ column.display }}
+                            {% if column.display != column.original %}
+                                <small class="text-muted d-block" style="font-size: 0.7rem;">
+                                    ({{ column.original }})
+                                </small>
+                            {% endif %}
+                            <br>
+                            <span class="column-type-badge type-{{ column.type|slice:':3' }}">
+                                {{ column.type|truncatechars:10 }}
+                            </span>
+                        </th>
+                        {% endfor %}
+                        <th width="100">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr class="record-row" data-record-id="{{ row.id }}">
+                        <td><strong>{{ row.id }}</strong></td>
+                        {% for column in enhanced_columns %}
+                        <td title="{{ row|lookup:column.original }}">
+                            {% with value=row|lookup:column.original %}
+                                {% if value %}
+                                    {{ value|truncatechars:50 }}
+                                {% else %}
+                                    <span class="text-muted">-</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        {% endfor %}
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary view-record" 
+                                    data-record-id="{{ row.id }}"
+                                    title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="{{ enhanced_columns|length|add:2 }}" class="text-center py-4">
+                            <i class="fas fa-search fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No records found{% if search_query %} for "{{ search_query }}"{% endif %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination-container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    Showing {{ data|length }} of {{ total_records }} records
+                </div>
+                <nav>
+                    <ul class="pagination mb-0">
+                        {% if has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page != 50 %}&per_page={{ per_page }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ previous_page }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page != 50 %}&per_page={{ per_page }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in page_range %}
+                        <li class="page-item {% if page_num == current_page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ page_num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page != 50 %}&per_page={{ per_page }}{% endif %}">
+                                {{ page_num }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                        
+                        {% if has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ next_page }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page != 50 %}&per_page={{ per_page }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ total_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if per_page != 50 %}&per_page={{ per_page }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Record Detail Modal -->
+<div class="modal fade" id="recordModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="prevRecord" title="Previous Record">
+                    <i class="bi bi-arrow-left"></i>
+                </button>
+                <h5 class="modal-title mx-3">Record Details</h5>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="nextRecord" title="Next Record">
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="recordDetails">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading record details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="recordPosition" class="text-muted me-auto"></span>
+                <small class="text-muted me-3">
+                    <i class="bi bi-arrow-left-right"></i> Use arrow keys or buttons to navigate
+                </small>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('recordModal'));
+    let currentRecordIndex = -1;
+    let allRecords = [];
+    
+    // Initialize record list from table rows
+    function initializeRecordList() {
+        allRecords = Array.from(document.querySelectorAll('.record-row')).map(row => {
+            return row.dataset.recordId;
+        });
+    }
+    
+    // Call initialize on page load
+    initializeRecordList();
+    
+    // Navigation event listeners
+    document.getElementById('prevRecord').addEventListener('click', function() {
+        if (currentRecordIndex > 0) {
+            currentRecordIndex--;
+            showRecordDetails(allRecords[currentRecordIndex]);
+        }
+    });
+    
+    document.getElementById('nextRecord').addEventListener('click', function() {
+        if (currentRecordIndex < allRecords.length - 1) {
+            currentRecordIndex++;
+            showRecordDetails(allRecords[currentRecordIndex]);
+        }
+    });
+    
+    // Keyboard navigation
+    document.addEventListener('keydown', function(e) {
+        if (document.getElementById('recordModal').classList.contains('show')) {
+            if (e.key === 'ArrowLeft' && currentRecordIndex > 0) {
+                e.preventDefault();
+                currentRecordIndex--;
+                showRecordDetails(allRecords[currentRecordIndex]);
+            } else if (e.key === 'ArrowRight' && currentRecordIndex < allRecords.length - 1) {
+                e.preventDefault();
+                currentRecordIndex++;
+                showRecordDetails(allRecords[currentRecordIndex]);
+            }
+        }
+    });
+    
+    // Update navigation buttons state
+    function updateNavigationButtons() {
+        const prevBtn = document.getElementById('prevRecord');
+        const nextBtn = document.getElementById('nextRecord');
+        const positionSpan = document.getElementById('recordPosition');
+        
+        prevBtn.disabled = currentRecordIndex <= 0;
+        nextBtn.disabled = currentRecordIndex >= allRecords.length - 1;
+        
+        if (allRecords.length > 0) {
+            positionSpan.textContent = `Record ${currentRecordIndex + 1} of ${allRecords.length}`;
+        }
+    }
+    
+    // Add click handlers for record rows and view buttons
+    document.querySelectorAll('.record-row, .view-record').forEach(element => {
+        element.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const recordId = this.dataset.recordId || this.closest('tr').dataset.recordId;
+            showRecordDetails(recordId);
+        });
+    });
+    
+    function showRecordDetails(recordId) {
+        // Set current record index
+        currentRecordIndex = allRecords.indexOf(recordId);
+        
+        // Show modal with loading state
+        modal.show();
+        document.getElementById('recordDetails').innerHTML = `
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading record details...</p>
+            </div>
+        `;
+        
+        // Update navigation buttons
+        updateNavigationButtons();
+        
+        // Fetch record details
+        fetch(`{% url 'owner:record_detail' database.id 0 %}`.replace('0', recordId))
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Record not found');
+            }
+            return response.json();
+        })
+        .then(data => {
+            displayRecordDetails(data);
+        })
+        .catch(error => {
+            console.error('Error fetching record:', error);
+            document.getElementById('recordDetails').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Error loading record details: ${error.message}
+                </div>
+            `;
+        });
+    }
+    
+    function displayRecordDetails(data) {
+        const fieldsHtml = data.record.map(field => {
+            let valueDisplay = field.formatted_value || field.value;
+            
+            // Format different data types if not already formatted
+            if (!field.formatted_value) {
+                if (field.type.includes('datetime') && field.value) {
+                    valueDisplay = new Date(field.value).toLocaleString();
+                } else if (field.type.includes('decimal') && field.value) {
+                    valueDisplay = parseFloat(field.value).toLocaleString();
+                } else if (!field.value) {
+                    valueDisplay = '<span class="text-muted">Not set</span>';
+                }
+            }
+            
+            return `
+                <tr>
+                    <td class="fw-bold">
+                        ${field.display_name}
+                        ${field.display_name !== field.original_name ? 
+                            `<br><small class="text-muted fw-normal">(${field.original_name})</small>` : ''}
+                    </td>
+                    <td>${valueDisplay}</td>
+                </tr>
+            `;
+        }).join('');
+        
+        document.getElementById('recordDetails').innerHTML = `
+            <div class="mb-3">
+                <h6><i class="fas fa-database"></i> ${data.database.display_name}</h6>
+                <small class="text-muted">${data.database.description || 'Property Database Records'}</small>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Field</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${fieldsHtml}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+    
+    // Auto-refresh functionality for long-running queries
+    let autoRefreshTimer;
+    
+    function startAutoRefresh() {
+        clearTimeout(autoRefreshTimer);
+        autoRefreshTimer = setTimeout(() => {
+            if (document.hidden) {
+                startAutoRefresh(); // Restart timer if page is hidden
+                return;
+            }
+            
+            // Optionally refresh data if needed
+            // window.location.reload();
+        }, 30000); // 30 seconds
+    }
+    
+    // Start auto-refresh
+    startAutoRefresh();
+    
+    // Handle page visibility changes
+    document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+            startAutoRefresh();
+        }
+    });
+    
+    // Disable copy protection
+    document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    document.addEventListener('selectstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    document.addEventListener('dragstart', function(e) {
+        e.preventDefault();
+        return false;
+    });
+    
+    // Disable keyboard shortcuts for copying
+    document.addEventListener('keydown', function(e) {
+        // Disable Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+S, F12
+        if (e.ctrlKey && (e.keyCode === 65 || e.keyCode === 67 || e.keyCode === 86 || e.keyCode === 88 || e.keyCode === 83)) {
+            e.preventDefault();
+            return false;
+        }
+        // Disable F12 (Developer Tools)
+        if (e.keyCode === 123) {
+            e.preventDefault();
+            return false;
+        }
+        // Disable Ctrl+Shift+I (Developer Tools)
+        if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+            e.preventDefault();
+            return false;
+        }
+        // Disable Ctrl+U (View Source)
+        if (e.ctrlKey && e.keyCode === 85) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // Modal event listeners
+    document.getElementById('recordModal').addEventListener('hidden.bs.modal', function() {
+        currentRecordIndex = -1;
+        document.getElementById('recordPosition').textContent = '';
+    });
+    
+    // Re-initialize record list when page content changes (for pagination)
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                initializeRecordList();
+            }
+        });
+    });
+    
+    const tableContainer = document.querySelector('.table-responsive');
+    if (tableContainer) {
+        observer.observe(tableContainer, { childList: true, subtree: true });
+    }
+});
+</script>
+{% endblock %}

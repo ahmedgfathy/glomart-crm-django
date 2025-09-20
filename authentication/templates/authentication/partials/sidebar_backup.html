@@ -1,0 +1,312 @@
+{% load static %}
+
+<!-- Fixed Left Sidebar -->
+<div class="sidebar-fixed">
+    {% load static %}
+
+<!-- Fixed Left Sidebar -->
+<div class="sidebar-fixed">
+    <div class="sidebar-header">
+        <div class="d-flex align-items-center px-3 py-3">
+            <div class="bg-primary rounded-circle p-2 me-3">
+                <i class="bi bi-person text-white"></i>
+            </div>
+            <div class="flex-grow-1">
+                <div class="fw-semibold text-white">{{ user.get_full_name|default:user.username }}</div>
+                <small class="text-light opacity-75">
+                    {% if user.is_superuser %}
+                        System Administrator
+                    {% else %}
+                        {% if user.user_profile.profile %}
+                            {{ user.user_profile.profile.name }}
+                        {% else %}
+                            No Profile
+                        {% endif %}
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="sidebar-content">
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'authentication:dashboard' %}">
+                        <i class="bi bi-speedometer2 me-3"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-divider">
+                    <span class="nav-divider-text">CRM MODULES</span>
+                </li>
+                
+                <!-- Leads Module -->
+                {% if has_leads_view %}
+                <li class="nav-item">
+                    <a class="nav-link {% if 'leads' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'leads:leads_list' %}">
+                        <i class="bi bi-person-lines-fill me-3"></i>
+                        <span>Leads</span>
+                        {% if user_leads_count > 0 %}
+                        <span class="badge bg-primary ms-auto">{{ user_leads_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Other Modules - Show based on user permissions -->
+                {% if user_accessible_modules %}
+                    {% for module in user_accessible_modules|dictsort:"order" %}
+                        {% if module.name == 'report' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Reports module coming soon!')">
+                                <i class="bi bi-graph-up me-3"></i>
+                                <span>Reports</span>
+                            </a>
+                        </li>
+                        {% elif module.name == 'property' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'properties' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'properties:property_list' %}">
+                                <i class="bi bi-building me-3"></i>
+                                <span>Properties</span>
+                                {% if user_properties_count > 0 %}
+                                <span class="badge bg-success ms-auto">{{ user_properties_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% elif module.name == 'projects' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'projects' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'projects:project_list' %}">
+                                <i class="bi bi-building me-3"></i>
+                                <span>Projects</span>
+                                {% if user_projects_count > 0 %}
+                                <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% elif module.name != 'leads' and module.name != 'authentication' and module.name != 'audit' and module.name != 'calendar' and module.name != 'document' and module.name != 'opportunity' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('{{ module.display_name }} module coming soon!')">
+                                <i class="{{ module.icon|default:'bi bi-puzzle' }} me-3"></i>
+                                <span>{{ module.display_name }}</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                {% if user.is_superuser %}
+                <li class="nav-divider">
+                    <span class="nav-divider-text">ADMINISTRATION</span>
+                </li>
+                
+                <!-- Profile Management -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'profiles' %}active{% endif %}" href="{% url 'authentication:profiles' %}">
+                        <i class="bi bi-shield-check me-3"></i>
+                        <span>Manage Profiles</span>
+                    </a>
+                </li>
+                
+                <!-- Audit Logs -->
+                <li class="nav-item">
+                    <a class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'audit:audit_list' %}">
+                        <i class="bi bi-shield-exclamation me-3"></i>
+                        <span>Audit Logs</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Audit access for non-superusers with permissions -->
+                {% if not user.is_superuser and user.user_profile.profile %}
+                    {% for permission in user.user_profile.profile.permissions.all %}
+                        {% if permission.module.name == 'audit' and permission.code == 'view' %}
+                        <li class="nav-divider">
+                            <span class="nav-divider-text">SYSTEM</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'audit:audit_list' %}">
+                                <i class="bi bi-shield-exclamation me-3"></i>
+                                <span>Audit Logs</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <div class="px-3 py-2">
+            <small class="text-light opacity-75 d-block mb-2">Glomart CRM v1.0</small>
+            <div class="d-flex gap-2">
+                <a href="{% url 'authentication:user_profile_settings' %}" class="btn btn-sm btn-outline-light flex-fill" title="User Settings">
+                    <i class="bi bi-gear"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-light flex-fill" type="button" title="Help">
+                    <i class="bi bi-question-circle"></i>
+                </button>
+                <a href="{% url 'authentication:logout' %}" class="btn btn-sm btn-outline-danger flex-fill" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+<!-- Mobile Toggle Button (shown only on mobile) -->
+<button class="btn btn-gradient sidebar-toggle d-lg-none" type="button" id="sidebarToggle">
+    <i class="bi bi-list"></i>
+</button>
+    
+    <div class="sidebar-content">
+        <nav class="sidebar-nav">
+            <ul class="nav flex-column">
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'authentication:dashboard' %}">
+                        <i class="bi bi-speedometer2 me-3"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                
+                <li class="nav-divider">
+                    <span class="nav-divider-text">CRM MODULES</span>
+                </li>
+                
+                <!-- Leads Module -->
+                {% if has_leads_view %}
+                <li class="nav-item">
+                    <a class="nav-link {% if 'leads' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'leads:leads_list' %}">
+                        <i class="bi bi-person-lines-fill me-3"></i>
+                        <span>Leads</span>
+                        {% if user_leads_count > 0 %}
+                        <span class="badge bg-primary ms-auto">{{ user_leads_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Other Modules - Show based on user permissions -->
+                {% if user_accessible_modules %}
+                    {% for module in user_accessible_modules|dictsort:"order" %}
+                        {% if module.name == 'report' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Reports module coming soon!')">
+                                <i class="bi bi-graph-up me-3"></i>
+                                <span>Reports</span>
+                            </a>
+                        </li>
+                        {% elif module.name == 'property' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'properties' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'properties:property_list' %}">
+                                <i class="bi bi-building me-3"></i>
+                                <span>Properties</span>
+                                {% if user_properties_count > 0 %}
+                                <span class="badge bg-success ms-auto">{{ user_properties_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% elif module.name == 'projects' %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'projects' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'projects:project_list' %}">
+                                <i class="bi bi-building me-3"></i>
+                                <span>Projects</span>
+                                {% if user_projects_count > 0 %}
+                                <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
+                                {% endif %}
+                            </a>
+                        </li>
+                        {% elif module.name == 'opportunity' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Opportunities module coming soon!')">
+                                <i class="bi bi-trophy me-3"></i>
+                                <span>Opportunities</span>
+                            </a>
+                        </li>
+                        {% elif module.name != 'leads' and module.name != 'authentication' and module.name != 'audit' and module.name != 'calendar' and module.name != 'document' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('{{ module.display_name }} module coming soon!')">
+                                <i class="{{ module.icon|default:'bi bi-puzzle' }} me-3"></i>
+                                <span>{{ module.display_name }}</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+                
+                {% if user.is_superuser %}
+                <li class="nav-divider">
+                    <span class="nav-divider-text">ADMINISTRATION</span>
+                </li>
+                
+                <!-- Profile Management -->
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'profiles' %}active{% endif %}" href="{% url 'authentication:profiles' %}">
+                        <i class="bi bi-shield-check me-3"></i>
+                        <span>Manage Profiles</span>
+                    </a>
+                </li>
+                
+                <!-- Audit Logs -->
+                <li class="nav-item">
+                    <a class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'audit:audit_list' %}">
+                        <i class="bi bi-shield-exclamation me-3"></i>
+                        <span>Audit Logs</span>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Audit access for non-superusers with permissions -->
+                {% if not user.is_superuser and user.user_profile.profile %}
+                    {% for permission in user.user_profile.profile.permissions.all %}
+                        {% if permission.module.name == 'audit' and permission.code == 'view' %}
+                        <li class="nav-divider">
+                            <span class="nav-divider-text">SYSTEM</span>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if 'audit' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'audit:audit_list' %}">
+                                <i class="bi bi-shield-exclamation me-3"></i>
+                                <span>Audit Logs</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    
+    <!-- Sidebar Footer -->
+    <div class="sidebar-footer">
+        <div class="px-3 py-2">
+            <small class="text-light opacity-75 d-block mb-2">Glomart CRM v1.0</small>
+            <div class="d-flex gap-2">
+                <a href="{% url 'authentication:user_profile_settings' %}" class="btn btn-sm btn-outline-light flex-fill" title="User Settings">
+                    <i class="bi bi-gear"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-light flex-fill" type="button" title="Help">
+                    <i class="bi bi-question-circle"></i>
+                </button>
+                <a href="{% url 'authentication:logout' %}" class="btn btn-sm btn-outline-danger flex-fill" title="Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Sidebar Overlay -->
+<div class="sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+<!-- Mobile Toggle Button (shown only on mobile) -->
+<button class="btn btn-gradient sidebar-toggle d-lg-none" type="button" id="sidebarToggle">
+    <i class="bi bi-list"></i>
+</button>

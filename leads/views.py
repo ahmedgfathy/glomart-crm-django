@@ -17,7 +17,50 @@ from .models import (
     LeadType, LeadPriority, LeadTemperature,
     UserLeadPreferences
 )
-from authentication.models import Module, Permission
+from authentication.models import Module, Permission, DataFilter
+
+
+def apply_user_data_filters(user, queryset, model_name):
+    """Apply user profile data filters to a queryset"""
+    if not hasattr(user, 'user_profile') or not user.user_profile.profile:
+        return queryset
+    
+    profile = user.user_profile.profile
+    
+    # Get data filters for this profile and model
+    try:
+        module = Module.objects.get(name='leads')
+        filters = DataFilter.objects.filter(
+            profile=profile,
+            module=module,
+            model_name=model_name,
+            is_active=True
+        )
+        
+        if filters.exists():
+            # If there are multiple filters, we need to combine them properly
+            # For data access filters, we typically want to show records that match ANY of the filters (OR logic)
+            from django.db.models import Q
+            combined_filter = Q()
+            
+            for data_filter in filters:
+                if data_filter.filter_conditions:
+                    try:
+                        # Add each filter with OR logic
+                        combined_filter |= Q(**data_filter.filter_conditions)
+                    except Exception as e:
+                        # Log the error but don't break the view
+                        print(f"Error processing filter {data_filter.name}: {e}")
+                        continue
+            
+            # Apply the combined filter
+            if combined_filter:
+                queryset = queryset.filter(combined_filter)
+                    
+    except Module.DoesNotExist:
+        pass
+    
+    return queryset
 
 
 def has_lead_permission(user, permission_level):
@@ -60,13 +103,24 @@ def permission_required(level):
 @permission_required(1)  # View permission
 def leads_list_view(request):
     """Display paginated list of leads with filtering and search"""
-    # Restrict leads based on user permissions
-    if request.user.is_superuser:
-        # Superuser can see all leads
-        leads = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').all()
-    else:
-        # Regular users can only see leads assigned to them
-        leads = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').filter(assigned_to=request.user)
+    # Get base leads queryset
+    leads = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').all()
+    
+    # Apply user profile data filters first
+    leads = apply_user_data_filters(request.user, leads, 'Lead')
+    
+    # Restrict leads based on user permissions (if not superuser)
+    if not request.user.is_superuser:
+        # Check if user has manager-level access through profile
+        if hasattr(request.user, 'user_profile') and request.user.user_profile.profile:
+            profile = request.user.user_profile.profile
+            # If profile name contains 'manager' or 'supervisor', allow seeing all filtered leads
+            if 'manager' not in profile.name.lower() and 'supervisor' not in profile.name.lower():
+                # Regular users can only see leads assigned to them
+                leads = leads.filter(assigned_to=request.user)
+        else:
+            # No profile - restrict to assigned leads only
+            leads = leads.filter(assigned_to=request.user)
     
     # Apply filters
     status_filter = request.GET.get('status')

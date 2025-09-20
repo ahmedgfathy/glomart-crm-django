@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Field Permissions Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .stats-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+    }
+    .profile-card {
+        border-left: 4px solid #007bff;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+    .permission-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        margin: 0.1rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+    .badge-view { background-color: #d4edda; color: #155724; }
+    .badge-edit { background-color: #cce7ff; color: #004085; }
+    .badge-filter { background-color: #fff3cd; color: #856404; }
+    .badge-dropdown { background-color: #f8d7da; color: #721c24; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Field Permissions Dashboard</h1>
+                    <p class="text-muted">Manage granular field-level access control across all modules</p>
+                </div>
+                <div>
+                    <a href="{% url 'authentication:field_permissions_matrix' %}" class="btn btn-primary">
+                        <i class="fas fa-table"></i> Permission Matrix
+                    </a>
+                    <a href="{% url 'admin:authentication_fieldpermission_changelist' %}" class="btn btn-secondary">
+                        <i class="fas fa-cog"></i> Admin Interface
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-number">{{ total_permissions }}</div>
+                <div>Total Field Permissions</div>
+                <small>{{ active_permissions }} active</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-number">{{ profiles_count }}</div>
+                <div>Active Profiles</div>
+                <small>User role templates</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-number">{{ modules_count }}</div>
+                <div>Modules</div>
+                <small>System components</small>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="stats-number">564</div>
+                <div>Fields Managed</div>
+                <small>Across all modules</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profiles Overview -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users"></i> Profile Permissions Overview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for stat in profile_stats %}
+                        <div class="col-md-6 col-lg-4">
+                            <div class="profile-card">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0">{{ stat.profile.name }}</h6>
+                                    <a href="{% url 'authentication:profile_field_editor' stat.profile.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </a>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <span class="permission-badge badge-view">
+                                        👁️ {{ stat.viewable_fields }} viewable
+                                    </span>
+                                    <span class="permission-badge badge-edit">
+                                        ✏️ {{ stat.editable_fields }} editable
+                                    </span>
+                                </div>
+                                
+                                <div class="mb-2">
+                                    <span class="permission-badge badge-filter">
+                                        🔍 {{ stat.data_filters }} data filters
+                                    </span>
+                                    <span class="permission-badge badge-dropdown">
+                                        📋 {{ stat.dropdown_restrictions }} dropdown limits
+                                    </span>
+                                </div>
+                                
+                                <small class="text-muted">
+                                    Total: {{ stat.total_fields }} fields managed
+                                </small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <a href="{% url 'authentication:data_filters_manager' %}" class="btn btn-outline-info btn-block">
+                                <i class="fas fa-filter"></i><br>
+                                Manage Data Filters
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'authentication:dropdown_restrictions_manager' %}" class="btn btn-outline-warning btn-block">
+                                <i class="fas fa-list"></i><br>
+                                Dropdown Restrictions
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-success btn-block" onclick="testUserPermissions()">
+                                <i class="fas fa-user-check"></i><br>
+                                Test User Permissions
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'admin:authentication_profile_changelist' %}" class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-users-cog"></i><br>
+                                Manage Profiles
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Changes (if available) -->
+    {% if recent_changes %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock"></i> Recent Changes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for change in recent_changes %}
+                        <div class="list-group-item">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ change.description }}</h6>
+                                <small>{{ change.timestamp|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1">{{ change.details }}</p>
+                            <small>by {{ change.user }}</small>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Test Permissions Modal -->
+<div class="modal fade" id="testPermissionsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Test User Permissions</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="testPermissionsForm">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">Select User</label>
+                            <select name="user_id" class="form-select" required>
+                                <option value="">Choose user...</option>
+                                <!-- Populate with users via AJAX -->
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Module</label>
+                            <select name="module" class="form-select" required>
+                                <option value="">Choose module...</option>
+                                <option value="leads">Leads</option>
+                                <option value="property">Properties</option>
+                                <option value="projects">Projects</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Model</label>
+                            <select name="model" class="form-select" required>
+                                <option value="">Choose model...</option>
+                                <option value="Lead">Lead</option>
+                                <option value="Property">Property</option>
+                                <option value="Project">Project</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <button type="submit" class="btn btn-primary">Test Permissions</button>
+                    </div>
+                </form>
+                
+                <div id="permissionResults" class="mt-4" style="display: none;">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function testUserPermissions() {
+    $('#testPermissionsModal').modal('show');
+    // Load users dynamically
+    loadUsers();
+}
+
+function loadUsers() {
+    // This would fetch users via AJAX
+    // For now, we'll populate with test users
+    const userSelect = document.querySelector('select[name="user_id"]');
+    userSelect.innerHTML = `
+        <option value="">Choose user...</option>
+        <option value="3">commercial_agent (Commercial Property Specialist)</option>
+        <option value="4">residential_agent (Residential Property Specialist)</option>
+        <option value="5">lead_manager (Lead Manager)</option>
+        <option value="6">sales_rep (Sales Representative)</option>
+    `;
+}
+
+document.getElementById('testPermissionsForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        user_id: formData.get('user_id'),
+        module: formData.get('module'),
+        model: formData.get('model')
+    };
+    
+    fetch('{% url "authentication:test_user_permissions" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            displayPermissionResults(data);
+        } else {
+            alert('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while testing permissions');
+    });
+});
+
+function displayPermissionResults(data) {
+    const resultsDiv = document.getElementById('permissionResults');
+    
+    let html = `
+        <h6>Permission Test Results</h6>
+        <p><strong>User:</strong> ${data.user} (${data.profile})</p>
+        
+        <h6>Visible Fields:</h6>
+        <div class="mb-3">
+            ${data.visible_fields ? data.visible_fields.map(field => 
+                `<span class="badge bg-success me-1">${field}</span>`
+            ).join('') : '<em>No fields visible</em>'}
+        </div>
+        
+        <h6>Field Permissions:</h6>
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Field</th>
+                        <th>View</th>
+                        <th>Edit</th>
+                        <th>List</th>
+                        <th>Detail</th>
+                        <th>Forms</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.field_permissions.map(perm => `
+                        <tr>
+                            <td>${perm.field_name}</td>
+                            <td>${perm.can_view ? '✅' : '❌'}</td>
+                            <td>${perm.can_edit ? '✅' : '❌'}</td>
+                            <td>${perm.is_visible_in_list ? '✅' : '❌'}</td>
+                            <td>${perm.is_visible_in_detail ? '✅' : '❌'}</td>
+                            <td>${perm.is_visible_in_forms ? '✅' : '❌'}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        </div>
+        
+        <h6>Data Filters:</h6>
+        <div>
+            ${data.data_filters.length > 0 ? 
+                data.data_filters.map(filter => 
+                    `<div class="alert alert-info"><strong>${filter.name}</strong>: ${filter.filter_type}</div>`
+                ).join('') : 
+                '<em>No data filters applied</em>'
+            }
+        </div>
+    `;
+    
+    resultsDiv.innerHTML = html;
+    resultsDiv.style.display = 'block';
+}
+</script>
+{% endblock %}

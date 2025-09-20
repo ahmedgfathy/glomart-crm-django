@@ -12,6 +12,13 @@ from django import forms
 import json
 
 from .models import Module, Permission, Rule, Profile, UserProfile, UserActivity
+from .field_permissions_views import (
+    field_permissions_dashboard, field_permissions_matrix, profile_field_editor,
+    bulk_update_permissions, test_user_permissions, data_filters_manager,
+    create_data_filter, edit_data_filter, delete_data_filter,
+    dropdown_restrictions_manager, create_dropdown_restriction, 
+    edit_dropdown_restriction, delete_dropdown_restriction
+)
 
 
 def login_view(request):
@@ -144,6 +151,28 @@ def dashboard_view(request):
     # Recent activities from UserActivity
     recent_activities = UserActivity.objects.select_related('user').order_by('-timestamp')[:5]
     
+    # Field permissions statistics
+    from .models import FieldPermission, Profile
+    total_field_permissions = FieldPermission.objects.count()
+    profiles_count = Profile.objects.count()
+    active_field_permissions = FieldPermission.objects.filter(can_view=True).count()
+    
+    # User statistics
+    total_users = User.objects.count()
+    active_users = User.objects.filter(is_active=True).count()
+    residential_users = UserProfile.objects.filter(
+        profile__name='Residential Users Profile'
+    ).count()
+    
+    # Owner database records count
+    try:
+        from owner.models import OwnerDatabase
+        # Use cached totals from OwnerDatabase models instead of live counting
+        databases = OwnerDatabase.objects.filter(is_active=True)
+        total_owner_records = sum(db.total_records for db in databases)
+    except ImportError:
+        total_owner_records = 0  # Fallback if owner app not available
+    
     context = {
         'user': request.user,
         'accessible_modules': accessible_modules,
@@ -158,6 +187,17 @@ def dashboard_view(request):
         'medical_count': medical_count,
         'office_count': office_count,
         'recent_activities': recent_activities,
+        # Field permissions stats
+        'total_field_permissions': total_field_permissions,
+        'profiles_count': profiles_count,
+        'active_field_permissions': active_field_permissions,
+        # User stats
+        'total_users': total_users,
+        'active_users': active_users,
+        'residential_users': residential_users,
+        'active_field_permissions': active_field_permissions,
+        # Owner database stats
+        'total_owner_records': total_owner_records,
     }
     
     return render(request, 'authentication/dashboard.html', context)

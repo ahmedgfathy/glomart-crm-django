@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'leads',
     'properties',  # Property management app
     'projects',    # Project management app
+    'owner',       # Owner databases management app
 ]
 
 MIDDLEWARE = [
@@ -67,7 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'authentication.context_processors.permissions_context',
+                'authentication.enhanced_context_processors.enhanced_permissions_context',
             ],
         },
     },
@@ -83,6 +84,16 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+    },
+    # MariaDB connection for owner databases
+    'mariadb_owner': {
+        'ENGINE': 'django.db.backends.mysql',
+        'HOST': 'localhost',
+        'USER': 'root',
+        'PASSWORD': 'zerocall',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+        },
     }
 }
 

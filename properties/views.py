@@ -14,20 +14,90 @@ from datetime import datetime
 from .models import (
     Property, Region, FinishingType, UnitPurpose, PropertyType, 
     PropertyCategory, Compound, PropertyStatus, PropertyActivity, 
-    Project, Currency, PropertyHistory, UserPropertyPreferences
+    PropertyHistory, UserPropertyPreferences
 )
-from .forms import PropertyCreateForm
+from authentication.models import DataFilter, Module
+
+
+def apply_user_data_filters(user, queryset, model_name):
+    """Apply user profile data filters to a queryset"""
+    if not hasattr(user, 'user_profile') or not user.user_profile.profile:
+        return queryset
+    
+    profile = user.user_profile.profile
+    
+    # Get data filters for this profile and model
+    try:
+        module = Module.objects.get(name='property')
+        filters = DataFilter.objects.filter(
+            profile=profile,
+            module=module,
+            model_name=model_name,
+            is_active=True
+        )
+        
+        if filters.exists():
+            # If there are multiple filters, we need to combine them properly
+            # For data access filters, we typically want to show records that match ANY of the filters (OR logic)
+            from django.db.models import Q
+            combined_filter = Q()
+            
+            for data_filter in filters:
+                if data_filter.filter_conditions:
+                    try:
+                        # Add each filter with OR logic
+                        combined_filter |= Q(**data_filter.filter_conditions)
+                    except Exception as e:
+                        # Log the error but don't break the view
+                        print(f"Error processing filter {data_filter.name}: {e}")
+                        continue
+            
+            # Apply the combined filter
+            if combined_filter:
+                queryset = queryset.filter(combined_filter)
+                    
+    except Module.DoesNotExist:
+        pass
+    
+    return queryset
 
 
 @login_required
 def property_list(request):
     """Display list of properties with search and filtering"""
     
-    # Get all properties (will be filtered based on user permissions later)
+    # Get all properties and apply user profile data filters
     properties = Property.objects.select_related(
         'region', 'property_type', 'category', 'status', 'activity',
         'compound', 'handler', 'sales_person'
     ).prefetch_related('assigned_users')
+    
+    # Apply user profile data filters first
+    properties = apply_user_data_filters(request.user, properties, 'Property')
+    
+    # Apply search filters
+    search_query = request.GET.get('search', '').strip()
+    if search_query:
+        properties = properties.filter(
+            Q(property_id__icontains=search_query) |
+            Q(property_number__icontains=search_query) |
+            Q(name__icontains=search_query) |
+            Q(description__icontains=search_query) |
+            Q(region__name__icontains=search_query) |
+            Q(compound__name__icontains=search_query) |
+            Q(mobile_number__icontains=search_query)
+        )
+def property_list(request):
+    """Display list of properties with search and filtering"""
+    
+    # Get all properties and apply user profile data filters
+    properties = Property.objects.select_related(
+        'region', 'property_type', 'category', 'status', 'activity',
+        'compound', 'handler', 'sales_person'
+    ).prefetch_related('assigned_users')
+    
+    # Apply user profile data filters first
+    properties = apply_user_data_filters(request.user, properties, 'Property')
     
     # Apply search filters
     search_query = request.GET.get('search', '').strip()

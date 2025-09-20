@@ -1,7 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.models import User
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from .models import Module, Permission, Rule, Profile, UserProfile, UserActivity
+from .models import (
+    Module, Permission, Rule, Profile, UserProfile, UserActivity,
+    FieldPermission, DataFilter, DynamicDropdown, ProfileDataScope
+)
 
 
 @admin.register(Module)
@@ -41,6 +44,30 @@ class RuleInline(admin.TabularInline):
     extra = 0
 
 
+class FieldPermissionInline(admin.TabularInline):
+    model = FieldPermission
+    extra = 0
+    fields = ['module', 'model_name', 'field_name', 'can_view', 'can_edit', 'is_visible_in_list', 'is_active']
+
+
+class DataFilterInline(admin.TabularInline):
+    model = DataFilter
+    extra = 0
+    fields = ['module', 'name', 'model_name', 'filter_type', 'is_active']
+
+
+class DynamicDropdownInline(admin.TabularInline):
+    model = DynamicDropdown
+    extra = 0
+    fields = ['module', 'name', 'field_name', 'source_model', 'is_active']
+
+
+class ProfileDataScopeInline(admin.TabularInline):
+    model = ProfileDataScope
+    extra = 0
+    fields = ['module', 'name', 'scope_type', 'is_active']
+
+
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['name', 'get_permissions_count', 'get_rules_count', 'get_users_count', 'is_active', 'created_at']
@@ -49,6 +76,7 @@ class ProfileAdmin(admin.ModelAdmin):
     filter_horizontal = ['permissions', 'rules']
     ordering = ['name']
     list_editable = ['is_active']
+    inlines = [FieldPermissionInline, DataFilterInline, DynamicDropdownInline, ProfileDataScopeInline]
     
     def get_permissions_count(self, obj):
         return obj.permissions.count()
@@ -110,3 +138,39 @@ class UserActivityAdmin(admin.ModelAdmin):
 # Unregister the default User admin and register our custom one
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+
+@admin.register(FieldPermission)
+class FieldPermissionAdmin(admin.ModelAdmin):
+    list_display = ['profile', 'module', 'model_name', 'field_name', 'can_view', 'can_edit', 'is_active']
+    list_filter = ['profile', 'module', 'model_name', 'can_view', 'can_edit', 'is_active']
+    search_fields = ['profile__name', 'module__name', 'model_name', 'field_name']
+    ordering = ['profile', 'module', 'model_name', 'field_name']
+    list_editable = ['can_view', 'can_edit', 'is_active']
+
+
+@admin.register(DataFilter)
+class DataFilterAdmin(admin.ModelAdmin):
+    list_display = ['profile', 'module', 'name', 'model_name', 'filter_type', 'is_active']
+    list_filter = ['profile', 'module', 'filter_type', 'is_active']
+    search_fields = ['profile__name', 'module__name', 'name', 'model_name']
+    ordering = ['profile', 'module', 'name']
+    list_editable = ['is_active']
+
+
+@admin.register(DynamicDropdown)
+class DynamicDropdownAdmin(admin.ModelAdmin):
+    list_display = ['profile', 'module', 'name', 'field_name', 'source_model', 'is_active']
+    list_filter = ['profile', 'module', 'is_active']
+    search_fields = ['profile__name', 'module__name', 'name', 'field_name']
+    ordering = ['profile', 'module', 'name']
+    list_editable = ['is_active']
+
+
+@admin.register(ProfileDataScope)
+class ProfileDataScopeAdmin(admin.ModelAdmin):
+    list_display = ['profile', 'module', 'name', 'scope_type', 'is_active']
+    list_filter = ['profile', 'module', 'scope_type', 'is_active']
+    search_fields = ['profile__name', 'module__name', 'name']
+    ordering = ['profile', 'module', 'scope_type']
+    list_editable = ['is_active']
