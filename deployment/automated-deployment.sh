@@ -55,8 +55,9 @@ print_status "Updating system packages..."
 apt update && apt upgrade -y
 
 # Install Python 3.11
-print_status "Installing Python 3.11..."
-apt install -y python3.11 python3.11-venv python3.11-dev python3-pip
+# Install Python and required packages (use system Python 3.12)
+print_status "✅ Using system Python $(python3 --version)..."
+apt install -y python3-pip python3-venv python3-dev build-essential pkg-config default-libmysqlclient-dev
 apt install -y build-essential libssl-dev libffi-dev libjpeg-dev zlib1g-dev libpng-dev
 
 # Create Python symlink

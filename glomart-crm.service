@@ -1,0 +1,21 @@
+[Unit]
+Description=Gunicorn daemon for Glomart CRM
+Requires=network.target
+After=network.target
+
+[Service]
+Type=exec
+User=django-user
+Group=django-user
+WorkingDirectory=/var/www/glomart-crm
+Environment="PATH=/var/www/glomart-crm/venv/bin"
+ExecStart=/bin/bash -c 'cd /var/www/glomart-crm && source venv/bin/activate && exec gunicorn --bind 127.0.0.1:8000 --workers 3 --timeout 30 --keep-alive 2 --max-requests 1000 --max-requests-jitter 50 --preload real_estate_crm.wsgi:application'
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
