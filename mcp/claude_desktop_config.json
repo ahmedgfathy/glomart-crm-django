@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "glomart-crm": {
+      "command": "python",
+      "args": ["/Users/ahmedgomaa/Downloads/crm/mcp/server.py"],
+      "env": {
+        "CRM_PROJECT_PATH": "/Users/ahmedgomaa/Downloads/crm",
+        "DB_HOST": "localhost",
+        "DB_PORT": "3306",
+        "DB_NAME": "django_db_glomart_rs",
+        "DB_USER": "root",
+        "DB_PASSWORD": "zerocall",
+        "DJANGO_SETTINGS_MODULE": "real_estate_crm.settings",
+        "DEBUG": "false"
+      }
+    }
+  }
+}

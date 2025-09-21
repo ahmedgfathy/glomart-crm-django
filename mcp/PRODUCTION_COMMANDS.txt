@@ -1,0 +1,36 @@
+# PRODUCTION SERVER COMMANDS
+# Run these commands on your production server (5.180.148.92)
+
+# 1. CREATE DIRECTORY STRUCTURE
+sudo mkdir -p /var/www/glomart-crm/public/properties/images
+sudo mkdir -p /var/www/glomart-crm/public/properties/videos
+
+# 2. SET PERMISSIONS
+sudo chown -R www-data:www-data /var/www/glomart-crm/public/
+sudo chmod -R 755 /var/www/glomart-crm/public/
+
+# 3. UPDATE NGINX CONFIGURATION
+sudo nano /etc/nginx/sites-available/glomart-crm
+
+# Add this location block BEFORE the Django location block:
+
+# Property images (CRITICAL FIX)
+location /public/ {
+    alias /var/www/glomart-crm/public/;
+    expires 30d;
+    add_header Cache-Control "public, immutable";
+    access_log off;
+}
+
+# 4. TEST AND RELOAD NGINX
+sudo nginx -t
+sudo systemctl reload nginx
+
+# 5. SYNC IMAGES FROM LOCAL TO PRODUCTION
+# Run this from your LOCAL machine:
+rsync -avz --partial --progress /Users/ahmedgomaa/Downloads/crm/public/ root@5.180.148.92:/var/www/glomart-crm/public/
+
+# 6. VERIFY IMAGES ARE ACCESSIBLE
+# Test these URLs in your browser:
+# http://5.180.148.92/public/properties/images/6767eaf3002aec9af9bd.jpg
+# http://5.180.148.92/static/images/property-placeholder.svg

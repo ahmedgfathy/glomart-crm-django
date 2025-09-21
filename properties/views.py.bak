@@ -296,7 +296,7 @@ def property_edit(request, property_id):
     ).prefetch_related('assigned_users')
     
     # Apply user profile data filters
-    # properties_queryset = apply_user_data_filters(request.user, properties_queryset, 'Property') # TEMPORARILY DISABLED
+    properties_queryset = apply_user_data_filters(request.user, properties_queryset, 'Property')
     
     # Order by creation date (same as list view)
     properties_queryset = properties_queryset.order_by('-created_at')

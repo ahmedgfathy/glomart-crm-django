@@ -321,9 +321,13 @@ class Property(models.Model):
                     # Return the original cloud URL if available
                     if 'originalUrl' in first_image:
                         return first_image['originalUrl']
-                    # Fallback to fileUrl if available
+                    # Fallback to fileUrl if available - convert to /public/ path
                     elif 'fileUrl' in first_image:
-                        return first_image['fileUrl']
+                        file_url = first_image['fileUrl']
+                        # Convert /properties/ to /public/properties/ for nginx serving
+                        if file_url.startswith('/properties/'):
+                            return '/public' + file_url
+                        return file_url
             # If it's just a direct URL string
             elif self.primary_image.startswith('http'):
                 return self.primary_image
@@ -350,9 +354,14 @@ class Property(models.Model):
                         # Return the original cloud URL if available
                         if 'originalUrl' in img:
                             urls.append(img['originalUrl'])
-                        # Fallback to fileUrl if available
+                        # Fallback to fileUrl if available - convert to /public/ path
                         elif 'fileUrl' in img:
-                            urls.append(img['fileUrl'])
+                            file_url = img['fileUrl']
+                            # Convert /properties/ to /public/properties/ for nginx serving
+                            if file_url.startswith('/properties/'):
+                                urls.append('/public' + file_url)
+                            else:
+                                urls.append(file_url)
                     return urls if urls else ['/static/images/property-placeholder.jpg']
             # If it's just a direct URL string
             elif self.primary_image.startswith('http'):
