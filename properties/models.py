@@ -347,9 +347,11 @@ class Property(models.Model):
     def get_all_image_urls(self):
         """Extract all image URLs from the JSON data"""
         import json
+        import re
+        from django.conf import settings
         
         if not self.primary_image:
-            return ['/static/images/property-placeholder.jpg']
+            return ['/static/images/property-placeholder.svg']
         
         try:
             # If it's a JSON array with image objects
@@ -362,30 +364,43 @@ class Property(models.Model):
                         if 'originalUrl' in img:
                             original_url = img['originalUrl']
                             if original_url.startswith('/property-images/'):
-                                urls.append(original_url.replace('/property-images/', '/public/properties/images/'))
+                                # For local development, use /media/ URL
+                                urls.append(original_url.replace('/property-images/', f'{settings.MEDIA_URL}properties/images/'))
                             elif original_url.startswith('/properties/'):
-                                urls.append('/public' + original_url)
+                                # For local development, use /media/ URL
+                                urls.append(original_url.replace('/properties/', f'{settings.MEDIA_URL}properties/'))
                             else:
                                 urls.append(original_url)
-                        # Fallback to fileUrl if available - convert to /public/ path
+                        # Fallback to fileUrl if available - convert to /media/ path for local development
                         elif 'fileUrl' in img:
                             file_url = img['fileUrl']
-                            # Convert /properties/ or /property-images/ to /public/properties/images/ for nginx serving
+                            # Convert /properties/ or /property-images/ to /media/properties/images/ for Django serving
                             if file_url.startswith('/properties/'):
-                                urls.append('/public' + file_url)
+                                urls.append(file_url.replace('/properties/', f'{settings.MEDIA_URL}properties/'))
                             elif file_url.startswith('/property-images/'):
-                                urls.append(file_url.replace('/property-images/', '/public/properties/images/'))
+                                urls.append(file_url.replace('/property-images/', f'{settings.MEDIA_URL}properties/images/'))
                             else:
                                 urls.append(file_url)
-                    return urls if urls else ['/static/images/property-placeholder.jpg']
+                    return urls if urls else ['/static/images/property-placeholder.svg']
             # If it's just a direct URL string
             elif self.primary_image.startswith('http'):
                 return [self.primary_image]
         except (json.JSONDecodeError, KeyError, IndexError):
-            pass
+            # If JSON parsing fails, try to extract fileUrl using regex
+            file_url_matches = re.findall(r'"fileUrl":"([^"]+)"', self.primary_image)
+            if file_url_matches:
+                urls = []
+                for file_url in file_url_matches:
+                    if file_url.startswith('/property-images/'):
+                        urls.append(file_url.replace('/property-images/', f'{settings.MEDIA_URL}properties/images/'))
+                    elif file_url.startswith('/properties/'):
+                        urls.append(file_url.replace('/properties/', f'{settings.MEDIA_URL}properties/'))
+                    else:
+                        urls.append(file_url)
+                return urls if urls else ['/static/images/property-placeholder.svg']
         
         # Fallback to placeholder
-        return ['/static/images/property-placeholder.jpg']
+        return ['/static/images/property-placeholder.svg']
 
     @property
     def total_area(self):
