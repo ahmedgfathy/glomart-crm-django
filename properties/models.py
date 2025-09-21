@@ -274,7 +274,7 @@ class Property(models.Model):
     rent_to = models.DateTimeField(blank=True, null=True)
     
     # Media files (store paths as JSON for multiple files)
-    primary_image = models.CharField(max_length=191, blank=True, null=True)
+    primary_image = models.TextField(blank=True, null=True)
     thumbnail_path = models.CharField(max_length=191, blank=True, null=True)
     images = models.JSONField(default=list, blank=True)
     property_images = models.JSONField(default=list, blank=True)
@@ -318,15 +318,22 @@ class Property(models.Model):
                 image_array = json.loads(self.primary_image)
                 if image_array and len(image_array) > 0:
                     first_image = image_array[0]
-                    # Return the original cloud URL if available
+                    # Return the original cloud URL if available and convert path
                     if 'originalUrl' in first_image:
-                        return first_image['originalUrl']
+                        original_url = first_image['originalUrl']
+                        if original_url.startswith('/property-images/'):
+                            return original_url.replace('/property-images/', '/public/properties/images/')
+                        elif original_url.startswith('/properties/'):
+                            return '/public' + original_url
+                        return original_url
                     # Fallback to fileUrl if available - convert to /public/ path
                     elif 'fileUrl' in first_image:
                         file_url = first_image['fileUrl']
-                        # Convert /properties/ to /public/properties/ for nginx serving
+                        # Convert /properties/ or /property-images/ to /public/properties/images/ for nginx serving
                         if file_url.startswith('/properties/'):
                             return '/public' + file_url
+                        elif file_url.startswith('/property-images/'):
+                            return file_url.replace('/property-images/', '/public/properties/images/')
                         return file_url
             # If it's just a direct URL string
             elif self.primary_image.startswith('http'):
@@ -351,15 +358,23 @@ class Property(models.Model):
                 if image_array and len(image_array) > 0:
                     urls = []
                     for img in image_array:
-                        # Return the original cloud URL if available
+                        # Return the original cloud URL if available and convert path
                         if 'originalUrl' in img:
-                            urls.append(img['originalUrl'])
+                            original_url = img['originalUrl']
+                            if original_url.startswith('/property-images/'):
+                                urls.append(original_url.replace('/property-images/', '/public/properties/images/'))
+                            elif original_url.startswith('/properties/'):
+                                urls.append('/public' + original_url)
+                            else:
+                                urls.append(original_url)
                         # Fallback to fileUrl if available - convert to /public/ path
                         elif 'fileUrl' in img:
                             file_url = img['fileUrl']
-                            # Convert /properties/ to /public/properties/ for nginx serving
+                            # Convert /properties/ or /property-images/ to /public/properties/images/ for nginx serving
                             if file_url.startswith('/properties/'):
                                 urls.append('/public' + file_url)
+                            elif file_url.startswith('/property-images/'):
+                                urls.append(file_url.replace('/property-images/', '/public/properties/images/'))
                             else:
                                 urls.append(file_url)
                     return urls if urls else ['/static/images/property-placeholder.jpg']
@@ -415,6 +430,9 @@ class UserPropertyPreferences(models.Model):
     @classmethod
     def get_for_user(cls, user):
         """Get or create preferences for user"""
+        if user.is_anonymous:
+            # Return default preferences for anonymous users
+            return cls(view_mode='grid')
         preferences, created = cls.objects.get_or_create(user=user)
         return preferences
     
