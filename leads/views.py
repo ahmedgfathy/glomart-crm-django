@@ -587,6 +587,41 @@ def lead_edit_view(request, lead_id):
         except Exception as e:
             messages.error(request, f'Error updating lead: {str(e)}')
     
+    # Get navigation leads (previous/next) with same filters as list view
+    leads_queryset = Lead.objects.select_related('status', 'source', 'assigned_to', 'lead_type', 'priority', 'temperature').all()
+    
+    # Apply user profile data filters
+    leads_queryset = apply_user_data_filters(request.user, leads_queryset, 'Lead')
+    
+    # Restrict leads based on user permissions (if not superuser)
+    if not request.user.is_superuser:
+        # Check if user has manager-level access through profile
+        if hasattr(request.user, 'user_profile') and request.user.user_profile.profile:
+            profile = request.user.user_profile.profile
+            # If profile name contains 'manager' or 'supervisor', allow seeing all filtered leads
+            if 'manager' not in profile.name.lower() and 'supervisor' not in profile.name.lower():
+                # Regular users can only see leads assigned to them
+                leads_queryset = leads_queryset.filter(assigned_to=request.user)
+        else:
+            # No profile - restrict to assigned leads only
+            leads_queryset = leads_queryset.filter(assigned_to=request.user)
+    
+    # Order by creation date (same as list view)
+    leads_queryset = leads_queryset.order_by('-created_at')
+    
+    # Get lead IDs in order
+    lead_ids = list(leads_queryset.values_list('id', flat=True))
+    
+    # Find current lead index
+    try:
+        current_index = lead_ids.index(lead_id)
+        prev_lead_id = lead_ids[current_index + 1] if current_index + 1 < len(lead_ids) else None
+        next_lead_id = lead_ids[current_index - 1] if current_index > 0 else None
+    except ValueError:
+        # Lead not found in filtered list
+        prev_lead_id = None
+        next_lead_id = None
+    
     # Get form options
     sources = LeadSource.objects.filter(is_active=True)
     statuses = LeadStatus.objects.filter(is_active=True).order_by('order')
@@ -597,6 +632,10 @@ def lead_edit_view(request, lead_id):
     
     context = {
         'lead': lead,
+        'prev_lead_id': prev_lead_id,
+        'next_lead_id': next_lead_id,
+        'current_index': lead_ids.index(lead_id) + 1 if lead_id in lead_ids else 0,
+        'total_leads': len(lead_ids),
         'sources': sources,
         'statuses': statuses,
         'users': users,

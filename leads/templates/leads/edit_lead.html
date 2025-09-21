@@ -166,10 +166,117 @@ Edit Lead - {{ lead.full_name }} - Glomart CRM
 .tag-remove:hover {
     background: rgba(255, 255, 255, 0.2);
 }
+
+/* Navigation arrows styling */
+.navigation-arrows {
+    position: fixed;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nav-arrow {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.nav-arrow:hover {
+    background: rgba(59, 130, 246, 1);
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+}
+
+.nav-arrow:disabled {
+    background: rgba(156, 163, 175, 0.5);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-arrow:disabled:hover {
+    transform: none;
+}
+
+.nav-arrow-left {
+    left: 20px;
+}
+
+.nav-arrow-right {
+    right: 20px;
+}
+
+.nav-counter {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+@media (max-width: 768px) {
+    .navigation-arrows {
+        display: none;
+    }
+    .nav-counter {
+        display: none;
+    }
+}
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Navigation Counter -->
+{% if total_leads > 1 %}
+<div class="nav-counter">
+    Lead {{ current_index }} of {{ total_leads }}
+</div>
+{% endif %}
+
+<!-- Navigation Arrows -->
+{% if prev_lead_id or next_lead_id %}
+<div class="navigation-arrows">
+    {% if prev_lead_id %}
+    <button type="button" class="nav-arrow nav-arrow-left" onclick="navigateToLead('{{ prev_lead_id }}')" title="Previous Lead">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    {% else %}
+    <button type="button" class="nav-arrow nav-arrow-left" disabled title="No Previous Lead">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    {% endif %}
+    
+    {% if next_lead_id %}
+    <button type="button" class="nav-arrow nav-arrow-right" onclick="navigateToLead('{{ next_lead_id }}')" title="Next Lead">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    {% else %}
+    <button type="button" class="nav-arrow nav-arrow-right" disabled title="No Next Lead">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    {% endif %}
+</div>
+{% endif %}
+
 <!-- Toast Container -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -556,6 +663,51 @@ document.addEventListener('DOMContentLoaded', function() {
 {% block extra_js %}
 <script>
 let tags = [];
+
+// Navigation function
+function navigateToLead(leadId) {
+    // Check if there are unsaved changes
+    const form = document.getElementById('leadForm');
+    const formData = new FormData(form);
+    let hasChanges = false;
+    
+    // Simple check for changes - in a real app you'd want more sophisticated change detection
+    const inputs = form.querySelectorAll('input, select, textarea');
+    for (let input of inputs) {
+        if (input.name && input.defaultValue !== input.value) {
+            hasChanges = true;
+            break;
+        }
+    }
+    
+    if (hasChanges) {
+        const confirmed = confirm('You have unsaved changes. Do you want to leave this page without saving?');
+        if (!confirmed) {
+            return;
+        }
+    }
+    
+    // Navigate to the new lead
+    window.location.href = `/leads/${leadId}/edit/`;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    // Only trigger if not typing in an input field
+    if (e.target.tagName.toLowerCase() === 'input' || 
+        e.target.tagName.toLowerCase() === 'textarea' ||
+        e.target.tagName.toLowerCase() === 'select') {
+        return;
+    }
+    
+    if (e.key === 'ArrowLeft' && '{{ prev_lead_id }}') {
+        e.preventDefault();
+        navigateToLead('{{ prev_lead_id }}');
+    } else if (e.key === 'ArrowRight' && '{{ next_lead_id }}') {
+        e.preventDefault();
+        navigateToLead('{{ next_lead_id }}');
+    }
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     setupTagsInput();

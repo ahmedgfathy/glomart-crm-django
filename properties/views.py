@@ -16,7 +16,10 @@ from .models import (
     PropertyCategory, Compound, PropertyStatus, PropertyActivity, 
     PropertyHistory, UserPropertyPreferences
 )
+from .forms import PropertyCreateForm
 from authentication.models import DataFilter, Module
+from projects.models import Project
+from authentication.models import Currency
 
 
 def apply_user_data_filters(user, queryset, model_name):
@@ -287,10 +290,39 @@ def property_edit(request, property_id):
     else:
         form = PropertyCreateForm(instance=property_obj)
     
+    # Get navigation properties (previous/next) with same filters as list view
+    properties_queryset = Property.objects.select_related(
+        'region', 'property_type', 'category', 'status', 'activity',
+        'compound', 'handler', 'sales_person'
+    ).prefetch_related('assigned_users')
+    
+    # Apply user profile data filters
+    properties_queryset = apply_user_data_filters(request.user, properties_queryset, 'Property')
+    
+    # Order by creation date (same as list view)
+    properties_queryset = properties_queryset.order_by('-created_at')
+    
+    # Get property IDs in order
+    property_ids = list(properties_queryset.values_list('property_id', flat=True))
+    
+    # Find current property index
+    try:
+        current_index = property_ids.index(property_id)
+        prev_property_id = property_ids[current_index + 1] if current_index + 1 < len(property_ids) else None
+        next_property_id = property_ids[current_index - 1] if current_index > 0 else None
+    except ValueError:
+        # Property not found in filtered list
+        prev_property_id = None
+        next_property_id = None
+    
     # Get all the context data needed for the form
     context = {
         'property': property_obj,
         'form': form,
+        'prev_property_id': prev_property_id,
+        'next_property_id': next_property_id,
+        'current_index': property_ids.index(property_id) + 1 if property_id in property_ids else 0,
+        'total_properties': len(property_ids),
         'regions': Region.objects.filter(is_active=True).order_by('name'),
         'finishing_types': FinishingType.objects.filter(is_active=True).order_by('name'),
         'unit_purposes': UnitPurpose.objects.filter(is_active=True).order_by('name'),

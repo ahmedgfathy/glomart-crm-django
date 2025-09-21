@@ -34,10 +34,117 @@
         border-color: #667eea;
         box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     }
+    
+    /* Navigation arrows styling */
+    .navigation-arrows {
+        position: fixed;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .nav-arrow {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .nav-arrow:hover {
+        background: rgba(102, 126, 234, 1);
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    }
+    
+    .nav-arrow:disabled {
+        background: rgba(156, 163, 175, 0.5);
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .nav-arrow:disabled:hover {
+        transform: none;
+    }
+    
+    .nav-arrow-left {
+        left: 20px;
+    }
+    
+    .nav-arrow-right {
+        right: 20px;
+    }
+    
+    .nav-counter {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(102, 126, 234, 0.9);
+        color: white;
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    @media (max-width: 768px) {
+        .navigation-arrows {
+            display: none;
+        }
+        .nav-counter {
+            display: none;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Navigation Counter -->
+{% if total_properties > 1 %}
+<div class="nav-counter">
+    Property {{ current_index }} of {{ total_properties }}
+</div>
+{% endif %}
+
+<!-- Navigation Arrows -->
+{% if prev_property_id or next_property_id %}
+<div class="navigation-arrows">
+    {% if prev_property_id %}
+    <button type="button" class="nav-arrow nav-arrow-left" onclick="navigateToProperty('{{ prev_property_id }}')" title="Previous Property">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    {% else %}
+    <button type="button" class="nav-arrow nav-arrow-left" disabled title="No Previous Property">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    {% endif %}
+    
+    {% if next_property_id %}
+    <button type="button" class="nav-arrow nav-arrow-right" onclick="navigateToProperty('{{ next_property_id }}')" title="Next Property">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    {% else %}
+    <button type="button" class="nav-arrow nav-arrow-right" disabled title="No Next Property">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+    {% endif %}
+</div>
+{% endif %}
+
 <div class="container-fluid">
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -386,6 +493,51 @@
 
 {% block extra_js %}
 <script>
+// Navigation function
+function navigateToProperty(propertyId) {
+    // Check if there are unsaved changes
+    const form = document.getElementById('propertyForm');
+    const formData = new FormData(form);
+    let hasChanges = false;
+    
+    // Simple check for changes - in a real app you'd want more sophisticated change detection
+    const inputs = form.querySelectorAll('input, select, textarea');
+    for (let input of inputs) {
+        if (input.name && input.defaultValue !== input.value) {
+            hasChanges = true;
+            break;
+        }
+    }
+    
+    if (hasChanges) {
+        const confirmed = confirm('You have unsaved changes. Do you want to leave this page without saving?');
+        if (!confirmed) {
+            return;
+        }
+    }
+    
+    // Navigate to the new property
+    window.location.href = `/properties/${propertyId}/edit/`;
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', function(e) {
+    // Only trigger if not typing in an input field
+    if (e.target.tagName.toLowerCase() === 'input' || 
+        e.target.tagName.toLowerCase() === 'textarea' ||
+        e.target.tagName.toLowerCase() === 'select') {
+        return;
+    }
+    
+    if (e.key === 'ArrowLeft' && '{{ prev_property_id }}') {
+        e.preventDefault();
+        navigateToProperty('{{ prev_property_id }}');
+    } else if (e.key === 'ArrowRight' && '{{ next_property_id }}') {
+        e.preventDefault();
+        navigateToProperty('{{ next_property_id }}');
+    }
+});
+
 // Auto-calculate price per meter when total price or area changes
 document.addEventListener('DOMContentLoaded', function() {
     const totalPriceInput = document.getElementById('total_price');
@@ -404,6 +556,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     totalPriceInput.addEventListener('input', calculatePricePerMeter);
     totalSpaceInput.addEventListener('input', calculatePricePerMeter);
+    
+    // Add form ID for navigation
+    const form = document.querySelector('form');
+    if (form) {
+        form.id = 'propertyForm';
+    }
 });
 </script>
 {% endblock %}
