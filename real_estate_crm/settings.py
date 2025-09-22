@@ -83,7 +83,7 @@ WSGI_APPLICATION = 'real_estate_crm.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'glomart_crm',
+        'NAME': 'django_db_glomart_rs',
         'HOST': 'localhost',
         'USER': 'root',
         'PASSWORD': 'zerocall',
