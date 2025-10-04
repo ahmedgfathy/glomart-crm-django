@@ -186,10 +186,14 @@ def audit_detail(request, audit_id):
     
     # Get related audits for the same lead
     related_audits = []
-    if audit.lead:
-        related_audits = LeadAudit.objects.filter(
-            lead=audit.lead
-        ).exclude(id=audit.id).order_by('-timestamp')[:10]
+    try:
+        if audit.lead:
+            related_audits = LeadAudit.objects.filter(
+                lead=audit.lead
+            ).exclude(id=audit.id).order_by('-timestamp')[:10]
+    except Lead.DoesNotExist:
+        # Lead has been deleted, no related audits to show
+        related_audits = []
     
     context = {
         'audit': audit,
