@@ -32,10 +32,20 @@ jobs:
           # Activate virtual environment and update
           source venv/bin/activate
           pip install -r requirements-production.txt
+          
+          # Set production environment
+          export DJANGO_SETTINGS_MODULE=real_estate_crm.settings_production
+          
+          # Run Django commands
           python manage.py migrate --noinput
           python manage.py collectstatic --noinput
           
+          # Fix permissions
+          sudo chown -R www-data:www-data /var/www/glomart-crm/
+          sudo chmod -R 755 /var/www/glomart-crm/
+          
           # Restart services
+          sudo systemctl daemon-reload
           sudo systemctl restart glomart-crm
           sudo systemctl reload nginx
           
