@@ -732,17 +732,17 @@
                     </div>
                     <div class="metric-trend">
                         <i class="bi bi-arrow-up"></i>
-                        {% if conversion_rate > 2.5 %}+Good{% else %}Low{% endif %}
+                        {% if conversion_rate and conversion_rate > 2.5 %}+Good{% else %}Low{% endif %}
                     </div>
                 </div>
                 <div class="metric-content">
-                    <h3>{{ conversion_rate }}%</h3>
+                    <h3>{{ conversion_rate|default:0 }}%</h3>
                     <p>Lead Conversion</p>
                 </div>
                 <div class="metric-footer">
                     <div class="progress-wrapper">
                         <div class="progress-bar-custom">
-                            <div class="progress-fill" style="width: {{ conversion_rate|floatformat:0 }}%"></div>
+                            <div class="progress-fill" style="width: {{ conversion_rate|default:0|floatformat:0 }}%"></div>
                         </div>
                     </div>
                     <small>Conversion efficiency</small>
@@ -760,7 +760,7 @@
                     </div>
                 </div>
                 <div class="metric-content">
-                    <h3>${{ avg_property_value|floatformat:0|stringformat:"s" }}</h3>
+                    <h3>${{ avg_property_value|default:0|floatformat:0 }}</h3>
                     <p>Avg Property Value</p>
                 </div>
                 <div class="metric-footer">

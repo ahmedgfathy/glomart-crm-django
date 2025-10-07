@@ -119,12 +119,16 @@ def dashboard_view(request):
     ).count()
     
     # Lead statistics (as active clients)
-    active_leads = Lead.objects.filter(status__name__icontains='active').count()
-    if active_leads == 0:
-        # Fallback to all leads if no active status defined
-        active_leads = Lead.objects.count()
+    # Count leads that are not in final status (Won/Lost) - these are "active" leads
+    from leads.models import LeadStatus
+    active_leads = Lead.objects.filter(
+        status__is_final=False,
+        status__is_active=True
+    ).count()
     
-    # Project statistics
+    # If no leads have status set, count total leads
+    if active_leads == 0:
+        active_leads = Lead.objects.count()    # Project statistics
     total_projects = Project.objects.filter(is_active=True).count()
     active_projects = Project.objects.filter(is_active=True, status__name='active').count()
     
@@ -141,11 +145,11 @@ def dashboard_view(request):
     )['total'] or 0
     
     # Also calculate average property value
-    avg_property_value = Property.objects.aggregate(
-        avg=Sum('total_price')
-    )['avg'] or 0
-    if total_properties > 0:
+    avg_property_value = 0
+    if total_properties > 0 and total_property_value > 0:
         avg_property_value = total_property_value / total_properties
+    else:
+        avg_property_value = 0
     
     # Format the total value for display
     if total_property_value > 1000000:
@@ -199,8 +203,8 @@ def dashboard_view(request):
         # Additional analytics
         'total_property_value': total_property_value,
         'avg_property_value': avg_property_value,
-        'conversion_rate': round((active_leads / max(total_properties, 1)) * 100, 1) if total_properties > 0 else 0,
-        'properties_per_user': round(total_properties / max(total_users, 1), 1) if total_users > 0 else 0,
+        'conversion_rate': round((active_leads / max(total_properties, 1)) * 100, 1) if total_properties > 0 and active_leads >= 0 else 0,
+        'properties_per_user': round(total_properties / max(total_users, 1), 1) if total_users > 0 and total_properties >= 0 else 0,
         # Owner database stats
     }
     
