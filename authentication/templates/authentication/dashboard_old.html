@@ -591,9 +591,7 @@
 
         <!-- Hero Stats Section -->
         <div class="hero-stats text-center">
-            <div class="hero-number" id="client-counter">{{ total_owner_records|floatformat:0 }}</div>
             <div class="hero-label">Total Client Records</div>
-            <div class="hero-description">Across all Owner databases</div>
         </div>
 
         <!-- Main Stats Grid -->
@@ -729,13 +727,11 @@
             </div>
             {% endif %}
             
-            {% if has_owner_access %}
             <div class="col-xl-4 col-md-6">
                 <div class="action-card-modern">
                     <div class="stat-icon success">
                         <i class="bi bi-database"></i>
                     </div>
-                    <h3 class="action-title">Owner Databases</h3>
                     <p class="action-description">Access client databases and records</p>
                     <a href="{% url 'owner:dashboard' %}" class="action-btn">
                         Access Databases <i class="bi bi-arrow-right"></i>
@@ -953,7 +949,6 @@
         </div>
     </div>
     
-    <!-- Owner Database Stats -->
     <div class="row g-4 mb-5">
         <div class="col-xl-6 col-md-12 mx-auto">
             <div class="modern-stat-card bg-gradient-owner">
@@ -961,10 +956,8 @@
                     <i class="bi bi-people-fill"></i>
                 </div>
                 <div class="card-content">
-                    <h3 class="stat-number" id="client-counter" style="font-size: 3rem; font-weight: 700; font-family: 'Arial', monospace;">{{ total_owner_records|floatformat:0 }}</h3>
                     <p class="stat-label">Total Client Records</p>
                     <div class="stat-trend">
-                        <span id="counter-trend">All Owner Databases</span>
                     </div>
                 </div>
             </div>

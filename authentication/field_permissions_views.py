@@ -161,6 +161,10 @@ def profile_field_editor(request, profile_id):
     
     # Get all field permissions for this profile, organized by module
     modules_data = []
+    total_fields = 0
+    total_viewable = 0
+    total_editable = 0
+    
     for module in Module.objects.filter(is_active=True):
         permissions = FieldPermission.objects.filter(
             profile=profile, 
@@ -175,16 +179,29 @@ def profile_field_editor(request, profile_id):
                     models_data[permission.model_name] = []
                 models_data[permission.model_name].append(permission)
             
+            module_total = permissions.count()
+            module_viewable = permissions.filter(can_view=True).count()
+            module_editable = permissions.filter(can_edit=True).count()
+            
             modules_data.append({
                 'module': module,
                 'models': models_data,
-                'total_fields': permissions.count(),
-                'viewable_fields': permissions.filter(can_view=True).count(),
+                'total_fields': module_total,
+                'viewable_fields': module_viewable,
+                'editable_fields': module_editable,
             })
+            
+            # Update totals
+            total_fields += module_total
+            total_viewable += module_viewable
+            total_editable += module_editable
     
     context = {
         'profile': profile,
         'modules_data': modules_data,
+        'total_fields': total_fields,
+        'viewable_fields': total_viewable,
+        'editable_fields': total_editable,
     }
     
     return render(request, 'authentication/profile_field_editor.html', context)

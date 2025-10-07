@@ -39,7 +39,6 @@ class SensitiveFieldFilter(SimpleListFilter):
         return [
             ('financial', 'Financial Fields'),
             ('contact', 'Contact Information'),
-            ('owner', 'Owner Information'),
             ('basic', 'Basic Fields'),
         ]
 
@@ -49,7 +48,6 @@ class SensitiveFieldFilter(SimpleListFilter):
             sensitive_fields = {
                 'financial': ['budget_min', 'budget_max', 'base_price', 'asking_price', 'sold_price', 'total_price'],
                 'contact': ['mobile', 'email', 'phone', 'mobile_number', 'secondary_phone'],
-                'owner': ['owner_name', 'owner_phone', 'owner_email', 'owner_notes'],
                 'basic': ['first_name', 'last_name', 'name', 'property_id'],
             }
             if self.value() in sensitive_fields:

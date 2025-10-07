@@ -62,7 +62,7 @@
                         <thead class="table-light position-sticky" style="top: 0; z-index: 10;">
                             <tr>
                                 <th>Profile</th>
-                                <th>Assigned Users</th>
+                                <th>Description</th>
                                 <th>Permissions</th>
                                 <th>Status</th>
                                 <th>Created</th>
@@ -84,9 +84,8 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="d-flex align-items-center">
-                                        <span class="badge bg-info me-2">{{ profile.user_count }}</span>
-                                        <small class="text-muted">user{{ profile.user_count|pluralize }}</small>
+                                    <div class="text-muted">
+                                        {{ profile.description|default:"No description provided"|truncatewords:15 }}
                                     </div>
                                 </td>
                                 <td>

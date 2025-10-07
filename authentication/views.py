@@ -135,18 +135,25 @@ def dashboard_view(request):
         Q(status__name__icontains='follow')
     ).count()
     
-    # Calculate total property value (monthly revenue equivalent)
+    # Calculate total property value (portfolio value)
     total_property_value = Property.objects.aggregate(
         total=Sum('total_price')
     )['total'] or 0
     
+    # Also calculate average property value
+    avg_property_value = Property.objects.aggregate(
+        avg=Sum('total_price')
+    )['avg'] or 0
+    if total_properties > 0:
+        avg_property_value = total_property_value / total_properties
+    
     # Format the total value for display
     if total_property_value > 1000000:
-        monthly_revenue = f"${total_property_value/1000000:.1f}M"
+        monthly_revenue = f"{total_property_value/1000000:.1f}M"
     elif total_property_value > 1000:
-        monthly_revenue = f"${total_property_value/1000:.0f}K"
+        monthly_revenue = f"{total_property_value/1000:.0f}K"
     else:
-        monthly_revenue = f"${total_property_value:.0f}"
+        monthly_revenue = f"{total_property_value:.0f}"
     
     # Recent activities from UserActivity
     recent_activities = UserActivity.objects.select_related('user').order_by('-timestamp')[:5]
@@ -164,14 +171,7 @@ def dashboard_view(request):
         profile__name='Residential Users Profile'
     ).count()
     
-    # Owner database records count
-    try:
-        from owner.models import OwnerDatabase
-        # Use cached totals from OwnerDatabase models instead of live counting
-        databases = OwnerDatabase.objects.filter(is_active=True)
-        total_owner_records = sum(db.total_records for db in databases)
-    except ImportError:
-        total_owner_records = 0  # Fallback if owner app not available
+    # Owner database functionality has been removed
     
     context = {
         'user': request.user,
@@ -196,8 +196,12 @@ def dashboard_view(request):
         'active_users': active_users,
         'residential_users': residential_users,
         'active_field_permissions': active_field_permissions,
+        # Additional analytics
+        'total_property_value': total_property_value,
+        'avg_property_value': avg_property_value,
+        'conversion_rate': round((active_leads / max(total_properties, 1)) * 100, 1) if total_properties > 0 else 0,
+        'properties_per_user': round(total_properties / max(total_users, 1), 1) if total_users > 0 else 0,
         # Owner database stats
-        'total_owner_records': total_owner_records,
     }
     
     return render(request, 'authentication/dashboard.html', context)
@@ -632,9 +636,7 @@ def profiles_view(request):
         messages.error(request, 'Access denied. Administrator privileges required.')
         return redirect('authentication:dashboard')
     
-    profiles = Profile.objects.all().annotate(
-        user_count=Count('users')
-    ).order_by('name')
+    profiles = Profile.objects.all().order_by('name')
     
     return render(request, 'authentication/profiles.html', {
         'profiles': profiles

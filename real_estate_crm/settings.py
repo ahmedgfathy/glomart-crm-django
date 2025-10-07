@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'leads',
     'properties',  # Property management app
     'projects',    # Project management app
-    'owner',       # Owner databases management app
+    
 ]
 
 MIDDLEWARE = [
@@ -84,16 +84,6 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'django_db_glomart_rs',
-        'HOST': 'localhost',
-        'USER': 'root',
-        'PASSWORD': 'zerocall',
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
-    },
-    # MariaDB connection for owner databases
-    'mariadb_owner': {
-        'ENGINE': 'django.db.backends.mysql',
         'HOST': 'localhost',
         'USER': 'root',
         'PASSWORD': 'zerocall',

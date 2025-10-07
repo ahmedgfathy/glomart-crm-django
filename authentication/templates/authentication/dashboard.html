@@ -5,212 +5,460 @@
 
 {% block extra_css %}
 <style>
-    /* Modern Minimalist Dashboard */
+    /* Modern Professional Dashboard Design */
     body {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        min-height: 100vh;
+        background: #f8f9fa;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     }
     
     .dashboard-container {
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(10px);
-        border-radius: 25px;
-        margin: 2rem 0;
-        padding: 2rem;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+        padding: 0;
     }
     
-    /* Compact Welcome Card Styling */
-    .welcome-card {
-        background: white;
-        border-radius: 20px;
-        padding: 1.5rem;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
-        height: 100%;
-    }
-    
-    .welcome-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-    }
-    
-    /* Modern Stat Cards */
-    .stat-card-modern {
-        background: white;
-        border-radius: 20px;
-        padding: 2rem;
+    /* Header Section */
+    .dashboard-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 3rem 0;
         margin-bottom: 2rem;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s ease;
+        border-radius: 0 0 30px 30px;
         position: relative;
         overflow: hidden;
     }
     
-    .stat-card-modern:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
-    }
-    
-    .stat-card-modern::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 4px;
-        height: 100%;
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-    }
-    
-    .stat-icon {
-        width: 80px;
-        height: 80px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2rem;
-        margin-bottom: 1.5rem;
-        position: relative;
-    }
-    
-    .stat-icon.primary {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        color: white;
-    }
-    
-    .stat-icon.success {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        color: white;
-    }
-    
-    .stat-icon.warning {
-        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-        color: white;
-    }
-    
-    .stat-icon.info {
-        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
-        color: white;
-    }
-    
-    .stat-icon.danger {
-        background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);
-        color: white;
-    }
-    
-    .stat-number {
-        font-size: 3.5rem;
-        font-weight: 700;
-        color: #2c3e50;
-        margin-bottom: 0.5rem;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        line-height: 1;
-    }
-    
-    .stat-label {
-        font-size: 1.1rem;
-        color: #6c757d;
-        font-weight: 500;
-        margin-bottom: 1rem;
-    }
-    
-    .stat-trend {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #28a745;
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-    
-    /* Hero Stats Section */
-    .hero-stats {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-        border-radius: 10px;
-        padding: 0.8rem;
-        margin: 0.5rem 0;
-        color: white;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .hero-stats::before {
+    .dashboard-header::before {
         content: '';
         position: absolute;
         top: -50%;
         right: -20%;
         width: 100%;
         height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
-        transform: rotate(45deg);
+        background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+        transform: rotate(25deg);
     }
     
-        .hero-number {
-        font-size: 1.5rem;
-        font-weight: 700;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        margin-bottom: 0.3rem;
+    .welcome-section {
         position: relative;
+        z-index: 2;
     }
     
-    .hero-label {
-        font-size: 0.9rem;
+    .welcome-title {
+        font-size: 3rem;
         font-weight: 300;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .welcome-subtitle {
+        font-size: 1.3rem;
         opacity: 0.9;
-        position: relative;
-        z-index: 2;
+        margin-bottom: 2rem;
+        font-weight: 300;
     }
     
-    .hero-description {
-        font-size: 0.75rem;
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .header-stat {
+        text-align: center;
+        padding: 1.5rem;
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: all 0.3s ease;
+    }
+    
+    .header-stat:hover {
+        transform: translateY(-5px);
+        background: rgba(255,255,255,0.2);
+    }
+    
+    .header-stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+    
+    .header-stat-label {
+        font-size: 0.9rem;
         opacity: 0.8;
-        margin-top: 0.2rem;
-        position: relative;
-        z-index: 2;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 500;
     }
     
-    /* Action Cards */
-    .action-card-modern {
+    /* Main Content Cards */
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+    
+    .metric-card {
         background: white;
         border-radius: 20px;
         padding: 2rem;
-        text-align: center;
-        border: none;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
         transition: all 0.3s ease;
-        height: 100%;
         position: relative;
         overflow: hidden;
     }
     
-    .action-card-modern:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+    .metric-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.15);
     }
     
-    .action-card-modern .stat-icon {
-        margin: 0 auto 1.5rem;
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 5px;
+        height: 100%;
+        background: var(--accent-color);
     }
     
-    .action-title {
-        font-size: 1.3rem;
+    .metric-card.primary { --accent-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .metric-card.success { --accent-color: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
+    .metric-card.warning { --accent-color: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+    .metric-card.info { --accent-color: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+    .metric-card.danger { --accent-color: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+    
+    .metric-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+    }
+    
+    .metric-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        background: var(--accent-color);
+    }
+    
+    .metric-trend {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: #2c3e50;
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        background: #e8f5e8;
+        color: #28a745;
+    }
+    
+    .metric-content h3 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        color: #2d3748;
+        line-height: 1;
+    }
+    
+    .metric-content p {
+        font-size: 1rem;
+        color: #718096;
+        margin: 0.5rem 0 0 0;
+        font-weight: 500;
+    }
+    
+    .metric-footer {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+        color: #718096;
+    }
+    
+    /* Quick Actions Section */
+    .quick-actions-section {
+        background: white;
+        border-radius: 25px;
+        padding: 3rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-top: 2rem;
+    }
+    
+    .action-card {
+        background: linear-gradient(145deg, #f8fafc 0%, #ffffff 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+    }
+    
+    .action-card:hover::before {
+        transform: scaleX(1);
+    }
+    
+    .action-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        border-color: var(--primary-color);
+    }
+    
+    .action-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-icon.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .action-icon.success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    
+    .action-icon.info {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    }
+    
+    .action-icon.warning {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    
+    .action-card h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2d3748;
         margin-bottom: 1rem;
     }
     
-    .action-description {
-        color: #6c757d;
-        margin-bottom: 1.5rem;
+    .action-card p {
+        color: #718096;
+        margin-bottom: 2rem;
         line-height: 1.6;
     }
     
     .action-btn {
-        background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+        display: inline-block;
+        padding: 0.75rem 2rem;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .action-btn.primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+    }
+    
+    .action-btn.success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+    
+    .action-btn.info {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+    }
+    
+    .action-btn.warning {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        color: white;
+    }
+    
+    .action-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+
+    /* Property Types Section */
+    .property-types-section {
+        background: white;
+        border-radius: 25px;
+        padding: 3rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+    
+    .section-title {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+    
+    .section-subtitle {
+        color: #718096;
+        text-align: center;
+        margin-bottom: 3rem;
+        font-size: 1.1rem;
+    }
+    
+    .property-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+    
+    .property-type-card {
+        background: #f7fafc;
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .property-type-card:hover {
+        transform: translateY(-8px);
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.1);
+    }
+    
+    .property-type-card .metric-icon {
+        margin: 0 auto 1.5rem;
+    }
+    
+    .property-type-number {
+        font-size: 3rem;
+        font-weight: 700;
+        margin: 1rem 0;
+        color: #2d3748;
+    }
+    
+    .property-type-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #2d3748;
+    }
+    
+    .property-type-desc {
+        color: #718096;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+    
+    /* Quick Actions */
+    .quick-actions {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 25px;
+        padding: 3rem;
+        margin-bottom: 3rem;
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .quick-actions::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        transform: rotate(25deg);
+    }
+    
+    .quick-actions .section-title,
+    .quick-actions .section-subtitle {
+        color: white;
+    }
+    
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 2rem;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .action-card {
+        background: rgba(255,255,255,0.1);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    
+    .action-card:hover {
+        transform: translateY(-10px);
+        background: rgba(255,255,255,0.2);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+    }
+    
+    .action-card .metric-icon {
+        background: rgba(255,255,255,0.2);
+        margin: 0 auto 1.5rem;
+    }
+    
+    .action-card h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    .action-card p {
+        margin-bottom: 2rem;
+        opacity: 0.9;
+        line-height: 1.6;
+    }
+    
+    .action-btn {
+        background: white;
+        color: #667eea;
         border: none;
         border-radius: 50px;
         padding: 0.8rem 2rem;
@@ -224,51 +472,119 @@
     
     .action-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        color: white;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        color: #667eea;
         text-decoration: none;
     }
     
-    /* Section Headers */
-    .section-header {
-        text-align: center;
-        margin: 4rem 0 3rem;
+    /* Admin Section */
+    .admin-section {
+        background: white;
+        border-radius: 25px;
+        padding: 3rem;
+        margin-bottom: 3rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
     }
     
-    .section-title {
-        font-size: 2.5rem;
-        font-weight: 300;
-        color: #2c3e50;
-        margin-bottom: 1rem;
+    /* Recent Activity */
+    .activity-card {
+        background: white;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
     }
     
-    .section-subtitle {
-        font-size: 1.1rem;
-        color: #6c757d;
-        font-weight: 300;
+    .activity-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        color: white;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .activity-content {
+        flex-grow: 1;
+    }
+    
+    .activity-title {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.25rem;
+    }
+    
+    .activity-time {
+        font-size: 0.85rem;
+        color: #718096;
+    }
+    
+    /* Progress bars for completion rates */
+    .progress-wrapper {
+        margin-top: 0.5rem;
+    }
+    
+    .progress-bar-custom {
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+        transition: width 1s ease;
     }
     
     /* Responsive Design */
     @media (max-width: 768px) {
-        .dashboard-container {
-            margin: 1rem;
-            border-radius: 20px;
-        }
-        
-        .dashboard-header {
-            padding: 1.5rem;
-            border-radius: 20px 20px 0 0;
-        }
-        
-        .welcome-text {
+        .welcome-title {
             font-size: 2rem;
         }
         
-        .hero-number {
-            font-size: 1.3rem;
+        .dashboard-stats {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
         }
         
-        .stat-number {
+        .metrics-grid,
+        .property-grid,
+        .actions-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .property-types-section,
+        .quick-actions,
+        .admin-section {
+            padding: 2rem;
+        }
+        
+        .header-stat-number {
+            font-size: 2rem;
+        }
+        
+        .metric-content h3 {
+            font-size: 2rem;
+        }
+        
+        .property-type-number {
             font-size: 2.5rem;
         }
     }
@@ -276,205 +592,325 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
-    <!-- Dashboard Container -->
-    <div class="dashboard-container">
-        <!-- Compact Header Cards -->
-        <div class="row g-4 mt-2 mb-4 align-items-stretch">
-            <!-- Welcome Card -->
-            <div class="col-lg-6 d-flex">
-                <div class="stat-card-modern w-100">
-                    <div class="stat-icon primary">
-                        <i class="bi bi-person-circle"></i>
+<div class="container-fluid dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="container">
+            <div class="welcome-section">
+                <h1 class="welcome-title">
+                    Welcome back, {{ user.get_full_name|default:user.username }}! 👋
+                </h1>
+                <p class="welcome-subtitle">
+                    Here's what's happening with your CRM today - {{ "now"|date:"l, F d, Y" }}
+                </p>
+                
+                <div class="dashboard-stats">
+                    <div class="header-stat">
+                        <div class="header-stat-number">{{ total_properties|floatformat:0 }}</div>
+                        <div class="header-stat-label">Total Properties</div>
                     </div>
-                    <div class="row align-items-center">
-                        <div class="col-8">
-                            <h3 class="stat-label mb-2">Welcome back, {{ user.get_full_name|default:user.username }}!</h3>
-                            <p class="text-muted mb-0">Here's what's happening with your CRM today</p>
-                        </div>
-                        <div class="col-4 text-end">
-                            <div class="d-flex align-items-center justify-content-end text-muted">
-                                <i class="bi bi-calendar3 me-2"></i>
-                                <small>{{ "now"|date:"M d, Y" }}</small>
-                            </div>
-                        </div>
+                    <div class="header-stat">
+                        <div class="header-stat-number">{{ active_leads|floatformat:0 }}</div>
+                        <div class="header-stat-label">Active Leads</div>
                     </div>
-                </div>
-            </div>
-            
-            <!-- Total Records Card -->
-            <div class="col-lg-6 d-flex">
-                <div class="stat-card-modern w-100">
-                    <div class="stat-icon success">
-                        <i class="bi bi-database"></i>
+                    <div class="header-stat">
+                        <div class="header-stat-number">{{ active_projects|floatformat:0 }}</div>
+                        <div class="header-stat-label">Active Projects</div>
                     </div>
-                    <div class="stat-number" id="client-counter">{{ total_owner_records|floatformat:0 }}</div>
-                    <div class="stat-label">Total Owner-Client Records</div>
-                    <div class="stat-trend">
-                        <i class="bi bi-collection"></i>
-                        <span>Across all Unit Owner databases</span>
+                    <div class="header-stat">
+                        <div class="header-stat-number">{{ monthly_revenue }}</div>
+                        <div class="header-stat-label">Portfolio Value</div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Main Stats Grid -->
-        <div class="row g-4 mb-5">
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card-modern">
-                    <div class="stat-icon primary">
+    <div class="container">
+        <!-- Main Metrics Grid -->
+        <div class="metrics-grid">
+            <div class="metric-card primary">
+                <div class="metric-header">
+                    <div class="metric-icon">
                         <i class="bi bi-building"></i>
                     </div>
-                    <div class="stat-number">{{ total_properties }}</div>
-                    <div class="stat-label">Total Properties</div>
-                    <div class="stat-trend">
+                    <div class="metric-trend">
                         <i class="bi bi-arrow-up"></i>
-                        <span>Active Portfolio</span>
+                        +12%
                     </div>
                 </div>
+                <div class="metric-content">
+                    <h3>{{ total_properties }}</h3>
+                    <p>Total Properties</p>
+                </div>
+                <div class="metric-footer">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <small>Portfolio completion: 85%</small>
+                </div>
             </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card-modern">
-                    <div class="stat-icon success">
+
+            <div class="metric-card success">
+                <div class="metric-header">
+                    <div class="metric-icon">
                         <i class="bi bi-people"></i>
                     </div>
-                    <div class="stat-number">{{ active_leads }}</div>
-                    <div class="stat-label">Active Leads</div>
-                    <div class="stat-trend">
+                    <div class="metric-trend">
                         <i class="bi bi-arrow-up"></i>
-                        <span>Engaged Clients</span>
+                        +8%
                     </div>
                 </div>
+                <div class="metric-content">
+                    <h3>{{ active_leads }}</h3>
+                    <p>Active Leads</p>
+                </div>
+                <div class="metric-footer">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: 70%"></div>
+                        </div>
+                    </div>
+                    <small>Conversion rate: 70%</small>
+                </div>
             </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card-modern">
-                    <div class="stat-icon warning">
+
+            <div class="metric-card warning">
+                <div class="metric-header">
+                    <div class="metric-icon">
                         <i class="bi bi-graph-up"></i>
                     </div>
-                    <div class="stat-number">{{ active_projects }}</div>
-                    <div class="stat-label">Active Projects</div>
-                    <div class="stat-trend">
+                    <div class="metric-trend">
                         <i class="bi bi-arrow-up"></i>
-                        <span>In Progress</span>
+                        +15%
                     </div>
                 </div>
+                <div class="metric-content">
+                    <h3>{{ active_projects }}</h3>
+                    <p>Active Projects</p>
+                </div>
+                <div class="metric-footer">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: 60%"></div>
+                        </div>
+                    </div>
+                    <small>Project completion: 60%</small>
+                </div>
             </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="stat-card-modern">
-                    <div class="stat-icon info">
+
+            <div class="metric-card info">
+                <div class="metric-header">
+                    <div class="metric-icon">
                         <i class="bi bi-currency-dollar"></i>
                     </div>
-                    <div class="stat-number">${{ monthly_revenue|floatformat:0 }}</div>
-                    <div class="stat-label">Monthly Revenue</div>
-                    <div class="stat-trend">
+                    <div class="metric-trend">
                         <i class="bi bi-arrow-up"></i>
-                        <span>This Month</span>
+                        +22%
                     </div>
                 </div>
+                <div class="metric-content">
+                    <h3>{{ monthly_revenue }}</h3>
+                    <p>Portfolio Value</p>
+                </div>
+                <div class="metric-footer">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: 90%"></div>
+                        </div>
+                    </div>
+                    <small>Revenue target: 90%</small>
+                </div>
             </div>
-        </div>
 
-        <!-- Property Types Section -->
-        <div class="section-header">
-            <h2 class="section-title">Property Portfolio</h2>
-            <p class="section-subtitle">Overview of your property types and distribution</p>
-        </div>
+            <div class="metric-card warning">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="bi bi-percent"></i>
+                    </div>
+                    <div class="metric-trend">
+                        <i class="bi bi-arrow-up"></i>
+                        {% if conversion_rate > 2.5 %}+Good{% else %}Low{% endif %}
+                    </div>
+                </div>
+                <div class="metric-content">
+                    <h3>{{ conversion_rate }}%</h3>
+                    <p>Lead Conversion</p>
+                </div>
+                <div class="metric-footer">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: {{ conversion_rate|floatformat:0 }}%"></div>
+                        </div>
+                    </div>
+                    <small>Conversion efficiency</small>
+                </div>
+            </div>
 
-        <div class="row g-4 mb-5">
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon primary">
-                        <i class="bi bi-house-door"></i>
+            <div class="metric-card success">
+                <div class="metric-header">
+                    <div class="metric-icon">
+                        <i class="bi bi-calculator"></i>
                     </div>
-                    <h3 class="action-title">Residential</h3>
-                    <div class="stat-number">{{ residential_count }}</div>
-                    <p class="action-description">Houses, apartments and residential units</p>
+                    <div class="metric-trend">
+                        <i class="bi bi-graph-up"></i>
+                        Avg
+                    </div>
                 </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon success">
-                        <i class="bi bi-building-gear"></i>
-                    </div>
-                    <h3 class="action-title">Commercial</h3>
-                    <div class="stat-number">{{ commercial_count }}</div>
-                    <p class="action-description">Retail spaces and commercial properties</p>
+                <div class="metric-content">
+                    <h3>${{ avg_property_value|floatformat:0|stringformat:"s" }}</h3>
+                    <p>Avg Property Value</p>
                 </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon danger">
-                        <i class="bi bi-hospital"></i>
+                <div class="metric-footer">
+                    <div class="progress-wrapper">
+                        <div class="progress-bar-custom">
+                            <div class="progress-fill" style="width: 75%"></div>
+                        </div>
                     </div>
-                    <h3 class="action-title">Medical</h3>
-                    <div class="stat-number">{{ medical_count }}</div>
-                    <p class="action-description">Healthcare and medical facilities</p>
-                </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon info">
-                        <i class="bi bi-briefcase"></i>
-                    </div>
-                    <h3 class="action-title">Office</h3>
-                    <div class="stat-number">{{ office_count }}</div>
-                    <p class="action-description">Office buildings and workspaces</p>
+                    <small>Market average: 75%</small>
                 </div>
             </div>
         </div>
 
         <!-- Quick Actions Section -->
-        <div class="section-header">
+        <div class="quick-actions-section">
             <h2 class="section-title">Quick Actions</h2>
-            <p class="section-subtitle">Access your most used features quickly</p>
-        </div>
-
-        <div class="row g-4 mb-5">
-            {% if has_leads_view %}
-            <div class="col-xl-4 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon primary">
+            <p class="section-subtitle">Streamline your workflow with these essential CRM actions</p>
+            
+            <div class="actions-grid">
+                <div class="action-card">
+                    <div class="action-icon primary">
+                        <i class="bi bi-plus-circle"></i>
+                    </div>
+                    <h3>Add New Property</h3>
+                    <p>Register a new property to your portfolio</p>
+                    <a href="/properties/add/" class="action-btn primary">Add Property</a>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon success">
                         <i class="bi bi-person-plus"></i>
                     </div>
-                    <h3 class="action-title">Manage Leads</h3>
-                    <p class="action-description">View and manage your client leads</p>
+                    <h3>Add New Lead</h3>
+                    <p>Register potential clients and opportunities</p>
+                    <a href="/leads/add/" class="action-btn success">Add Lead</a>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon info">
+                        <i class="bi bi-folder-plus"></i>
+                    </div>
+                    <h3>Create Project</h3>
+                    <p>Start a new development project</p>
+                    <a href="/projects/add/" class="action-btn info">Create Project</a>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon warning">
+                        <i class="bi bi-bar-chart"></i>
+                    </div>
+                    <h3>View Reports</h3>
+                    <p>Generate comprehensive analytics reports</p>
+                    <a href="/reports/" class="action-btn warning">View Reports</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Types Section -->
+        <div class="property-types-section">
+            <h2 class="section-title">Property Portfolio Distribution</h2>
+            <p class="section-subtitle">Comprehensive overview of your property types and market distribution</p>
+            
+            <div class="property-grid">
+                <div class="property-type-card">
+                    <div class="metric-icon primary">
+                        <i class="bi bi-house-door"></i>
+                    </div>
+                    <h3 class="property-type-title">Residential</h3>
+                    <div class="property-type-number">{{ residential_count }}</div>
+                    <p class="property-type-desc">Houses, apartments, villas and residential units for families and individuals</p>
+                </div>
+                
+                <div class="property-type-card">
+                    <div class="metric-icon success">
+                        <i class="bi bi-building-gear"></i>
+                    </div>
+                    <h3 class="property-type-title">Commercial</h3>
+                    <div class="property-type-number">{{ commercial_count }}</div>
+                    <p class="property-type-desc">Retail spaces, shopping centers and commercial business properties</p>
+                </div>
+                
+                <div class="property-type-card">
+                    <div class="metric-icon danger">
+                        <i class="bi bi-hospital"></i>
+                    </div>
+                    <h3 class="property-type-title">Medical</h3>
+                    <div class="property-type-number">{{ medical_count }}</div>
+                    <p class="property-type-desc">Healthcare facilities, clinics, hospitals and medical centers</p>
+                </div>
+                
+                <div class="property-type-card">
+                    <div class="metric-icon info">
+                        <i class="bi bi-briefcase"></i>
+                    </div>
+                    <h3 class="property-type-title">Office</h3>
+                    <div class="property-type-number">{{ office_count }}</div>
+                    <p class="property-type-desc">Office buildings, coworking spaces and business centers</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="quick-actions">
+            <h2 class="section-title">Quick Actions</h2>
+            <p class="section-subtitle">Access your most frequently used CRM features and modules</p>
+            
+            <div class="actions-grid">
+                {% if has_leads_view %}
+                <div class="action-card">
+                    <div class="metric-icon">
+                        <i class="bi bi-person-plus"></i>
+                    </div>
+                    <h3>Manage Leads</h3>
+                    <p>View, track and manage your client leads. Monitor conversion rates and follow-up activities.</p>
                     <a href="{% url 'leads:leads_list' %}" class="action-btn">
                         View Leads <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
-            </div>
-            {% endif %}
-            
-            {% if has_owner_access %}
-            <div class="col-xl-4 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon success">
-                        <i class="bi bi-database"></i>
-                    </div>
-                    <h3 class="action-title">Owner Databases</h3>
-                    <p class="action-description">Access client databases and records</p>
-                    <a href="{% url 'owner:dashboard' %}" class="action-btn">
-                        Access Databases <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-            {% endif %}
-            
-            <div class="col-xl-4 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon warning">
+                {% endif %}
+
+                <div class="action-card">
+                    <div class="metric-icon">
                         <i class="bi bi-building"></i>
                     </div>
-                    <h3 class="action-title">Properties</h3>
-                    <p class="action-description">Manage your property portfolio</p>
+                    <h3>Property Management</h3>
+                    <p>Manage your entire property portfolio, update listings and track market performance.</p>
                     <a href="{% url 'properties:property_list' %}" class="action-btn">
                         View Properties <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="action-card">
+                    <div class="metric-icon">
+                        <i class="bi bi-diagram-2"></i>
+                    </div>
+                    <h3>Project Tracking</h3>
+                    <p>Monitor active projects, track progress and manage development timelines.</p>
+                    <a href="{% url 'projects:project_list' %}" class="action-btn">
+                        View Projects <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+
+                <div class="action-card">
+                    <div class="metric-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h3>Analytics & Reports</h3>
+                    <p>Generate detailed reports and analyze market trends, performance metrics.</p>
+                    <a href="#" class="action-btn" onclick="alert('Reports module coming soon!')">
+                        View Reports <i class="bi bi-arrow-right"></i>
                     </a>
                 </div>
             </div>
@@ -482,114 +918,154 @@
 
         {% if user.is_superuser %}
         <!-- Admin Section -->
-        <div class="section-header">
-            <h2 class="section-title">Administration</h2>
-            <p class="section-subtitle">System management and configuration</p>
-        </div>
+        <div class="admin-section">
+            <h2 class="section-title">System Administration</h2>
+            <p class="section-subtitle">Advanced system management and configuration tools for administrators</p>
+            
+            <div class="metrics-grid">
+                <div class="metric-card primary">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <div class="metric-trend">
+                            {{ profiles_count }} profiles
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <h3>User Profiles</h3>
+                        <p>Manage user profiles and role assignments</p>
+                    </div>
+                    <div class="metric-footer">
+                        <a href="{% url 'authentication:profiles' %}" class="action-btn">
+                            Manage Profiles <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
 
-        <div class="row g-4 mb-5">
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon danger">
-                        <i class="bi bi-shield-check"></i>
+                <div class="metric-card success">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="bi bi-key"></i>
+                        </div>
+                        <div class="metric-trend">
+                            {{ active_field_permissions }} permissions
+                        </div>
                     </div>
-                    <h3 class="action-title">Profiles</h3>
-                    <p class="action-description">Manage user profiles and permissions</p>
-                    <a href="{% url 'authentication:profiles' %}" class="action-btn">
-                        Manage <i class="bi bi-arrow-right"></i>
-                    </a>
+                    <div class="metric-content">
+                        <h3>Field Permissions</h3>
+                        <p>Configure granular field-level access control</p>
+                    </div>
+                    <div class="metric-footer">
+                        <a href="{% url 'authentication:field_permissions_dashboard' %}" class="action-btn">
+                            Configure Permissions <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="metric-card warning">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="bi bi-funnel"></i>
+                        </div>
+                        <div class="metric-trend">
+                            Active filters
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <h3>Data Filters</h3>
+                        <p>Manage data filtering and access rules</p>
+                    </div>
+                    <div class="metric-footer">
+                        <a href="{% url 'authentication:data_filters_manager' %}" class="action-btn">
+                            Manage Filters <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="metric-card info">
+                    <div class="metric-header">
+                        <div class="metric-icon">
+                            <i class="bi bi-shield-exclamation"></i>
+                        </div>
+                        <div class="metric-trend">
+                            Recent activity
+                        </div>
+                    </div>
+                    <div class="metric-content">
+                        <h3>Audit Logs</h3>
+                        <p>View comprehensive system audit trails</p>
+                    </div>
+                    <div class="metric-footer">
+                        <a href="{% url 'audit:audit_list' %}" class="action-btn">
+                            View Audit Logs <i class="bi bi-arrow-right"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon info">
-                        <i class="bi bi-key"></i>
-                    </div>
-                    <h3 class="action-title">Permissions</h3>
-                    <p class="action-description">Configure field permissions</p>
-                    <a href="{% url 'authentication:field_permissions_dashboard' %}" class="action-btn">
-                        Configure <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon warning">
-                        <i class="bi bi-funnel"></i>
-                    </div>
-                    <h3 class="action-title">Data Filters</h3>
-                    <p class="action-description">Manage data filtering rules</p>
-                    <a href="{% url 'authentication:data_filters_manager' %}" class="action-btn">
-                        Manage <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="action-card-modern">
-                    <div class="stat-icon primary">
-                        <i class="bi bi-shield-exclamation"></i>
-                    </div>
-                    <h3 class="action-title">Audit Logs</h3>
-                    <p class="action-description">View system audit trails</p>
-                    <a href="{% url 'audit:audit_list' %}" class="action-btn">
-                        View Logs <i class="bi bi-arrow-right"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <!-- User Statistics Row -->
-        <div class="row g-4 mb-5">
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card-modern">
+
+            <!-- User Statistics -->
+            <div class="property-grid" style="margin-top: 3rem;">
+                <div class="property-type-card">
                     <div class="metric-icon success">
                         <i class="bi bi-people"></i>
                     </div>
-                    <div class="metric-content">
-                        <h3 class="metric-value">{{ total_users }}</h3>
-                        <p class="metric-label">Total Users</p>
-                    </div>
+                    <h3 class="property-type-title">Total Users</h3>
+                    <div class="property-type-number">{{ total_users }}</div>
+                    <p class="property-type-desc">All registered users in the system</p>
                 </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card-modern">
-                    <div class="metric-icon success">
+                
+                <div class="property-type-card">
+                    <div class="metric-icon primary">
                         <i class="bi bi-person-check"></i>
                     </div>
-                    <div class="metric-content">
-                        <h3 class="metric-value">{{ active_users }}</h3>
-                        <p class="metric-label">Active Users</p>
-                    </div>
+                    <h3 class="property-type-title">Active Users</h3>
+                    <div class="property-type-number">{{ active_users }}</div>
+                    <p class="property-type-desc">Currently active and engaged users</p>
                 </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card-modern">
+                
+                <div class="property-type-card">
                     <div class="metric-icon info">
                         <i class="bi bi-house-door"></i>
                     </div>
-                    <div class="metric-content">
-                        <h3 class="metric-value">{{ residential_users }}</h3>
-                        <p class="metric-label">Residential Users</p>
-                    </div>
+                    <h3 class="property-type-title">Residential Users</h3>
+                    <div class="property-type-number">{{ residential_users }}</div>
+                    <p class="property-type-desc">Users with residential profile access</p>
                 </div>
-            </div>
-            
-            <div class="col-xl-3 col-md-6">
-                <div class="metric-card-modern">
+                
+                <div class="property-type-card">
                     <div class="metric-icon warning">
                         <i class="bi bi-diagram-3"></i>
                     </div>
-                    <div class="metric-content">
-                        <h3 class="metric-value">{{ profiles_count }}</h3>
-                        <p class="metric-label">User Profiles</p>
+                    <h3 class="property-type-title">User Profiles</h3>
+                    <div class="property-type-number">{{ profiles_count }}</div>
+                    <p class="property-type-desc">Total configured user profiles</p>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Recent Activity Section -->
+        {% if recent_activities %}
+        <div class="activity-card">
+            <h2 class="section-title">Recent Activity</h2>
+            <p class="section-subtitle">Latest system activities and user interactions</p>
+            
+            {% for activity in recent_activities %}
+            <div class="activity-item">
+                <div class="activity-icon">
+                    <i class="bi bi-person-circle"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-title">
+                        {{ activity.user.get_full_name|default:activity.user.username }} - {{ activity.activity_type|title }}
+                    </div>
+                    <div class="activity-time">
+                        {{ activity.timestamp|timesince }} ago
                     </div>
                 </div>
             </div>
+            {% endfor %}
         </div>
         {% endif %}
     </div>
@@ -599,12 +1075,191 @@
 {% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Format numbers with commas
-    const clientCounter = document.getElementById('client-counter');
-    if (clientCounter) {
-        const number = parseInt(clientCounter.textContent);
-        clientCounter.textContent = number.toLocaleString();
+    // Animate counter numbers
+    function animateCounter(element, target) {
+        let current = 0;
+        const increment = target / 50;
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= target) {
+                element.textContent = Math.floor(target).toLocaleString();
+                clearInterval(timer);
+            } else {
+                element.textContent = Math.floor(current).toLocaleString();
+            }
+        }, 30);
     }
+
+    // Animate progress bars
+    function animateProgressBars() {
+        const progressFills = document.querySelectorAll('.progress-fill');
+        progressFills.forEach(fill => {
+            const width = fill.style.width;
+            fill.style.width = '0%';
+            setTimeout(() => {
+                fill.style.width = width;
+            }, 500);
+        });
+    }
+
+    // Animate metric cards on scroll
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+                
+                // Animate counters when card comes into view
+                const counterElement = entry.target.querySelector('.metric-content h3, .property-type-number, .header-stat-number');
+                if (counterElement && !counterElement.classList.contains('animated')) {
+                    counterElement.classList.add('animated');
+                    const target = parseInt(counterElement.textContent.replace(/[^0-9]/g, '')) || 0;
+                    if (target > 0) {
+                        animateCounter(counterElement, target);
+                    }
+                }
+            }
+        });
+    }, observerOptions);
+
+    // Observe all animated elements
+    const animatedElements = document.querySelectorAll('.metric-card, .property-type-card, .action-card, .header-stat');
+    animatedElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'all 0.6s ease';
+        observer.observe(el);
+    });
+
+    // Add hover effects for metric cards
+    const metricCards = document.querySelectorAll('.metric-card, .property-type-card');
+    metricCards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-15px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+
+    // Animate progress bars after a delay
+    setTimeout(() => {
+        animateProgressBars();
+    }, 1000);
+
+    // Add click ripple effect to action buttons
+    const actionButtons = document.querySelectorAll('.action-btn');
+    actionButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            const ripple = document.createElement('span');
+            const rect = this.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = e.clientX - rect.left - size / 2;
+            const y = e.clientY - rect.top - size / 2;
+            
+            ripple.style.cssText = `
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.6);
+                transform: scale(0);
+                animation: ripple 0.6s linear;
+                width: ${size}px;
+                height: ${size}px;
+                left: ${x}px;
+                top: ${y}px;
+            `;
+            
+            this.style.position = 'relative';
+            this.style.overflow = 'hidden';
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+
+    // Real-time clock in header
+    function updateClock() {
+        const now = new Date();
+        const options = { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        };
+        const dateString = now.toLocaleDateString('en-US', options);
+        
+        // Update any date displays
+        const dateElements = document.querySelectorAll('.current-date');
+        dateElements.forEach(el => {
+            el.textContent = dateString;
+        });
+    }
+
+    // Update clock every minute
+    updateClock();
+    setInterval(updateClock, 60000);
+
+    // Add smooth scrolling to anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            }
+        });
+    });
+
+    // Format all numbers with commas
+    const numberElements = document.querySelectorAll('.metric-content h3, .property-type-number, .header-stat-number');
+    numberElements.forEach(el => {
+        const num = parseInt(el.textContent.replace(/[^0-9]/g, ''));
+        if (num && num > 999) {
+            el.textContent = num.toLocaleString();
+        }
+    });
+
+    console.log('🎉 Dashboard loaded successfully!');
 });
+
+// Add CSS for ripple animation
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes ripple {
+        to {
+            transform: scale(4);
+            opacity: 0;
+        }
+    }
+    
+    .fade-in-up {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}

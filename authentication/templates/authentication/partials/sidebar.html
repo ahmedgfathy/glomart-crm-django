@@ -51,31 +51,12 @@
                     </a>
                 </li>
                 {% endif %}
-                
-                <!-- Owner Databases Module -->
-                {% if has_owner_access %}
-                <li class="nav-item">
-                    <a class="nav-link {% if 'owner' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'owner:dashboard' %}">
-                        <i class="bi bi-database me-3"></i>
-                        <span>Owner Databases</span>
-                        {% if owner_databases_count > 0 %}
-                        <span class="badge bg-warning ms-auto">{{ owner_databases_count }}</span>
-                        {% endif %}
-                    </a>
-                </li>
-                {% endif %}
+
                 
                 <!-- Other Modules - Show based on user permissions -->
                 {% if user_accessible_modules %}
                     {% for module in user_accessible_modules|dictsort:"order" %}
-                        {% if module.name == 'report' %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Reports module coming soon!')">
-                                <i class="bi bi-graph-up me-3"></i>
-                                <span>Reports</span>
-                            </a>
-                        </li>
-                        {% elif module.name == 'property' %}
+                        {% if module.name == 'property' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'properties' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'properties:property_list' %}">
                                 <i class="bi bi-building me-3"></i>
@@ -88,21 +69,35 @@
                         {% elif module.name == 'projects' %}
                         <li class="nav-item">
                             <a class="nav-link {% if 'projects' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'projects:project_list' %}">
-                                <i class="bi bi-building me-3"></i>
+                                <i class="bi bi-diagram-2 me-3"></i>
                                 <span>Projects</span>
                                 {% if user_projects_count > 0 %}
                                 <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
                                 {% endif %}
                             </a>
                         </li>
-                        {% elif module.name == 'opportunity' %}
+                        {% elif module.name == 'report' %}
                         <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="alert('Opportunities module coming soon!')">
-                                <i class="bi bi-trophy me-3"></i>
-                                <span>Opportunities</span>
+                            <a class="nav-link" href="#" onclick="alert('Reports module coming soon!')">
+                                <i class="bi bi-graph-up me-3"></i>
+                                <span>Reports</span>
                             </a>
                         </li>
-                        {% elif module.name != 'leads' and module.name != 'authentication' and module.name != 'audit' and module.name != 'calendar' and module.name != 'document' and module.name != 'owner' %}
+                        {% elif module.name == 'calendar' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Calendar module coming soon!')">
+                                <i class="bi bi-calendar me-3"></i>
+                                <span>Calendar</span>
+                            </a>
+                        </li>
+                        {% elif module.name == 'document' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="alert('Documents module coming soon!')">
+                                <i class="bi bi-file-text me-3"></i>
+                                <span>Documents</span>
+                            </a>
+                        </li>
+                        {% elif module.name != 'leads' and module.name != 'authentication' and module.name != 'audit' and module.name != 'owner' %}
                         <li class="nav-item">
                             <a class="nav-link" href="#" onclick="alert('{{ module.display_name }} module coming soon!')">
                                 <i class="{{ module.icon|default:'bi bi-puzzle' }} me-3"></i>

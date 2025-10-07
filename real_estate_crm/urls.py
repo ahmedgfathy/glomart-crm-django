@@ -30,7 +30,6 @@ urlpatterns = [
     path('leads/', include('leads.urls')),
     path('properties/', include('properties.urls')),
     path('projects/', include('projects.urls')),
-    path('owner/', include('owner.urls')),
     path('audit/', include('leads.audit_urls')),
 ]
 

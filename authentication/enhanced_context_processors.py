@@ -17,8 +17,6 @@ def enhanced_permissions_context(request):
                 user_projects_count = Project.objects.filter(is_active=True).count()
                 
                 # Owner databases for superuser
-                from owner.models import OwnerDatabase
-                owner_databases_count = OwnerDatabase.objects.filter(is_active=True).count()
                 
                 context.update({
                     'has_leads_view': True,
@@ -36,8 +34,6 @@ def enhanced_permissions_context(request):
                     'has_projects_edit': True,
                     'has_projects_delete': True,
                     'user_projects_count': user_projects_count,
-                    'has_owner_access': True,
-                    'owner_databases_count': owner_databases_count,
                     'user_accessible_modules': Module.objects.all(),
                     'user_profile_permissions': None,  # Superuser doesn't need field restrictions
                 })
@@ -185,31 +181,7 @@ def enhanced_permissions_context(request):
                         
                         context['user_accessible_modules'] = accessible_modules
                         
-                        # Check owner databases access
-                        owner_module = Module.objects.filter(name='owner').first()
-                        if owner_module:
-                            owner_permissions = profile.permissions.filter(
-                                module=owner_module,
-                                is_active=True
-                            )
-                            
-                            has_owner_access = owner_permissions.filter(level__gte=1).exists()
-                            
-                            # Count accessible databases
-                            owner_databases_count = 0
-                            if has_owner_access:
-                                from owner.models import OwnerDatabase
-                                owner_databases_count = OwnerDatabase.objects.filter(is_active=True).count()
-                            
-                            context.update({
-                                'has_owner_access': has_owner_access,
-                                'owner_databases_count': owner_databases_count,
-                            })
-                        else:
-                            context.update({
-                                'has_owner_access': False,
-                                'owner_databases_count': 0,
-                            })
+                        # Owner databases functionality has been removed
                         
                     else:
                         # No profile assigned - set everything to False
@@ -236,8 +208,6 @@ def enhanced_permissions_context(request):
                             'user_projects_count': 0,
                             'projects_visible_fields': [],
                             'projects_form_fields': [],
-                            'has_owner_access': False,
-                            'owner_databases_count': 0,
                             'user_accessible_modules': Module.objects.none(),
                             'user_profile_permissions': None,
                         })
@@ -268,8 +238,6 @@ def enhanced_permissions_context(request):
                         'user_projects_count': 0,
                         'projects_visible_fields': [],
                         'projects_form_fields': [],
-                        'has_owner_access': False,
-                        'owner_databases_count': 0,
                         'user_accessible_modules': Module.objects.none(),
                         'user_profile_permissions': None,
                     })
@@ -300,8 +268,6 @@ def enhanced_permissions_context(request):
                 'user_projects_count': 0,
                 'projects_visible_fields': [],
                 'projects_form_fields': [],
-                'has_owner_access': False,
-                'owner_databases_count': 0,
                 'user_accessible_modules': Module.objects.none(),
                 'user_profile_permissions': None,
             })
@@ -330,8 +296,6 @@ def enhanced_permissions_context(request):
             'user_projects_count': 0,
             'projects_visible_fields': [],
             'projects_form_fields': [],
-            'has_owner_access': False,
-            'owner_databases_count': 0,
             'user_accessible_modules': Module.objects.none(),
             'user_profile_permissions': None,
         })
