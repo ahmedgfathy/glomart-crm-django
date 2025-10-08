@@ -54,30 +54,29 @@
 
                 
                 <!-- Properties Module -->
-                {% if user_accessible_modules %}
-                    {% for module in user_accessible_modules|dictsort:"order" %}
-                        {% if module.name == 'property' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'properties' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'properties:property_list' %}">
-                                <i class="bi bi-building me-3"></i>
-                                <span>Properties</span>
-                                {% if user_properties_count > 0 %}
-                                <span class="badge bg-success ms-auto">{{ user_properties_count }}</span>
-                                {% endif %}
-                            </a>
-                        </li>
-                        {% elif module.name == 'projects' %}
-                        <li class="nav-item">
-                            <a class="nav-link {% if 'projects' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'projects:project_list' %}">
-                                <i class="bi bi-diagram-2 me-3"></i>
-                                <span>Projects</span>
-                                {% if user_projects_count > 0 %}
-                                <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
-                                {% endif %}
-                            </a>
-                        </li>
+                {% if has_properties_view %}
+                <li class="nav-item">
+                    <a class="nav-link {% if 'properties' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'properties:property_list' %}">
+                        <i class="bi bi-building me-3"></i>
+                        <span>Properties</span>
+                        {% if user_properties_count > 0 %}
+                        <span class="badge bg-success ms-auto">{{ user_properties_count }}</span>
                         {% endif %}
-                    {% endfor %}
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Projects Module -->
+                {% if has_projects_view %}
+                <li class="nav-item">
+                    <a class="nav-link {% if 'projects' in request.resolver_match.namespace %}active{% endif %}" href="{% url 'projects:project_list' %}">
+                        <i class="bi bi-diagram-2 me-3"></i>
+                        <span>Projects</span>
+                        {% if user_projects_count > 0 %}
+                        <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
+                        {% endif %}
+                    </a>
+                </li>
                 {% endif %}
                 
                 {% if user.is_superuser %}
