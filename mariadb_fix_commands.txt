@@ -1,0 +1,41 @@
+
+# ================================
+# MariaDB Connection Fix Commands
+# ================================
+
+# 1. Check MariaDB service status
+sudo systemctl status mariadb
+
+# 2. Connect to MariaDB as root (test credentials)
+mysql -u root -p
+
+# Once connected, run these SQL commands:
+# ================================
+# Create dedicated Django user
+CREATE USER IF NOT EXISTS 'django_user'@'localhost' IDENTIFIED BY 'Django2024!Secure';
+
+# Create database if it doesn't exist
+CREATE DATABASE IF NOT EXISTS django_db_glomart_rs CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# Grant all privileges to Django user
+GRANT ALL PRIVILEGES ON django_db_glomart_rs.* TO 'django_user'@'localhost';
+FLUSH PRIVILEGES;
+
+# Verify user exists
+SELECT User, Host FROM mysql.user WHERE User = 'django_user';
+
+# Show database
+SHOW DATABASES LIKE 'django_db_glomart_rs';
+
+# Exit MariaDB
+EXIT;
+
+# 3. Test new Django user connection
+mysql -u django_user -p django_db_glomart_rs
+
+# 4. If root password is wrong, reset it:
+# sudo mysql_secure_installation
+# OR
+# sudo mysql
+# ALTER USER 'root'@'localhost' IDENTIFIED BY 'your_new_password';
+# FLUSH PRIVILEGES;

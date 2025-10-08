@@ -86,7 +86,7 @@ DATABASES = {
         'NAME': 'django_db_glomart_rs',
         'HOST': 'localhost',
         'USER': 'root',
-        'PASSWORD': 'zerocall',
+        'PASSWORD': 'ZeroCall20!@HH##1655&&',
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
