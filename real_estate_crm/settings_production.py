@@ -46,7 +46,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'leads.middleware.UserActivityMiddleware',  # Custom middleware for activity tracking
+    'leads.middleware.AuditMiddleware',  # Custom middleware for audit tracking
 ]
 
 ROOT_URLCONF = 'real_estate_crm.urls'

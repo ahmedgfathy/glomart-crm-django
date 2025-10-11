@@ -387,6 +387,27 @@
         line-height: 1.5;
     }
     
+    /* Property Type Links */
+    .property-type-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+    
+    .property-type-link:hover {
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .property-type-link:hover .property-type-title {
+        color: #667eea;
+    }
+    
+    .property-type-link:focus {
+        outline: 2px solid #667eea;
+        outline-offset: 4px;
+    }
+    
     /* Quick Actions */
     .quick-actions {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -786,7 +807,7 @@
                     </div>
                     <h3>Add New Property</h3>
                     <p>Register a new property to your portfolio</p>
-                    <a href="/properties/add/" class="action-btn primary">Add Property</a>
+                    <a href="{% url 'properties:property_create' %}" class="action-btn primary">Add Property</a>
                 </div>
                 
                 <div class="action-card">
@@ -795,7 +816,7 @@
                     </div>
                     <h3>Add New Lead</h3>
                     <p>Register potential clients and opportunities</p>
-                    <a href="/leads/add/" class="action-btn success">Add Lead</a>
+                    <a href="{% url 'leads:create_lead' %}" class="action-btn success">Add Lead</a>
                 </div>
                 
                 <div class="action-card">
@@ -804,7 +825,7 @@
                     </div>
                     <h3>Create Project</h3>
                     <p>Start a new development project</p>
-                    <a href="/projects/add/" class="action-btn info">Create Project</a>
+                    <a href="{% url 'projects:project_create' %}" class="action-btn info">Create Project</a>
                 </div>
                 
                 <div class="action-card">
@@ -813,7 +834,7 @@
                     </div>
                     <h3>View Reports</h3>
                     <p>Generate comprehensive analytics reports</p>
-                    <a href="/reports/" class="action-btn warning">View Reports</a>
+                    <a href="{% url 'authentication:dashboard' %}" class="action-btn warning">View Reports</a>
                 </div>
             </div>
         </div>
@@ -824,41 +845,41 @@
             <p class="section-subtitle">Comprehensive overview of your property types and market distribution</p>
             
             <div class="property-grid">
-                <div class="property-type-card">
+                <a href="{% url 'properties:property_list' %}?search=apartment villa townhouse duplex chalet penthouse studio" class="property-type-card property-type-link" title="View Residential Properties">
                     <div class="metric-icon primary">
                         <i class="bi bi-house-door"></i>
                     </div>
                     <h3 class="property-type-title">Residential</h3>
                     <div class="property-type-number">{{ residential_count }}</div>
                     <p class="property-type-desc">Houses, apartments, villas and residential units for families and individuals</p>
-                </div>
+                </a>
                 
-                <div class="property-type-card">
+                <a href="{% url 'properties:property_list' %}?search=commercial retail shop building factory" class="property-type-card property-type-link" title="View Commercial Properties">
                     <div class="metric-icon success">
                         <i class="bi bi-building-gear"></i>
                     </div>
                     <h3 class="property-type-title">Commercial</h3>
                     <div class="property-type-number">{{ commercial_count }}</div>
                     <p class="property-type-desc">Retail spaces, shopping centers and commercial business properties</p>
-                </div>
+                </a>
                 
-                <div class="property-type-card">
+                <a href="{% url 'properties:property_list' %}?search=medical clinic" class="property-type-card property-type-link" title="View Medical Properties">
                     <div class="metric-icon danger">
                         <i class="bi bi-hospital"></i>
                     </div>
                     <h3 class="property-type-title">Medical</h3>
                     <div class="property-type-number">{{ medical_count }}</div>
                     <p class="property-type-desc">Healthcare facilities, clinics, hospitals and medical centers</p>
-                </div>
+                </a>
                 
-                <div class="property-type-card">
+                <a href="{% url 'properties:property_list' %}?search=office administrative" class="property-type-card property-type-link" title="View Office Properties">
                     <div class="metric-icon info">
                         <i class="bi bi-briefcase"></i>
                     </div>
                     <h3 class="property-type-title">Office</h3>
                     <div class="property-type-number">{{ office_count }}</div>
                     <p class="property-type-desc">Office buildings, coworking spaces and business centers</p>
-                </div>
+                </a>
             </div>
         </div>
 
