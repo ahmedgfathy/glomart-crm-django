@@ -46,6 +46,9 @@ jobs:
           # Set production environment
           export DJANGO_SETTINGS_MODULE=real_estate_crm.settings_production
           
+          # Load environment variables
+          source .env.production 2>/dev/null || echo "No .env.production file found"
+          
           # CRITICAL: Only check migrations, NEVER apply them automatically
           echo "🔍 Checking migrations (READ-ONLY)..."
           python manage.py showmigrations
