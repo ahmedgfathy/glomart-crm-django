@@ -137,7 +137,13 @@ echo "📦 Installing missing dependencies..."
 source venv/bin/activate
 pip install python-dotenv
 
-# 6. Test Django with production settings
+# 6. Create log directory
+echo "📁 Creating log directory..."
+mkdir -p /var/log/glomart-crm
+chown www-data:www-data /var/log/glomart-crm
+chmod 755 /var/log/glomart-crm
+
+# 7. Test Django with production settings
 echo "🧪 Testing Django with production settings..."
 export DJANGO_SETTINGS_MODULE=real_estate_crm.settings_production
 source .env.production
@@ -148,23 +154,23 @@ else
     echo "⚠️  Django settings check has warnings (this is normal)"
 fi
 
-# 7. Collect static files
+# 8. Collect static files
 echo "📄 Collecting static files..."
 python manage.py collectstatic --noinput
 
-# 8. Set proper file permissions
+# 9. Set proper file permissions
 echo "🔒 Setting file permissions..."
 chown -R www-data:www-data /var/www/glomart-crm/
 chmod -R 755 /var/www/glomart-crm/
 chmod 600 /var/www/glomart-crm/.env.production
 
-# 9. Reload and restart services
+# 10. Reload and restart services
 echo "🔄 Restarting services..."
 systemctl daemon-reload
 systemctl restart glomart-crm
 systemctl reload nginx
 
-# 10. Health check
+# 11. Health check
 echo "🏥 Performing health check..."
 sleep 5
 
