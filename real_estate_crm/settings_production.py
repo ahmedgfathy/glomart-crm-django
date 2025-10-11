@@ -1,20 +1,28 @@
 """
 Production Django settings for real_estate_crm project.
+This file is used ONLY for production deployment.
 """
 
 from pathlib import Path
 import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env.production file (if exists)
+env_file = BASE_DIR / '.env.production'
+if env_file.exists():
+    load_dotenv(env_file)
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-4cow$muvk#-gxnnbvrzy80f5$$-)%s4(117e-89_q96s7aq7&1')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-CHANGE-THIS-IN-PRODUCTION')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
 
-ALLOWED_HOSTS = ['sys.glomartrealestates.com', '5.180.148.92', 'localhost', '127.0.0.1']
+# Get allowed hosts from environment variable
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'sys.glomartrealestates.com,5.180.148.92').split(',')
 
 # Application definition
 INSTALLED_APPS = [
@@ -62,19 +70,20 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'real_estate_crm.wsgi.application'
 
-# Database - Production MariaDB
+# Database - Production MariaDB (using environment variables)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ.get('DB_NAME', 'glomart_crm'),
-        'USER': os.environ.get('DB_USER', 'glomart_crm_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'your_password'),
+        'NAME': os.environ.get('DB_NAME', 'django_db_glomart_rs'),
+        'USER': os.environ.get('DB_USER', 'root'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'ZeroCall20!@HH##1655&&'),
         'HOST': os.environ.get('DB_HOST', 'localhost'),
         'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
         },
+        'CONN_MAX_AGE': 60,  # Connection pooling for production
     }
 }
 
@@ -102,15 +111,16 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-STATIC_ROOT = '/var/www/glomart-crm/staticfiles'
+STATIC_ROOT = os.environ.get('STATIC_ROOT', '/var/www/glomart-crm/staticfiles')
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
+    BASE_DIR / "public",  # Match main settings
 ]
 
 # Media files
 MEDIA_URL = '/media/'
-MEDIA_ROOT = '/var/www/glomart-crm/media'
+MEDIA_ROOT = os.environ.get('MEDIA_ROOT', '/var/www/glomart-crm/media')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

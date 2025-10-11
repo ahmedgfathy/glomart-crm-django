@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Production (Code Only - Database Protected)
 
 on:
   push:
@@ -16,41 +16,61 @@ jobs:
         username: ${{ secrets.USERNAME }}
         key: ${{ secrets.SSH_KEY }}
         script: |
+          # CRITICAL: Production database is MASTER - NEVER touch it!
+          # Database: root/ZeroCall20!@HH##1655&& - READ ONLY!
+          
+          echo "🚀 Starting production deployment (CODE ONLY)..."
+          echo "🗄️ Production database is MASTER - will NOT be modified"
+          
           cd /var/www/glomart-crm
           
-          # Backup current version
+          # Backup current code version only (not database)
+          echo "📦 Backing up current code..."
+          sudo mkdir -p /var/backups/glomart-crm
           sudo cp -r /var/www/glomart-crm /var/backups/glomart-crm-backup-$(date +%Y%m%d_%H%M%S)
           
           # Pull latest changes
+          echo "⬇️ Pulling latest code..."
           git fetch origin main
           git reset --hard origin/main
           
-          # Set permissions
+          # Set permissions for code files only
           sudo chown -R www-data:www-data /var/www/glomart-crm/
           sudo chmod -R 755 /var/www/glomart-crm/
           
-          # Activate virtual environment and update
+          # Activate virtual environment and update dependencies
+          echo "📚 Updating Python dependencies..."
           source venv/bin/activate
           pip install -r requirements-production.txt
           
           # Set production environment
           export DJANGO_SETTINGS_MODULE=real_estate_crm.settings_production
           
-          # Run Django commands
-          python manage.py migrate --noinput
+          # CRITICAL: Only check migrations, NEVER apply them automatically
+          echo "🔍 Checking migrations (READ-ONLY)..."
+          python manage.py showmigrations
+          
+          # Collect static files (safe operation)
+          echo "📄 Collecting static files..."
           python manage.py collectstatic --noinput
           
-          # Fix permissions
+          # Fix permissions again
           sudo chown -R www-data:www-data /var/www/glomart-crm/
           sudo chmod -R 755 /var/www/glomart-crm/
           
-          # Restart services
+          # Restart application services (not database)
+          echo "🔄 Restarting services..."
           sudo systemctl daemon-reload
           sudo systemctl restart glomart-crm
           sudo systemctl reload nginx
           
-          # Check if deployment was successful
+          # Health check
+          echo "🏥 Performing health check..."
           sleep 5
-          curl -f http://127.0.0.1:8000/ || exit 1
-          
-          echo "Deployment completed successfully!"
+          if curl -f http://127.0.0.1:8000/admin/ > /dev/null 2>&1; then
+            echo "✅ Deployment successful!"
+            echo "🗄️ Production database remains untouched (master data preserved)"
+          else
+            echo "❌ Health check failed"
+            exit 1
+          fi
