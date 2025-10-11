@@ -126,7 +126,7 @@ MEDIA_ROOT = os.environ.get('MEDIA_ROOT', '/var/www/glomart-crm/media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom user model
-AUTH_USER_MODEL = 'authentication.User'
+#AUTH_USER_MODEL = .authentication.User. # Removed - using default User model
 
 # Login URLs
 LOGIN_URL = '/authentication/login/'
