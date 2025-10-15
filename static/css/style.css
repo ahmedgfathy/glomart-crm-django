@@ -450,6 +450,8 @@ body {
     top: 70px;
     left: 0;
     width: 280px;
+    max-width: 280px !important;
+    min-width: 280px !important;
     height: calc(100vh - 70px);
     background: #ffffff;
     box-shadow: none;
@@ -561,7 +563,7 @@ body {
     min-height: calc(100vh - 70px);
     transition: margin-left 0.3s ease;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    padding: 0;
+    padding: 1rem 0 0 0;
     overflow-x: hidden;
 }
 

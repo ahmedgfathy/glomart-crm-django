@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="content-wrapper">
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -40,7 +40,7 @@
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-md-3">
         <div class="stat-card">
             <div class="stat-number">{{ total_leads }}</div>
@@ -72,7 +72,7 @@
 </div>
 
 <!-- Search and Filters -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-12">
         <div class="card-modern p-3">
             <form method="get" id="filterForm" class="row g-3 align-items-end" action="{% url 'leads:leads_list' %}">
