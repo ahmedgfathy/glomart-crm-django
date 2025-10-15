@@ -4,6 +4,10 @@
 {% block title %}Dashboard - Glomart CRM{% endblock %}
 
 {% block extra_css %}
+<!-- Force browser to reload this page -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <style>
     /* Modern Professional Dashboard Design */
     body {
@@ -13,15 +17,17 @@
     
     .dashboard-container {
         padding: 0;
+        margin-top: 0;
     }
     
     /* Header Section */
     .dashboard-header {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
         color: white;
-        padding: 3rem 0;
-        margin-bottom: 2rem;
-        border-radius: 0 0 30px 30px;
+        padding: 0.75rem 0;
+        margin-top: 0;
+        margin-bottom: 1rem;
+        border-radius: 0;
         position: relative;
         overflow: hidden;
     }
@@ -127,11 +133,11 @@
         background: var(--accent-color);
     }
     
-    .metric-card.primary { --accent-color: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    .metric-card.success { --accent-color: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
-    .metric-card.warning { --accent-color: linear-gradient(135deg, #10b981 0%, #059669 100%); }
-    .metric-card.info { --accent-color: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
-    .metric-card.danger { --accent-color: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .metric-card.primary { --accent-color: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%); }
+    .metric-card.success { --accent-color: linear-gradient(135deg, #1877f2 0%, #4267B2 100%); }
+    .metric-card.warning { --accent-color: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%); }
+    .metric-card.info { --accent-color: linear-gradient(135deg, #1877f2 0%, #4267B2 100%); }
+    .metric-card.danger { --accent-color: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%); }
     
     .metric-header {
         display: flex;
@@ -160,8 +166,8 @@
         font-weight: 600;
         padding: 0.3rem 0.8rem;
         border-radius: 20px;
-        background: #e8f5e8;
-        color: #28a745;
+        background: #e3f2fd;
+        color: #1877f2;
     }
     
     .metric-content h3 {
@@ -251,19 +257,19 @@
     }
     
     .action-icon.primary {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
     }
     
     .action-icon.success {
-        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #4267B2 100%);
     }
     
     .action-icon.info {
-        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #4267B2 100%);
     }
     
     .action-icon.warning {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
     }
     
     .action-card h3 {
@@ -291,22 +297,22 @@
     }
     
     .action-btn.primary {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
         color: white;
     }
     
     .action-btn.success {
-        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #4267B2 100%);
         color: white;
     }
     
     .action-btn.info {
-        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #4267B2 100%);
         color: white;
     }
     
     .action-btn.warning {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
         color: white;
     }
     
@@ -358,9 +364,9 @@
     
     .property-type-card:hover {
         transform: translateY(-8px);
-        border-color: #10b981;
+        border-color: #1877f2;
         background: white;
-        box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);
+        box-shadow: 0 20px 40px rgba(24, 119, 242, 0.1);
     }
     
     .property-type-card .metric-icon {
@@ -400,17 +406,17 @@
     }
     
     .property-type-link:hover .property-type-title {
-        color: #10b981;
+        color: #1877f2;
     }
     
     .property-type-link:focus {
-        outline: 2px solid #10b981;
+        outline: 2px solid #1877f2;
         outline-offset: 4px;
     }
     
     /* Quick Actions */
     .quick-actions {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
         border-radius: 25px;
         padding: 3rem;
         margin-bottom: 3rem;
@@ -479,7 +485,7 @@
     
     .action-btn {
         background: white;
-        color: #10b981;
+        color: #1877f2;
         border: none;
         border-radius: 50px;
         padding: 0.8rem 2rem;
@@ -494,7 +500,7 @@
     .action-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        color: #10b981;
+        color: #1877f2;
         text-decoration: none;
     }
     
@@ -530,7 +536,7 @@
     .activity-icon {
         width: 40px;
         height: 40px;
-        background: #10b981;
+        background: #1877f2;
         color: white;
         border-radius: 10px;
         display: flex;
@@ -569,7 +575,7 @@
     
     .progress-fill {
         height: 100%;
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        background: linear-gradient(135deg, #1877f2 0%, #0c63d4 100%);
         border-radius: 10px;
         transition: width 1s ease;
     }
@@ -617,31 +623,16 @@
     <!-- Header Section -->
     <div class="dashboard-header">
         <div class="container">
-            <div class="welcome-section">
-                <h1 class="welcome-title">
-                    Welcome back, {{ user.get_full_name|default:user.username }}! 👋
-                </h1>
-                <p class="welcome-subtitle">
-                    Here's what's happening with your CRM today - {{ "now"|date:"l, F d, Y" }}
-                </p>
-                
-                <div class="dashboard-stats">
-                    <div class="header-stat">
-                        <div class="header-stat-number">{{ total_properties|floatformat:0 }}</div>
-                        <div class="header-stat-label">Total Properties</div>
-                    </div>
-                    <div class="header-stat">
-                        <div class="header-stat-number">{{ active_leads|floatformat:0 }}</div>
-                        <div class="header-stat-label">Active Leads</div>
-                    </div>
-                    <div class="header-stat">
-                        <div class="header-stat-number">{{ active_projects|floatformat:0 }}</div>
-                        <div class="header-stat-label">Active Projects</div>
-                    </div>
-                    <div class="header-stat">
-                        <div class="header-stat-number">{{ monthly_revenue }}</div>
-                        <div class="header-stat-label">Portfolio Value</div>
-                    </div>
+            <div class="welcome-section" style="display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                    <h1 class="welcome-title" style="font-size: 1.5rem; margin: 0;">
+                        Welcome, {{ user.get_full_name|default:user.username }}! 👋
+                    </h1>
+                    <p class="welcome-subtitle" style="margin: 0.25rem 0 0 0; font-size: 0.9rem;">
+                        <span class="badge" style="background: rgba(255,255,255,0.25); color: white; font-weight: normal;">
+                            <i class="bi bi-circle-fill" style="font-size: 0.5rem; color: #4ade80;"></i> Online
+                        </span>
+                    </p>
                 </div>
             </div>
         </div>
