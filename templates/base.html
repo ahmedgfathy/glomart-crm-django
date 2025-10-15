@@ -85,6 +85,118 @@
                 }
             });
         });
+        
+        // ============= CALENDAR / EVENTS FUNCTIONALITY =============
+        // Load upcoming events for calendar dropdown
+        function loadUpcomingEvents() {
+            const loadingState = document.getElementById('eventsLoadingState');
+            const listContainer = document.getElementById('eventsListContainer');
+            const badge = document.getElementById('eventsCountBadge');
+            const notificationBadge = document.getElementById('eventsNotificationBadge');
+            
+            if (!listContainer) return;
+            
+            fetch('/leads/api/events/user/upcoming/')
+                .then(response => response.json())
+                .then(data => {
+                    if (loadingState) loadingState.style.display = 'none';
+                    
+                    if (data.success && data.events.length > 0) {
+                        // Update badges
+                        if (badge) badge.textContent = data.count;
+                        if (notificationBadge) {
+                            notificationBadge.textContent = data.count;
+                            notificationBadge.style.display = 'block';
+                        }
+                        
+                        // Display events
+                        let html = '';
+                        data.events.forEach(event => {
+                            const startDate = new Date(event.start_datetime);
+                            const isToday = startDate.toDateString() === new Date().toDateString();
+                            const isTomorrow = startDate.toDateString() === new Date(Date.now() + 86400000).toDateString();
+                            
+                            let dateLabel = startDate.toLocaleDateString('en-US', { 
+                                month: 'short', day: 'numeric'
+                            });
+                            if (isToday) dateLabel = 'Today';
+                            else if (isTomorrow) dateLabel = 'Tomorrow';
+                            
+                            const timeLabel = startDate.toLocaleTimeString('en-US', { 
+                                hour: '2-digit', minute: '2-digit'
+                            });
+                            
+                            const typeIcon = {
+                                'meeting': 'people',
+                                'call': 'telephone',
+                                'site_visit': 'building',
+                                'follow_up': 'arrow-repeat',
+                                'presentation': 'easel',
+                                'negotiation': 'chat-dots',
+                                'closing': 'check-circle',
+                                'other': 'calendar-event'
+                            }[event.event_type] || 'calendar-event';
+                            
+                            html += `
+                                <li>
+                                    <a class="dropdown-item py-2" href="/leads/${event.lead_id}/" style="white-space: normal;">
+                                        <div class="d-flex align-items-start">
+                                            <div class="flex-shrink-0 me-2">
+                                                <i class="bi bi-${typeIcon} text-success"></i>
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">${event.title}</div>
+                                                <div class="text-muted small">${event.lead_name}</div>
+                                                <div class="text-success small">
+                                                    <i class="bi bi-clock me-1"></i>${dateLabel} at ${timeLabel}
+                                                    ${event.location ? `<i class="bi bi-geo-alt ms-2 me-1"></i>${event.location}` : ''}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </li>
+                            `;
+                        });
+                        
+                        listContainer.innerHTML = html;
+                    } else {
+                        if (badge) badge.textContent = '0';
+                        listContainer.innerHTML = `
+                            <li>
+                                <div class="px-3 py-4 text-center text-muted">
+                                    <i class="bi bi-calendar-x display-6 mb-2"></i>
+                                    <div class="small">No upcoming events</div>
+                                </div>
+                            </li>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading events:', error);
+                    if (loadingState) loadingState.style.display = 'none';
+                    listContainer.innerHTML = `
+                        <li>
+                            <div class="px-3 py-2 text-center text-danger small">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Error loading events
+                            </div>
+                        </li>
+                    `;
+                });
+        }
+        
+        // Load events when calendar dropdown is opened
+        const calendarButton = document.getElementById('calendarButton');
+        if (calendarButton) {
+            calendarButton.addEventListener('click', function() {
+                loadUpcomingEvents();
+            });
+        }
+        
+        // Initial load
+        if (document.getElementById('calendarDropdown')) {
+            loadUpcomingEvents();
+        }
     </script>
     
     {% block extra_js %}{% endblock %}

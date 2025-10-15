@@ -4,6 +4,13 @@
 
 {% block title %}{{ profile.name }} - Profile Details{% endblock %}
 
+{% block extra_head %}
+<!-- Force browser to reload this page - no caching -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+{% endblock %}
+
 {% block extra_css %}
 <style>
 /* Custom Range Slider Styles */
@@ -26,45 +33,6 @@
     height: 26px;
     border-radius: 50%;
     background: var(--thumb-color, var(--primary-color));
-    cursor: pointer;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    border: 2px solid white;
-}
-    
-    // Check if user has permission to edit (test with a simple request)
-    window.checkEditPermissions = function() {
-        console.log('🔍 Checking edit permissions...');
-        fetch(`{% url 'authentication:update_permissions' profile.id %}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({test: true})
-        })
-        .then(response => {
-            if (response.status === 403) {
-                console.warn('⚠️ User does not have superuser permissions');
-                alert('⚠️ Permission Issue\n\nYou are not logged in as a superuser.\nPermission sliders will not save changes.\n\nPlease log in with an administrator account.');
-            } else if (response.status === 302) {
-                console.warn('⚠️ User is not logged in');
-                alert('⚠️ Authentication Required\n\nYou are not logged in.\nPlease log in as a superuser to modify permissions.');
-            } else {
-                console.log('✅ User has edit permissions');
-            }
-        })
-        .catch(error => {
-            console.warn('⚠️ Could not verify permissions:', error);
-        });
-    };
-    
-    // Test function to verify save indicator works
-    window.testSaveIndicator = function() {
-        console.log('🧪 Testing save indicator...');
-        showSavingIndicator();
-        setTimeout(() => showSaveSuccessIndicator(), 1000);
-    };
     cursor: pointer;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
@@ -194,6 +162,107 @@
 .save-indicator.show {
     opacity: 1;
 }
+
+/* Field Permissions Styles */
+.field-permissions-section {
+    transition: all 0.3s ease;
+}
+
+.field-permissions-content {
+    transition: all 0.3s ease;
+}
+
+.field-permissions-content.show {
+    display: block !important;
+}
+
+.field-chevron {
+    transition: transform 0.3s ease;
+}
+
+.field-loading {
+    display: none;
+}
+
+.field-permission-item {
+    transition: all 0.2s ease;
+}
+
+.field-permission-item:hover {
+    background-color: #f8f9fa !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.model-section {
+    border-left: 3px solid var(--primary-color);
+    padding-left: 15px;
+}
+
+.badge-sm {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+}
+
+.field-edit-checkbox:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Full-Width Field Permissions Panel */
+.field-permissions-panel {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Filter Builder Styles */
+.filter-condition-row {
+    transition: all 0.2s ease;
+}
+
+.filter-condition-row:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#filterBuilder {
+    min-height: 100px;
+}
+
+#filterConditionsList:empty::before {
+    content: "No conditions added yet. Click 'Add Condition' to start.";
+    color: #6c757d;
+    font-style: italic;
+    display: block;
+    text-align: center;
+    padding: 20px;
+}
+
+.field-permissions-panel .card-modern {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 2px solid var(--primary-color);
+}
+
+.field-list .table {
+    margin-bottom: 0;
+}
+
+.field-list .table thead {
+    position: sticky;
+    top: 0;
+    background: white;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
 </style>
 {% endblock %}
 
@@ -232,24 +301,47 @@
     <div class="row mb-4">
         <div class="col-lg-8">
             <div class="card-modern p-4">
-                <h5 class="fw-bold mb-3">
-                    <i class="bi bi-sliders text-primary me-2"></i>
-                    Module Permissions
-                </h5>
-                <div class="alert alert-info d-flex align-items-center mb-4">
-                    <i class="bi bi-info-circle me-2"></i>
-                    <div>
-                        <strong>Cumulative Permission Levels:</strong> Each level includes all permissions from lower levels.
-                        <br><small class="text-muted">
-                            <span class="badge bg-secondary">None</span> → 
-                            <span class="badge bg-info">View</span> → 
-                            <span class="badge bg-warning">View + Edit</span> → 
-                            <span class="badge bg-success">View + Edit + Create</span> → 
-                            <span class="badge bg-danger">View + Edit + Create + Delete</span>
-                        </small>
-                        <br><small class="text-success"><i class="bi bi-check-circle me-1"></i>Changes are saved automatically</small>
-                    </div>
-                </div>
+                <!-- Tabs Navigation -->
+                <ul class="nav nav-tabs mb-4" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="permissions-tab" data-bs-toggle="tab" data-bs-target="#permissions" type="button" role="tab">
+                            <i class="bi bi-sliders me-2"></i>Module Permissions
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="datafilters-tab" data-bs-toggle="tab" data-bs-target="#datafilters" type="button" role="tab">
+                            <i class="bi bi-funnel me-2"></i>Data Filters
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="dropdowns-tab" data-bs-toggle="tab" data-bs-target="#dropdowns" type="button" role="tab">
+                            <i class="bi bi-list-ul me-2"></i>Dropdown Restrictions
+                        </button>
+                    </li>
+                </ul>
+
+                <!-- Tab Content -->
+                <div class="tab-content" id="profileTabContent">
+                    <!-- Module Permissions Tab -->
+                    <div class="tab-pane fade show active" id="permissions" role="tabpanel">
+                        <h5 class="fw-bold mb-3">
+                            <i class="bi bi-sliders text-primary me-2"></i>
+                            Module Permissions
+                        </h5>
+                        <div class="alert alert-info d-flex align-items-center mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <div>
+                                <strong>Cumulative Permission Levels:</strong> Each level includes all permissions from lower levels.
+                                <br><small class="text-muted">
+                                    <span class="badge bg-secondary">None</span> → 
+                                    <span class="badge bg-info">View</span> → 
+                                    <span class="badge bg-warning">View + Edit</span> → 
+                                    <span class="badge bg-success">View + Edit + Create</span> → 
+                                    <span class="badge bg-danger">View + Edit + Create + Delete</span>
+                                </small>
+                                <br><small class="text-success"><i class="bi bi-check-circle me-1"></i>Changes are saved automatically</small>
+                            </div>
+                        </div>
                 
                 <div class="row g-4">
                     {% for module in modules %}
@@ -311,12 +403,240 @@
                                 </span>
                                 {% endwith %}
                             </div>
+                            
+                            <!-- Field Permissions Toggle Button -->
+                            <div class="field-permissions-section mt-3" 
+                                 id="fields-{{ module.name }}" 
+                                 data-module="{{ module.name }}"
+                                 style="display: none;">
+                                <div class="border-top pt-3">
+                                    <button class="btn btn-sm btn-primary w-100 d-flex align-items-center justify-content-between" 
+                                            type="button" 
+                                            onclick="toggleFieldPermissions('{{ module.name }}')">
+                                        <span>
+                                            <i class="bi bi-list-check me-2"></i>
+                                            Configure Field Visibility
+                                        </span>
+                                        <i class="bi bi-chevron-down field-chevron" id="chevron-{{ module.name }}"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Full-Width Field Permissions Panel (appears below when expanded) -->
+                    <div class="col-12 field-permissions-panel" id="panel-{{ module.name }}" style="display: none;">
+                        <div class="card-modern p-4 mt-3">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h5 class="fw-bold mb-1">
+                                        <i class="bi bi-list-check text-primary me-2"></i>
+                                        Field Visibility Configuration - {{ module.display_name }}
+                                    </h5>
+                                    <p class="text-muted small mb-0">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Control which fields users with this profile can see and edit in the {{ module.display_name }} module
+                                    </p>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success" 
+                                            onclick="saveFieldPermissions('{{ module.name }}')">
+                                        <i class="bi bi-check-circle me-1"></i>Save Changes
+                                    </button>
+                                    <button class="btn btn-outline-secondary" 
+                                            onclick="toggleFieldPermissions('{{ module.name }}')">
+                                        <i class="bi bi-x-lg me-1"></i>Close
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Loading indicator -->
+                            <div class="text-center py-5 field-loading" id="loading-{{ module.name }}" style="display: none;">
+                                <div class="spinner-border text-primary me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div class="mt-2">
+                                    <strong>Loading fields...</strong>
+                                </div>
+                            </div>
+                            
+                            <!-- Fields will be loaded here dynamically -->
+                            <div class="field-list" id="fieldlist-{{ module.name }}"></div>
                         </div>
                     </div>
                     {% endfor %}
+                                </div>
+                            </div>
+                    </div>
+                    <!-- End Module Permissions Tab -->
+
+                    <!-- Data Filters Tab -->
+                    <div class="tab-pane fade" id="datafilters" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h5 class="fw-bold mb-1">
+                                    <i class="bi bi-funnel text-primary me-2"></i>
+                                    Data Filters (Row-Level Security)
+                                </h5>
+                                <p class="text-muted small mb-0">
+                                    Control which data rows users can see (e.g., "Sales rep can only see their own leads")
+                                </p>
+                            </div>
+                            <button class="btn btn-primary" onclick="openDataFilterModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Filter
+                            </button>
+                        </div>
+                        
+                        <div id="dataFiltersTable">
+                            <table class="table table-hover" id="filtersDataTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Filter Name</th>
+                                        <th>Module</th>
+                                        <th>Model</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="filtersTableBody">
+                                    {% if data_filters %}
+                                        {% for filter in data_filters %}
+                                        <tr data-filter-id="{{ filter.id }}">
+                                            <td>
+                                                <strong>{{ filter.name }}</strong>
+                                                {% if filter.description %}
+                                                    <br><small class="text-muted">{{ filter.description }}</small>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ filter.module.display_name }}</span>
+                                            </td>
+                                            <td><code class="small">{{ filter.model_name }}</code></td>
+                                            <td>
+                                                {% if filter.filter_type == 'include' %}
+                                                    <span class="badge bg-success">Include</span>
+                                                {% elif filter.filter_type == 'exclude' %}
+                                                    <span class="badge bg-danger">Exclude</span>
+                                                {% else %}
+                                                    <span class="badge bg-info">Conditional</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if filter.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        onclick="editDataFilter({{ filter.id }})" 
+                                                        title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        onclick="deleteDataFilter({{ filter.id }})" 
+                                                        title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr id="noFiltersRow">
+                                            <td colspan="6" class="text-center text-muted py-4">
+                                                <i class="bi bi-funnel fs-2 d-block mb-2"></i>
+                                                No data filters configured for this profile
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- End Data Filters Tab -->
+
+                    <!-- Dropdown Restrictions Tab -->
+                    <div class="tab-pane fade" id="dropdowns" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h5 class="fw-bold mb-1">
+                                    <i class="bi bi-list-ul text-primary me-2"></i>
+                                    Dropdown Restrictions
+                                </h5>
+                                <p class="text-muted small mb-0">
+                                    Limit dropdown choices for this profile (e.g., restrict property types, lead sources)
+                                </p>
+                            </div>
+                            <button class="btn btn-primary" onclick="openDropdownModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Restriction
+                            </button>
+                        </div>
+                        
+                        <div id="dropdownRestrictionsTable">
+                            <table class="table table-hover" id="restrictionsDataTable">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Restriction Name</th>
+                                        <th>Module</th>
+                                        <th>Field</th>
+                                        <th>Source Model</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="restrictionsTableBody">
+                                    {% if dropdown_restrictions %}
+                                        {% for restriction in dropdown_restrictions %}
+                                        <tr data-restriction-id="{{ restriction.id }}">
+                                            <td>
+                                                <strong>{{ restriction.name }}</strong>
+                                                {% if restriction.is_multi_select %}
+                                                    <br><span class="badge badge-sm bg-info">Multi-Select</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-primary">{{ restriction.module.display_name }}</span>
+                                            </td>
+                                            <td><code class="small">{{ restriction.field_name }}</code></td>
+                                            <td><code class="small">{{ restriction.source_model }}</code></td>
+                                            <td>
+                                                {% if restriction.is_active %}
+                                                    <span class="badge bg-success">Active</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary" 
+                                                        onclick="editDropdownRestriction({{ restriction.id }})" 
+                                                        title="Edit">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger" 
+                                                        onclick="deleteDropdownRestriction({{ restriction.id }})" 
+                                                        title="Delete">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    {% else %}
+                                        <tr id="noRestrictionsRow">
+                                            <td colspan="6" class="text-center text-muted py-4">
+                                                <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
+                                                No dropdown restrictions configured for this profile
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- End Dropdown Restrictions Tab -->
                 </div>
-            </div>
-        </div>
+                <!-- End Tab Content -->
         
         <div class="col-lg-4">
             <!-- Profile Summary -->
@@ -701,6 +1021,1456 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initial log to confirm script is loaded
     console.log('🚀 Permission slider system loaded and ready!');
+    
+    // ====== FIELD PERMISSIONS FUNCTIONS ======
+    
+    // Toggle field permissions section visibility - NOW WITH FULL WIDTH PANEL
+    window.toggleFieldPermissions = function(moduleName) {
+        const panel = document.getElementById(`panel-${moduleName}`);
+        const chevron = document.getElementById(`chevron-${moduleName}`);
+        const fieldList = document.getElementById(`fieldlist-${moduleName}`);
+        const loadingIndicator = document.getElementById(`loading-${moduleName}`);
+        
+        // Close all other panels first
+        document.querySelectorAll('.field-permissions-panel').forEach(p => {
+            if (p.id !== `panel-${moduleName}`) {
+                p.style.display = 'none';
+            }
+        });
+        
+        // Reset all chevrons
+        document.querySelectorAll('.field-chevron').forEach(c => {
+            if (c.id !== `chevron-${moduleName}`) {
+                c.classList.remove('bi-chevron-up');
+                c.classList.add('bi-chevron-down');
+            }
+        });
+        
+        // Toggle current panel
+        if (panel.style.display === 'none' || !panel.style.display) {
+            panel.style.display = 'block';
+            chevron.classList.remove('bi-chevron-down');
+            chevron.classList.add('bi-chevron-up');
+            
+            // Smooth scroll to the panel
+            setTimeout(() => {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+            
+            // Load fields if not already loaded
+            if (!fieldList.hasAttribute('data-loaded')) {
+                loadingIndicator.style.display = 'block';
+                loadModuleFields(moduleName);
+            }
+        } else {
+            panel.style.display = 'none';
+            chevron.classList.remove('bi-chevron-up');
+            chevron.classList.add('bi-chevron-down');
+        }
+    };
+    
+    // Load module fields via AJAX
+    window.loadModuleFields = function(moduleName) {
+        const loadingIndicator = document.getElementById(`loading-${moduleName}`);
+        const fieldList = document.getElementById(`fieldlist-${moduleName}`);
+        
+        loadingIndicator.style.display = 'block';
+        fieldList.innerHTML = '';
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const url = `/profiles/{{ profile.id }}/fields/${moduleName}/`;
+        
+        console.log('🔍 Loading fields from URL:', url);
+        
+        fetch(url, {
+            method: 'GET',
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            console.log('📡 Response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            loadingIndicator.style.display = 'none';
+            
+            console.log('📦 Received data:', data);
+            
+            if (data.success && data.models && data.models.length > 0) {
+                renderFieldPermissions(moduleName, data.models);
+                fieldList.setAttribute('data-loaded', 'true');
+            } else if (data.error) {
+                fieldList.innerHTML = `<div class="alert alert-danger small">
+                    <strong>Error:</strong> ${data.error}
+                    ${data.traceback ? '<pre class="mt-2 small">' + data.traceback + '</pre>' : ''}
+                </div>`;
+            } else {
+                fieldList.innerHTML = '<p class="text-muted text-center small">No fields found for this module</p>';
+            }
+        })
+        .catch(error => {
+            loadingIndicator.style.display = 'none';
+            console.error('❌ Error loading fields:', error);
+            fieldList.innerHTML = `<div class="alert alert-danger small">
+                <strong>Error loading fields:</strong> ${error.message}
+                <br><small class="text-muted">Check browser console for details</small>
+            </div>`;
+        });
+    };
+    
+    // Render field permissions UI - IMPROVED DESIGN
+    window.renderFieldPermissions = function(moduleName, models) {
+        const fieldList = document.getElementById(`fieldlist-${moduleName}`);
+        let html = '';
+        
+        // Add "Select All" controls at the top
+        html += `
+            <div class="mb-3 pb-3 border-bottom">
+                <div class="d-flex gap-2 justify-content-between align-items-center">
+                    <span class="fw-bold text-muted">
+                        <i class="bi bi-toggles me-2"></i>Quick Actions:
+                    </span>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" class="btn btn-outline-success" 
+                                onclick="toggleAllFields('${moduleName}', 'view', true)">
+                            <i class="bi bi-eye-fill me-1"></i>Show All
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" 
+                                onclick="toggleAllFields('${moduleName}', 'view', false)">
+                            <i class="bi bi-eye-slash-fill me-1"></i>Hide All
+                        </button>
+                        <button type="button" class="btn btn-outline-primary" 
+                                onclick="toggleAllFields('${moduleName}', 'edit', true)">
+                            <i class="bi bi-pencil-fill me-1"></i>Edit All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        models.forEach(model => {
+            html += `
+                <div class="model-section mb-4 border rounded-3 overflow-hidden">
+                    <div class="bg-primary bg-gradient p-2 px-3">
+                        <h6 class="fw-bold text-white mb-0 d-flex align-items-center">
+                            <i class="bi bi-box me-2"></i>${model.model_verbose_name}
+                            <span class="badge bg-white text-primary ms-2">${model.fields.length} fields</span>
+                        </h6>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="45%">Field Name</th>
+                                    <th width="15%" class="text-center">Type</th>
+                                    <th width="20%" class="text-center">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </th>
+                                    <th width="20%" class="text-center">
+                                        <i class="bi bi-pencil me-1"></i>Edit
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            
+            model.fields.forEach(field => {
+                const fieldId = `field_${moduleName}_${model.model_name}_${field.name}`;
+                const viewChecked = field.can_view ? 'checked' : '';
+                const editChecked = field.can_edit ? 'checked' : '';
+                const editDisabled = !field.can_view ? 'disabled' : '';
+                
+                html += `
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-dash text-muted me-2"></i>
+                                <strong>${field.verbose_name}</strong>
+                                ${field.is_required ? '<span class="badge bg-danger badge-sm ms-2">Required</span>' : ''}
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <small class="badge bg-secondary">${field.field_type}</small>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check d-flex justify-content-center">
+                                <input class="form-check-input field-view-checkbox" 
+                                       type="checkbox" 
+                                       id="${fieldId}_view"
+                                       data-module="${moduleName}"
+                                       data-model="${model.model_name}"
+                                       data-field="${field.name}"
+                                       ${viewChecked}
+                                       onchange="handleFieldViewChange('${moduleName}', '${model.model_name}', '${field.name}')">
+                            </div>
+                        </td>
+                        <td class="text-center">
+                            <div class="form-check d-flex justify-content-center">
+                                <input class="form-check-input field-edit-checkbox" 
+                                       type="checkbox" 
+                                       id="${fieldId}_edit"
+                                       data-module="${moduleName}"
+                                       data-model="${model.model_name}"
+                                       data-field="${field.name}"
+                                       ${editChecked}
+                                       ${editDisabled}>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        });
+        
+        if (html === '') {
+            html = '<p class="text-muted text-center small">No configurable fields found</p>';
+        }
+        
+        fieldList.innerHTML = html;
+    };
+    
+    // Handle view checkbox change (disable edit if view is unchecked)
+    window.handleFieldViewChange = function(moduleName, modelName, fieldName) {
+        const viewCheckbox = document.getElementById(`field_${moduleName}_${modelName}_${fieldName}_view`);
+        const editCheckbox = document.getElementById(`field_${moduleName}_${modelName}_${fieldName}_edit`);
+        
+        if (!viewCheckbox.checked) {
+            editCheckbox.checked = false;
+            editCheckbox.disabled = true;
+        } else {
+            editCheckbox.disabled = false;
+        }
+    };
+    
+    // Toggle all fields (view/edit) for a module
+    window.toggleAllFields = function(moduleName, type, checked) {
+        const fieldList = document.getElementById(`fieldlist-${moduleName}`);
+        
+        if (type === 'view') {
+            const checkboxes = fieldList.querySelectorAll('.field-view-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = checked;
+                // Trigger change event to update edit checkboxes
+                const module = checkbox.dataset.module;
+                const model = checkbox.dataset.model;
+                const field = checkbox.dataset.field;
+                handleFieldViewChange(module, model, field);
+            });
+        } else if (type === 'edit') {
+            const checkboxes = fieldList.querySelectorAll('.field-edit-checkbox');
+            checkboxes.forEach(checkbox => {
+                if (!checkbox.disabled) {
+                    checkbox.checked = checked;
+                }
+            });
+        }
+    };
+    
+    // Save field permissions for a module
+    window.saveFieldPermissions = function(moduleName) {
+        const fieldList = document.getElementById(`fieldlist-${moduleName}`);
+        const viewCheckboxes = fieldList.querySelectorAll('.field-view-checkbox');
+        const editCheckboxes = fieldList.querySelectorAll('.field-edit-checkbox');
+        
+        const fieldPermissions = [];
+        
+        viewCheckboxes.forEach(viewCheckbox => {
+            const module = viewCheckbox.dataset.module;
+            const model = viewCheckbox.dataset.model;
+            const field = viewCheckbox.dataset.field;
+            const editCheckbox = document.getElementById(`field_${module}_${model}_${field}_edit`);
+            
+            fieldPermissions.push({
+                module: module,
+                model: model,
+                field: field,
+                can_view: viewCheckbox.checked,
+                can_edit: editCheckbox ? editCheckbox.checked : false
+            });
+        });
+        
+        // Show saving indicator
+        showSavingIndicator();
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const url = `/profiles/{{ profile.id }}/permissions/`;
+        
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken
+            },
+            body: JSON.stringify({
+                action: 'save_field_permissions',
+                field_permissions: fieldPermissions
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSaveSuccessIndicator();
+                console.log(`✅ Field permissions saved for ${moduleName}`);
+            } else {
+                showSaveErrorIndicator();
+                alert(`Error: ${data.error || 'Failed to save field permissions'}`);
+            }
+        })
+        .catch(error => {
+            showSaveErrorIndicator();
+            console.error('Error saving field permissions:', error);
+            alert(`Error saving field permissions: ${error.message}`);
+        });
+    };
+    
+    // Show/hide field sections based on permission level
+    function updateFieldSectionVisibility(moduleName, level) {
+        const fieldSection = document.getElementById(`fields-${moduleName}`);
+        
+        if (level > 0) {
+            fieldSection.style.display = 'block';
+        } else {
+            fieldSection.style.display = 'none';
+            // Collapse if expanded
+            const content = document.getElementById(`content-${moduleName}`);
+            if (content && content.classList.contains('show')) {
+                content.classList.remove('show');
+            }
+        }
+    }
+    
+    // Update the existing updateSliderDisplay to show/hide field sections
+    const originalUpdateSliderDisplay = updateSliderDisplay;
+    updateSliderDisplay = function(slider, level) {
+        originalUpdateSliderDisplay(slider, level);
+        const module = slider.dataset.module;
+        updateFieldSectionVisibility(module, level);
+    };
+    
+    // Initialize field section visibility on page load
+    sliders.forEach(slider => {
+        const level = parseInt(slider.value);
+        const module = slider.dataset.module;
+        updateFieldSectionVisibility(module, level);
+    });
+    
+    // ==================== DATA FILTERS & DROPDOWN RESTRICTIONS ====================
+    
+    window.dataFiltersCache = [];
+    window.dropdownRestrictionsCache = [];
+    
+    // Load data filters
+    // Load data filters
+    window.loadDataFilters = function() {
+        fetch(`/profiles/{{ profile.id }}/data-filters/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.dataFiltersCache = data.filters;
+                    renderDataFiltersTable(data.filters);
+                }
+            })
+            .catch(error => console.error('Error loading data filters:', error));
+    }
+    
+    // Load dropdown restrictions
+    window.loadDropdownRestrictions = function() {
+        fetch(`/profiles/{{ profile.id }}/dropdown-restrictions/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.dropdownRestrictionsCache = data.restrictions;
+                    renderDropdownRestrictionsTable(data.restrictions);
+                }
+            })
+            .catch(error => console.error('Error loading dropdown restrictions:', error));
+    }
+    
+    // Render data filters table
+    function renderDataFiltersTable(filters) {
+        const tbody = document.getElementById('filtersTableBody');
+        if (!tbody) return;
+        
+        if (filters.length === 0) {
+            tbody.innerHTML = `
+                <tr id="noFiltersRow">
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-funnel fs-2 d-block mb-2"></i>
+                        No data filters configured for this profile
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = filters.map(filter => {
+            const typeBadge = filter.filter_type === 'include' ? 
+                '<span class="badge bg-success">Include</span>' :
+                filter.filter_type === 'exclude' ?
+                '<span class="badge bg-danger">Exclude</span>' :
+                '<span class="badge bg-info">Conditional</span>';
+            
+            const statusBadge = filter.is_active ?
+                '<span class="badge bg-success">Active</span>' :
+                '<span class="badge bg-secondary">Inactive</span>';
+            
+            return `
+                <tr data-filter-id="${filter.id}">
+                    <td>
+                        <strong>${filter.name}</strong>
+                        ${filter.description ? `<br><small class="text-muted">${filter.description}</small>` : ''}
+                    </td>
+                    <td><span class="badge bg-primary">${filter.module_display}</span></td>
+                    <td><code class="small">${filter.model_name}</code></td>
+                    <td>${typeBadge}</td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editDataFilter(${filter.id})" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDataFilter(${filter.id})" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Render dropdown restrictions table
+    function renderDropdownRestrictionsTable(restrictions) {
+        const tbody = document.getElementById('restrictionsTableBody');
+        if (!tbody) return;
+        
+        if (restrictions.length === 0) {
+            tbody.innerHTML = `
+                <tr id="noRestrictionsRow">
+                    <td colspan="6" class="text-center text-muted py-4">
+                        <i class="bi bi-list-ul fs-2 d-block mb-2"></i>
+                        No dropdown restrictions configured for this profile
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = restrictions.map(restriction => {
+            const statusBadge = restriction.is_active ?
+                '<span class="badge bg-success">Active</span>' :
+                '<span class="badge bg-secondary">Inactive</span>';
+            
+            const multiSelectBadge = restriction.is_multi_select ?
+                '<br><span class="badge badge-sm bg-info">Multi-Select</span>' : '';
+            
+            return `
+                <tr data-restriction-id="${restriction.id}">
+                    <td>
+                        <strong>${restriction.name}</strong>
+                        ${multiSelectBadge}
+                    </td>
+                    <td><span class="badge bg-primary">${restriction.module_display}</span></td>
+                    <td><code class="small">${restriction.field_name}</code></td>
+                    <td><code class="small">${restriction.source_model}</code></td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="editDropdownRestriction(${restriction.id})" title="Edit">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteDropdownRestriction(${restriction.id})" title="Delete">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+    
+    // Load filters and restrictions when Data Filters or Dropdown Restrictions tabs are clicked
+    document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function (event) {
+            const target = event.target.getAttribute('data-bs-target');
+            if (target === '#datafilters') {
+                loadDataFilters();
+            } else if (target === '#dropdowns') {
+                loadDropdownRestrictions();
+            }
+        });
+    });
 });
 </script>
+
+<!-- Data Filter Modal -->
+<div class="modal fade" id="dataFilterModal" tabindex="-1" aria-labelledby="dataFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dataFilterModalLabel">
+                    <i class="bi bi-funnel me-2"></i><span id="filterModalTitle">Add Data Filter</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dataFilterForm">
+                    <input type="hidden" id="filterId" value="">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="filterName" class="form-label">Filter Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="filterName" required placeholder="e.g., Commercial Properties Only">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="filterModule" class="form-label">Module <span class="text-danger">*</span></label>
+                            <select class="form-select" id="filterModule" required onchange="onModuleChange()">
+                                <option value="">Select Module</option>
+                                {% for module in modules %}
+                                <option value="{{ module.id }}">{{ module.display_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="filterDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="filterDescription" rows="2" placeholder="Describe what this filter does"></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="filterModelName" class="form-label">Model Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="filterModelName" required placeholder="e.g., Property, Lead">
+                            <small class="text-muted">The Django model to filter (e.g., Property, Lead, Project)</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="filterType" class="form-label">Filter Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="filterType" required>
+                                <option value="include">Include - Show only matching records</option>
+                                <option value="exclude">Exclude - Hide matching records</option>
+                                <option value="conditional">Conditional - Custom logic</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Filter Conditions <span class="text-danger">*</span></label>
+                        
+                        <!-- Visual Filter Builder -->
+                        <div id="filterBuilder" class="border rounded p-3 bg-light">
+                            <div id="filterConditionsList"></div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addFilterCondition()">
+                                <i class="bi bi-plus-circle me-1"></i>Add Condition
+                            </button>
+                        </div>
+                        
+                        <!-- Advanced: JSON Editor (Collapsible) -->
+                        <div class="mt-3">
+                            <button class="btn btn-sm btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#advancedJsonEditor">
+                                <i class="bi bi-code-square me-1"></i>Advanced: Edit JSON Directly
+                            </button>
+                            <div class="collapse" id="advancedJsonEditor">
+                                <textarea class="form-control font-monospace" id="filterConditions" rows="6" placeholder='{"property_type__name__icontains": "commercial"}'></textarea>
+                                <small class="text-muted">Django ORM filter conditions in JSON format</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="filterIsActive" checked>
+                                <label class="form-check-label" for="filterIsActive">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="filterOrder" class="form-label">Order</label>
+                            <input type="number" class="form-control" id="filterOrder" value="0" min="0">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveDataFilter()">
+                    <i class="bi bi-check-circle me-1"></i>Save Filter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dropdown Restriction Modal -->
+<div class="modal fade" id="dropdownRestrictionModal" tabindex="-1" aria-labelledby="dropdownRestrictionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="dropdownRestrictionModalLabel">
+                    <i class="bi bi-list-ul me-2"></i><span id="restrictionModalTitle">Add Dropdown Restriction</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="dropdownRestrictionForm">
+                    <input type="hidden" id="restrictionId" value="">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="restrictionName" class="form-label">Restriction Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="restrictionName" required placeholder="e.g., Commercial Property Types Only">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="restrictionModule" class="form-label">Module <span class="text-danger">*</span></label>
+                            <select class="form-select" id="restrictionModule" required>
+                                <option value="">Select Module</option>
+                                {% for module in modules %}
+                                <option value="{{ module.id }}">{{ module.display_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="restrictionFieldName" class="form-label">Field Name <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="restrictionFieldName" required placeholder="e.g., property_type">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="restrictionSourceModel" class="form-label">Source Model</label>
+                            <input type="text" class="form-control" id="restrictionSourceModel" placeholder="e.g., PropertyType">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="restrictionSourceField" class="form-label">Source Field</label>
+                            <input type="text" class="form-control" id="restrictionSourceField" placeholder="e.g., id" value="id">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="restrictionDisplayField" class="form-label">Display Field</label>
+                            <input type="text" class="form-control" id="restrictionDisplayField" placeholder="e.g., name" value="name">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="restrictionAllowedValues" class="form-label">Allowed Values (JSON Array)</label>
+                        <textarea class="form-control font-monospace" id="restrictionAllowedValues" rows="3" placeholder='[1, 3, 5]'>[]</textarea>
+                        <small class="text-muted">List of allowed IDs/values (empty = allow all except restricted)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="restrictionRestrictedValues" class="form-label">Restricted Values (JSON Array)</label>
+                        <textarea class="form-control font-monospace" id="restrictionRestrictedValues" rows="3" placeholder='[2, 4, 6]'>[]</textarea>
+                        <small class="text-muted">List of restricted IDs/values (these will be hidden)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="restrictionFilterConditions" class="form-label">Filter Conditions (JSON)</label>
+                        <textarea class="form-control font-monospace" id="restrictionFilterConditions" rows="3" placeholder='{"is_active": true}'>{}</textarea>
+                        <small class="text-muted">Additional Django ORM filter conditions</small>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="restrictionIsMultiSelect">
+                                <label class="form-check-label" for="restrictionIsMultiSelect">Multi-Select</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="restrictionIsActive" checked>
+                                <label class="form-check-label" for="restrictionIsActive">Active</label>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="restrictionOrder" class="form-label">Order</label>
+                            <input type="number" class="form-control" id="restrictionOrder" value="0" min="0">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="restrictionDefaultValue" class="form-label">Default Value</label>
+                            <input type="text" class="form-control" id="restrictionDefaultValue" placeholder="Default selection">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="restrictionPlaceholder" class="form-label">Placeholder Text</label>
+                            <input type="text" class="form-control" id="restrictionPlaceholder" placeholder="Select option...">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveDropdownRestriction()">
+                    <i class="bi bi-check-circle me-1"></i>Save Restriction
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ==================== DATA FILTER MODAL FUNCTIONS ====================
+
+// Store filter conditions
+let filterConditionsArray = [];
+let availableFields = {}; // Cache for model fields
+
+// Map module IDs/names to Django model names
+const moduleToModelMap = {
+    '1': 'Property',
+    '2': 'Lead', 
+    '3': 'Project',
+    'property': 'Property',
+    'properties': 'Property',
+    'lead': 'Lead',
+    'leads': 'Lead',
+    'project': 'Project',
+    'projects': 'Project'
+};
+
+// Fetch fields dynamically from backend
+async function fetchModelFields(moduleName) {
+    if (availableFields[moduleName]) {
+        return availableFields[moduleName]; // Return cached
+    }
+    
+    try {
+        const response = await fetch(`/model-fields/${moduleName}/`);
+        const data = await response.json();
+        
+        if (data.success) {
+            availableFields[moduleName] = data.fields;
+            return data.fields;
+        } else {
+            console.error('Error fetching fields:', data.error);
+            return getDefaultFields(moduleName); // Fallback
+        }
+    } catch (error) {
+        console.error('Error fetching fields:', error);
+        return getDefaultFields(moduleName); // Fallback
+    }
+}
+
+// Update model name and reload fields when module changes
+window.onModuleChange = async function() {
+    const moduleSelect = document.getElementById('filterModule');
+    const modelNameInput = document.getElementById('filterModelName');
+    
+    if (!moduleSelect.value) {
+        modelNameInput.value = '';
+        return;
+    }
+    
+    // Get the selected module's display name
+    const selectedOption = moduleSelect.options[moduleSelect.selectedIndex];
+    const moduleName = selectedOption.text; // e.g., "Property", "Leads"
+    
+    // Map to Django model name
+    let modelName = moduleName;
+    if (moduleName.toLowerCase() === 'leads') {
+        modelName = 'Lead';
+    } else if (moduleName.toLowerCase() === 'properties') {
+        modelName = 'Property';
+    } else if (moduleName.toLowerCase() === 'projects') {
+        modelName = 'Project';
+    }
+    
+    // Update the model name input
+    modelNameInput.value = modelName;
+    
+    // Clear existing filter conditions and reload
+    filterConditionsArray = [];
+    document.getElementById('filterConditionsList').innerHTML = '';
+    
+    // Add one empty condition with the new model's fields
+    await addFilterCondition();
+};
+
+// Fallback fields if API fails
+function getDefaultFields(moduleName) {
+    const propertyFields = [
+        { value: 'property_type__name', label: 'Property Type Name', type: 'text' },
+        { value: 'status', label: 'Status', type: 'text' },
+        { value: 'price', label: 'Price', type: 'number' },
+        { value: 'area', label: 'Area', type: 'number' }
+    ];
+    
+    const leadFields = [
+        { value: 'name', label: 'Lead Name', type: 'text' },
+        { value: 'status', label: 'Status', type: 'text' },
+        { value: 'source', label: 'Source', type: 'text' }
+    ];
+    
+    return moduleName.toLowerCase() === 'leads' ? leadFields : propertyFields;
+}
+
+// Operators based on field type
+function getOperatorsForType(fieldType) {
+    const operatorMap = {
+        'text': [
+            { value: '__icontains', label: 'Contains (case-insensitive)' },
+            { value: '__exact', label: 'Equals exactly' },
+            { value: '__in', label: 'Is one of (comma-separated)' },
+            { value: '__startswith', label: 'Starts with' },
+            { value: '__endswith', label: 'Ends with' }
+        ],
+        'number': [
+            { value: '', label: 'Equals' },
+            { value: '__gt', label: 'Greater than' },
+            { value: '__gte', label: 'Greater than or equal' },
+            { value: '__lt', label: 'Less than' },
+            { value: '__lte', label: 'Less than or equal' },
+            { value: '__in', label: 'Is one of (comma-separated)' }
+        ],
+        'boolean': [
+            { value: '', label: 'Equals' }
+        ],
+        'date': [
+            { value: '__exact', label: 'Equals date' },
+            { value: '__gt', label: 'After date' },
+            { value: '__gte', label: 'On or after date' },
+            { value: '__lt', label: 'Before date' },
+            { value: '__lte', label: 'On or before date' },
+            { value: '__year', label: 'Year equals' },
+            { value: '__month', label: 'Month equals' }
+        ],
+        'relation': [
+            { value: '', label: 'Equals ID' },
+            { value: '__in', label: 'Is one of (comma-separated IDs)' }
+        ]
+    };
+    
+    return operatorMap[fieldType] || operatorMap['text'];
+}
+
+// Add a new filter condition row
+window.addFilterCondition = async function(field = '', operator = '__icontains', value = '') {
+    const index = filterConditionsArray.length;
+    filterConditionsArray.push({ field, operator, value });
+    
+    const container = document.getElementById('filterConditionsList');
+    const row = document.createElement('div');
+    row.className = 'filter-condition-row mb-2 p-2 border rounded bg-white';
+    row.id = `condition-${index}`;
+    
+    // Get model name from the form
+    const modelNameInput = document.getElementById('filterModelName');
+    let modelName = modelNameInput ? modelNameInput.value : 'Property';
+    
+    // Normalize model name to lowercase plural for API call
+    // API expects: 'properties', 'leads', 'projects'
+    const modelNameLower = modelName.toLowerCase();
+    let apiModelName = modelNameLower;
+    if (modelNameLower === 'property') {
+        apiModelName = 'properties';
+    } else if (modelNameLower === 'lead') {
+        apiModelName = 'leads';
+    } else if (modelNameLower === 'project') {
+        apiModelName = 'projects';
+    }
+    
+    // Fetch fields for the selected model
+    const fields = await fetchModelFields(apiModelName);
+    
+    // Get operators based on selected field type
+    let operators = getOperatorsForType('text');
+    if (field) {
+        const selectedField = fields.find(f => f.value === field);
+        if (selectedField) {
+            operators = getOperatorsForType(selectedField.type);
+        }
+    }
+    
+    row.innerHTML = `
+        <div class="row g-2 align-items-center">
+            <div class="col-md-4">
+                <select class="form-select form-select-sm field-selector" data-index="${index}" onchange="onFieldChange(${index}, this.value)">
+                    <option value="">Select Field...</option>
+                    ${fields.map(f => `<option value="${f.value}" data-type="${f.type}" data-has-choices="${f.has_choices || false}" ${f.value === field ? 'selected' : ''}>${f.label}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select form-select-sm operator-selector" data-index="${index}" onchange="updateFilterCondition(${index}, 'operator', this.value)">
+                    ${operators.map(op => `<option value="${op.value}" ${op.value === operator ? 'selected' : ''}>${op.label}</option>`).join('')}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <div class="value-input-container" data-index="${index}">
+                    <input type="text" class="form-control form-control-sm value-input" placeholder="Value..." 
+                           value="${value}" onchange="updateFilterCondition(${index}, 'value', this.value)">
+                </div>
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFilterCondition(${index})" title="Remove">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(row);
+    updateJsonFromBuilder();
+};
+
+// Handle field change - update operators based on field type
+window.onFieldChange = async function(index, fieldValue) {
+    updateFilterCondition(index, 'field', fieldValue);
+    
+    if (!fieldValue) return;
+    
+    // Get the field type
+    let modelName = document.getElementById('filterModelName').value || 'Property';
+    
+    // Normalize model name to lowercase plural for API call
+    const modelNameLower = modelName.toLowerCase();
+    let apiModelName = modelNameLower;
+    if (modelNameLower === 'property') {
+        apiModelName = 'properties';
+    } else if (modelNameLower === 'lead') {
+        apiModelName = 'leads';
+    } else if (modelNameLower === 'project') {
+        apiModelName = 'projects';
+    }
+    
+    const fields = await fetchModelFields(apiModelName);
+    const selectedField = fields.find(f => f.value === fieldValue);
+    
+    if (selectedField) {
+        // Update operators dropdown
+        const operators = getOperatorsForType(selectedField.type);
+        const operatorSelect = document.querySelector(`select.operator-selector[data-index="${index}"]`);
+        
+        if (operatorSelect) {
+            operatorSelect.innerHTML = operators.map(op => 
+                `<option value="${op.value}">${op.label}</option>`
+            ).join('');
+            
+            // Update the stored operator
+            filterConditionsArray[index].operator = operators[0].value;
+            updateJsonFromBuilder();
+        }
+        
+        // Check if field has dropdown choices
+        if (selectedField.has_choices) {
+            await loadFieldChoices(index, apiModelName, fieldValue);
+        } else {
+            // Revert to text input if no choices
+            replaceWithTextInput(index);
+        }
+    }
+};
+
+// Fetch and populate dropdown choices for a field
+async function loadFieldChoices(index, moduleName, fieldName) {
+    try {
+        const response = await fetch(`/field-choices/${moduleName}/${fieldName}/`);
+        const data = await response.json();
+        
+        if (data.success && data.has_choices && data.choices.length > 0) {
+            // Replace text input with dropdown
+            const container = document.querySelector(`.value-input-container[data-index="${index}"]`);
+            if (container) {
+                const currentValue = filterConditionsArray[index].value || '';
+                
+                const selectHTML = `
+                    <select class="form-select form-select-sm value-input" onchange="updateFilterCondition(${index}, 'value', this.value)">
+                        <option value="">Select value...</option>
+                        ${data.choices.map(choice => `
+                            <option value="${choice.value}" ${choice.value === currentValue ? 'selected' : ''}>
+                                ${choice.display}
+                            </option>
+                        `).join('')}
+                    </select>
+                `;
+                container.innerHTML = selectHTML;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading field choices:', error);
+    }
+}
+
+// Replace dropdown with text input
+function replaceWithTextInput(index) {
+    const container = document.querySelector(`.value-input-container[data-index="${index}"]`);
+    if (container && !container.querySelector('input')) {
+        const currentValue = filterConditionsArray[index].value || '';
+        container.innerHTML = `
+            <input type="text" class="form-control form-control-sm value-input" placeholder="Value..." 
+                   value="${currentValue}" onchange="updateFilterCondition(${index}, 'value', this.value)">
+        `;
+    }
+}
+
+// Update a filter condition
+window.updateFilterCondition = function(index, field, value) {
+    filterConditionsArray[index][field] = value;
+    updateJsonFromBuilder();
+};
+
+// Remove a filter condition
+window.removeFilterCondition = function(index) {
+    document.getElementById(`condition-${index}`).remove();
+    filterConditionsArray[index] = null;
+    updateJsonFromBuilder();
+};
+
+// Update JSON textarea from visual builder
+function updateJsonFromBuilder() {
+    const conditions = {};
+    filterConditionsArray.forEach(cond => {
+        if (cond && cond.field && cond.value) {
+            const key = cond.field + cond.operator;
+            let value = cond.value;
+            
+            // Handle special cases
+            if (cond.operator === '__in') {
+                // Convert comma-separated to array
+                value = value.split(',').map(v => v.trim()).filter(v => v);
+            } else if (cond.operator === '__gt' || cond.operator === '__gte' || 
+                       cond.operator === '__lt' || cond.operator === '__lte') {
+                // Convert to number
+                value = parseFloat(value) || value;
+            } else if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+                // Convert to boolean
+                value = value.toLowerCase() === 'true';
+            } else if (!isNaN(value) && value.trim() !== '' && cond.operator === '') {
+                // Convert to number if no operator (for IDs, etc.)
+                value = parseFloat(value);
+            }
+            
+            conditions[key] = value;
+        }
+    });
+    
+    document.getElementById('filterConditions').value = JSON.stringify(conditions, null, 2);
+}
+
+// Load conditions from JSON into visual builder
+function loadJsonIntoBuilder(json) {
+    try {
+        const conditions = typeof json === 'string' ? JSON.parse(json) : json;
+        filterConditionsArray = [];
+        document.getElementById('filterConditionsList').innerHTML = '';
+        
+        // Get all possible operators
+        const allOperators = [
+            '__icontains', '__exact', '__in', '__startswith', '__endswith',
+            '__gt', '__gte', '__lt', '__lte',
+            '__year', '__month', '__day', ''
+        ];
+        
+        Object.entries(conditions).forEach(([key, value]) => {
+            // Parse field and operator from key
+            let field = key;
+            let operator = '';
+            
+            // Find matching operator (check longest first to avoid partial matches)
+            const sortedOps = allOperators.sort((a, b) => b.length - a.length);
+            for (const op of sortedOps) {
+                if (op !== '' && key.endsWith(op)) {
+                    field = key.slice(0, -op.length);
+                    operator = op;
+                    break;
+                }
+            }
+            
+            // If no operator found, assume exact match
+            if (!operator) {
+                operator = '';
+            }
+            
+            // Convert value to string for display
+            let displayValue = value;
+            if (Array.isArray(value)) {
+                displayValue = value.join(', ');
+            } else if (typeof value === 'object') {
+                displayValue = JSON.stringify(value);
+            } else {
+                displayValue = String(value);
+            }
+            
+            addFilterCondition(field, operator, displayValue);
+        });
+    } catch (e) {
+        console.error('Error loading JSON into builder:', e);
+    }
+}
+
+window.openDataFilterModal = function(filterId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('dataFilterModal'));
+    
+    // Reset builder
+    filterConditionsArray = [];
+    document.getElementById('filterConditionsList').innerHTML = '';
+    
+    if (filterId) {
+        // Edit mode
+        const filter = window.dataFiltersCache.find(f => f.id === filterId);
+        if (filter) {
+            document.getElementById('filterModalTitle').textContent = 'Edit Data Filter';
+            document.getElementById('filterId').value = filter.id;
+            document.getElementById('filterName').value = filter.name;
+            document.getElementById('filterModule').value = filter.module_id;
+            document.getElementById('filterDescription').value = filter.description || '';
+            document.getElementById('filterModelName').value = filter.model_name;
+            document.getElementById('filterType').value = filter.filter_type;
+            document.getElementById('filterConditions').value = JSON.stringify(filter.filter_conditions, null, 2);
+            document.getElementById('filterIsActive').checked = filter.is_active;
+            document.getElementById('filterOrder').value = filter.order;
+            
+            // Load into visual builder
+            loadJsonIntoBuilder(filter.filter_conditions);
+        }
+    } else {
+        // Create mode
+        document.getElementById('filterModalTitle').textContent = 'Add Data Filter';
+        document.getElementById('dataFilterForm').reset();
+        document.getElementById('filterId').value = '';
+        document.getElementById('filterIsActive').checked = true;
+        document.getElementById('filterOrder').value = 0;
+        document.getElementById('filterConditions').value = '{}';
+        
+        // Add one empty condition row
+        addFilterCondition();
+    }
+    
+    modal.show();
+};
+
+window.editDataFilter = function(filterId) {
+    openDataFilterModal(filterId);
+};
+
+window.saveDataFilter = function() {
+    const filterId = document.getElementById('filterId').value;
+    const action = filterId ? 'update' : 'create';
+    
+    // Get JSON from the textarea (which is auto-updated by the builder)
+    let filterConditions;
+    try {
+        const jsonValue = document.getElementById('filterConditions').value.trim();
+        filterConditions = jsonValue ? JSON.parse(jsonValue) : {};
+    } catch (e) {
+        showToast('❌ Invalid JSON in Filter Conditions. Please check the Advanced JSON editor or use the visual builder.', 'danger');
+        return;
+    }
+    
+    // Validate that at least one condition exists
+    if (Object.keys(filterConditions).length === 0) {
+        showToast('⚠️ Please add at least one filter condition.', 'warning');
+        return;
+    }
+    
+    const data = {
+        action: action,
+        name: document.getElementById('filterName').value,
+        module_id: document.getElementById('filterModule').value,
+        description: document.getElementById('filterDescription').value,
+        model_name: document.getElementById('filterModelName').value,
+        filter_type: document.getElementById('filterType').value,
+        filter_conditions: filterConditions,
+        is_active: document.getElementById('filterIsActive').checked,
+        order: parseInt(document.getElementById('filterOrder').value)
+    };
+    
+    if (action === 'update') {
+        data.filter_id = filterId;
+    }
+    
+    console.log('💾 Saving data filter:', data);
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/profiles/{{ profile.id }}/data-filters/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        return response.json();
+    })
+    .then(result => {
+        console.log('📥 Response data:', result);
+        if (result.success) {
+            showToast('✅ ' + (result.message || 'Data filter saved successfully!'), 'success');
+            
+            // Close modal safely
+            try {
+                const modalElement = document.getElementById('dataFilterModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            } catch (e) {
+                console.warn('Could not close modal:', e);
+            }
+            
+            // Reload data filters
+            loadDataFilters();
+        } else {
+            showToast('❌ Error: ' + (result.error || 'Unknown error'), 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('❌ Error saving data filter:', error);
+        showToast('❌ Failed to save data filter. Check console for details.', 'danger');
+    });
+};
+
+// ==================== DROPDOWN RESTRICTION MODAL FUNCTIONS ====================
+
+window.openDropdownModal = function(restrictionId = null) {
+    const modal = new bootstrap.Modal(document.getElementById('dropdownRestrictionModal'));
+    
+    if (restrictionId) {
+        // Edit mode
+        const restriction = window.dropdownRestrictionsCache.find(r => r.id === restrictionId);
+        if (restriction) {
+            document.getElementById('restrictionModalTitle').textContent = 'Edit Dropdown Restriction';
+            document.getElementById('restrictionId').value = restriction.id;
+            document.getElementById('restrictionName').value = restriction.name;
+            document.getElementById('restrictionModule').value = restriction.module_id;
+            document.getElementById('restrictionFieldName').value = restriction.field_name;
+            document.getElementById('restrictionSourceModel').value = restriction.source_model || '';
+            document.getElementById('restrictionSourceField').value = restriction.source_field || 'id';
+            document.getElementById('restrictionDisplayField').value = restriction.display_field || 'name';
+            document.getElementById('restrictionAllowedValues').value = JSON.stringify(restriction.allowed_values || [], null, 2);
+            document.getElementById('restrictionRestrictedValues').value = JSON.stringify(restriction.restricted_values || [], null, 2);
+            document.getElementById('restrictionFilterConditions').value = JSON.stringify(restriction.filter_conditions || {}, null, 2);
+            document.getElementById('restrictionIsMultiSelect').checked = restriction.is_multi_select;
+            document.getElementById('restrictionIsActive').checked = restriction.is_active;
+            document.getElementById('restrictionOrder').value = restriction.order;
+            document.getElementById('restrictionDefaultValue').value = restriction.default_value || '';
+            document.getElementById('restrictionPlaceholder').value = restriction.placeholder_text || '';
+        }
+    } else {
+        // Create mode
+        document.getElementById('restrictionModalTitle').textContent = 'Add Dropdown Restriction';
+        document.getElementById('dropdownRestrictionForm').reset();
+        document.getElementById('restrictionId').value = '';
+        document.getElementById('restrictionIsActive').checked = true;
+        document.getElementById('restrictionOrder').value = 0;
+        document.getElementById('restrictionSourceField').value = 'id';
+        document.getElementById('restrictionDisplayField').value = 'name';
+        document.getElementById('restrictionAllowedValues').value = '[]';
+        document.getElementById('restrictionRestrictedValues').value = '[]';
+        document.getElementById('restrictionFilterConditions').value = '{}';
+    }
+    
+    modal.show();
+};
+
+window.editDropdownRestriction = function(restrictionId) {
+    openDropdownModal(restrictionId);
+};
+
+window.saveDropdownRestriction = function() {
+    const restrictionId = document.getElementById('restrictionId').value;
+    const action = restrictionId ? 'update' : 'create';
+    
+    let allowedValues, restrictedValues, filterConditions;
+    try {
+        allowedValues = JSON.parse(document.getElementById('restrictionAllowedValues').value);
+        restrictedValues = JSON.parse(document.getElementById('restrictionRestrictedValues').value);
+        filterConditions = JSON.parse(document.getElementById('restrictionFilterConditions').value);
+    } catch (e) {
+        showToast('❌ Invalid JSON in one of the fields. Please check your syntax.', 'danger');
+        return;
+    }
+    
+    const data = {
+        action: action,
+        name: document.getElementById('restrictionName').value,
+        module_id: document.getElementById('restrictionModule').value,
+        field_name: document.getElementById('restrictionFieldName').value,
+        source_model: document.getElementById('restrictionSourceModel').value,
+        source_field: document.getElementById('restrictionSourceField').value,
+        display_field: document.getElementById('restrictionDisplayField').value,
+        allowed_values: allowedValues,
+        restricted_values: restrictedValues,
+        filter_conditions: filterConditions,
+        is_multi_select: document.getElementById('restrictionIsMultiSelect').checked,
+        is_active: document.getElementById('restrictionIsActive').checked,
+        order: parseInt(document.getElementById('restrictionOrder').value),
+        default_value: document.getElementById('restrictionDefaultValue').value,
+        placeholder_text: document.getElementById('restrictionPlaceholder').value
+    };
+    
+    if (action === 'update') {
+        data.restriction_id = restrictionId;
+    }
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/profiles/{{ profile.id }}/dropdown-restrictions/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            showToast('✅ ' + (result.message || 'Dropdown restriction saved successfully'), 'success');
+            
+            // Close modal safely
+            try {
+                const modalElement = document.getElementById('dropdownRestrictionModal');
+                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                if (modalInstance) {
+                    modalInstance.hide();
+                }
+            } catch (e) {
+                console.warn('Could not close modal:', e);
+            }
+            
+            // Reload dropdown restrictions
+            loadDropdownRestrictions();
+        } else {
+            showToast('❌ Error: ' + result.error, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('❌ Failed to save dropdown restriction', 'danger');
+    });
+};
+
+// ==================== HELPER FUNCTIONS ====================
+
+// Toast notification helper with beautiful Bootstrap toasts
+window.showToast = function(message, type = 'info') {
+    // Create toast container if it doesn't exist
+    let toastContainer = document.getElementById('toastContainer');
+    if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toastContainer';
+        toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+        toastContainer.style.zIndex = '9999';
+        document.body.appendChild(toastContainer);
+    }
+    
+    // Map type to Bootstrap classes and icons
+    const typeConfig = {
+        'success': { class: 'bg-success text-white', icon: 'bi-check-circle-fill' },
+        'danger': { class: 'bg-danger text-white', icon: 'bi-x-circle-fill' },
+        'warning': { class: 'bg-warning text-dark', icon: 'bi-exclamation-triangle-fill' },
+        'info': { class: 'bg-info text-white', icon: 'bi-info-circle-fill' }
+    };
+    
+    const config = typeConfig[type] || typeConfig['info'];
+    
+    // Create toast element
+    const toastId = 'toast-' + Date.now();
+    const toastHTML = `
+        <div id="${toastId}" class="toast ${config.class}" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header ${config.class} border-0">
+                <i class="bi ${config.icon} me-2"></i>
+                <strong class="me-auto">Notification</strong>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+            <div class="toast-body">
+                ${message}
+            </div>
+        </div>
+    `;
+    
+    toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+    
+    // Show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
+    toast.show();
+    
+    // Remove from DOM after hide
+    toastElement.addEventListener('hidden.bs.toast', () => {
+        toastElement.remove();
+    });
+};
+
+// Delete data filter function
+window.deleteDataFilter = function(filterId) {
+    if (!confirm('Are you sure you want to delete this data filter?')) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/profiles/{{ profile.id }}/data-filters/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            action: 'delete',
+            filter_id: filterId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Data filter deleted successfully', 'success');
+            loadDataFilters();
+        } else {
+            showToast('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to delete data filter', 'danger');
+    });
+};
+
+// Delete dropdown restriction function
+window.deleteDropdownRestriction = function(restrictionId) {
+    if (!confirm('Are you sure you want to delete this dropdown restriction?')) return;
+    
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    fetch(`/profiles/{{ profile.id }}/dropdown-restrictions/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            action: 'delete',
+            restriction_id: restrictionId
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Dropdown restriction deleted successfully', 'success');
+            loadDropdownRestrictions();
+        } else {
+            showToast('Error: ' + data.error, 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Failed to delete dropdown restriction', 'danger');
+    });
+};
+</script>
+
 {% endblock %}

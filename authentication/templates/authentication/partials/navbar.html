@@ -1,7 +1,7 @@
 {% load static %}
 
-<!-- Dark Header with Logo Only -->
-<nav class="navbar navbar-dark bg-dark fixed-top">
+<!-- Pure Black Header -->
+<nav class="navbar navbar-dark fixed-top" style="background-color: #000000;">
     <div class="container-fluid px-4">
         <!-- Logo positioned naturally with some breathing room -->
         <a class="navbar-brand d-flex align-items-center" href="{% url 'authentication:dashboard' %}" style="margin-left: 20px;">
@@ -17,10 +17,31 @@
                 <i class="bi bi-envelope"></i>
             </a>
             
-            <!-- Calendar -->
-            <button class="btn btn-outline-secondary border-0" type="button" title="Calendar" onclick="alert('Calendar module coming soon!')">
-                <i class="bi bi-calendar3"></i>
-            </button>
+            <!-- Calendar / Events -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary border-0 position-relative" type="button" data-bs-toggle="dropdown" id="calendarButton">
+                    <i class="bi bi-calendar-event"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" id="eventsNotificationBadge" style="display: none; font-size: 0.6rem;"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px; max-height: 400px; overflow-y: auto;" id="calendarDropdown">
+                    <li>
+                        <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                            <span><i class="bi bi-calendar-event me-2"></i>Upcoming Events</span>
+                            <span class="badge bg-success" id="eventsCountBadge">0</span>
+                        </h6>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <div class="px-3 py-2 text-center" id="eventsLoadingState">
+                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <small class="d-block mt-2 text-muted">Loading events...</small>
+                        </div>
+                        <div id="eventsListContainer"></div>
+                    </li>
+                </ul>
+            </div>
             
             <!-- Documents -->
             <button class="btn btn-outline-secondary border-0" type="button" title="Documents" onclick="alert('Documents module coming soon!')">
@@ -48,7 +69,7 @@
             <!-- User Menu -->
             <div class="dropdown">
                 <button class="btn btn-outline-secondary dropdown-toggle border-0 d-flex align-items-center" type="button" data-bs-toggle="dropdown">
-                    <div class="bg-primary rounded-circle p-2 me-2">
+                    <div class="bg-success rounded-circle p-2 me-2">
                         <i class="bi bi-person text-white"></i>
                     </div>
                     <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>

@@ -4,7 +4,7 @@
 <div class="sidebar-fixed">
     <div class="sidebar-header">
         <div class="d-flex align-items-center px-3 py-3">
-            <div class="bg-primary rounded-circle p-2 me-3">
+            <div class="bg-success rounded-circle p-2 me-3">
                 <i class="bi bi-person text-white"></i>
             </div>
             <div class="flex-grow-1">
@@ -46,7 +46,7 @@
                         <i class="bi bi-person-lines-fill me-3"></i>
                         <span>Leads</span>
                         {% if user_leads_count > 0 %}
-                        <span class="badge bg-primary ms-auto">{{ user_leads_count }}</span>
+                        <span class="badge bg-success ms-auto">{{ user_leads_count }}</span>
                         {% endif %}
                     </a>
                 </li>
@@ -73,7 +73,7 @@
                         <i class="bi bi-diagram-2 me-3"></i>
                         <span>Projects</span>
                         {% if user_projects_count > 0 %}
-                        <span class="badge bg-info ms-auto">{{ user_projects_count }}</span>
+                        <span class="badge bg-success ms-auto">{{ user_projects_count }}</span>
                         {% endif %}
                     </a>
                 </li>
@@ -89,22 +89,6 @@
                     <a class="nav-link {% if request.resolver_match.url_name == 'profiles' %}active{% endif %}" href="{% url 'authentication:profiles' %}">
                         <i class="bi bi-shield-check me-3"></i>
                         <span>Manage Profiles</span>
-                    </a>
-                </li>
-                
-                <!-- Field Permissions -->
-                <li class="nav-item">
-                    <a class="nav-link {% if 'field_permissions' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'authentication:field_permissions_dashboard' %}">
-                        <i class="bi bi-key me-3"></i>
-                        <span>Field Permissions</span>
-                    </a>
-                </li>
-                
-                <!-- Data Filters Manager -->
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'data_filters_manager' %}active{% endif %}" href="{% url 'authentication:data_filters_manager' %}">
-                        <i class="bi bi-funnel me-3"></i>
-                        <span>Data Filters</span>
                     </a>
                 </li>
                 

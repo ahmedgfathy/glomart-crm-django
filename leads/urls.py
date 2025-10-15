@@ -43,6 +43,12 @@ urlpatterns = [
     path('api/search/', views.leads_search_api, name='search_api'),
     path('api/save-column-preferences/', views.save_column_preferences, name='save_column_preferences'),
     
+    # Events API
+    path('api/events/<uuid:lead_id>/', views.get_lead_events_api, name='get_lead_events_api'),
+    path('api/events/create/', views.create_event_api, name='create_event_api'),
+    path('api/events/<int:event_id>/update-status/', views.update_event_status_api, name='update_event_status_api'),
+    path('api/events/user/upcoming/', views.get_user_upcoming_events_api, name='get_user_upcoming_events_api'),
+    
     # Source and status management
     path('sources/', views.lead_sources_view, name='sources'),
     path('sources/create/', views.create_lead_source_view, name='create_source'),

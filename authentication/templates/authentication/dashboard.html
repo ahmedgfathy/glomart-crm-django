@@ -17,7 +17,7 @@
     
     /* Header Section */
     .dashboard-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
         padding: 3rem 0;
         margin-bottom: 2rem;
@@ -127,11 +127,11 @@
         background: var(--accent-color);
     }
     
-    .metric-card.primary { --accent-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-    .metric-card.success { --accent-color: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%); }
-    .metric-card.warning { --accent-color: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-    .metric-card.info { --accent-color: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-    .metric-card.danger { --accent-color: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+    .metric-card.primary { --accent-color: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .metric-card.success { --accent-color: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+    .metric-card.warning { --accent-color: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+    .metric-card.info { --accent-color: linear-gradient(135deg, #10b981 0%, #34d399 100%); }
+    .metric-card.danger { --accent-color: linear-gradient(135deg, #10b981 0%, #059669 100%); }
     
     .metric-header {
         display: flex;
@@ -251,19 +251,19 @@
     }
     
     .action-icon.primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
     
     .action-icon.success {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
     }
     
     .action-icon.info {
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
     }
     
     .action-icon.warning {
-        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
     
     .action-card h3 {
@@ -291,22 +291,22 @@
     }
     
     .action-btn.primary {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
     }
     
     .action-btn.success {
-        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
         color: white;
     }
     
     .action-btn.info {
-        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
         color: white;
     }
     
     .action-btn.warning {
-        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
     }
     
@@ -358,9 +358,9 @@
     
     .property-type-card:hover {
         transform: translateY(-8px);
-        border-color: #667eea;
+        border-color: #10b981;
         background: white;
-        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.1);
+        box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);
     }
     
     .property-type-card .metric-icon {
@@ -400,17 +400,17 @@
     }
     
     .property-type-link:hover .property-type-title {
-        color: #667eea;
+        color: #10b981;
     }
     
     .property-type-link:focus {
-        outline: 2px solid #667eea;
+        outline: 2px solid #10b981;
         outline-offset: 4px;
     }
     
     /* Quick Actions */
     .quick-actions {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         border-radius: 25px;
         padding: 3rem;
         margin-bottom: 3rem;
@@ -479,7 +479,7 @@
     
     .action-btn {
         background: white;
-        color: #667eea;
+        color: #10b981;
         border: none;
         border-radius: 50px;
         padding: 0.8rem 2rem;
@@ -494,7 +494,7 @@
     .action-btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        color: #667eea;
+        color: #10b981;
         text-decoration: none;
     }
     
@@ -530,7 +530,7 @@
     .activity-icon {
         width: 40px;
         height: 40px;
-        background: #667eea;
+        background: #10b981;
         color: white;
         border-radius: 10px;
         display: flex;
@@ -569,7 +569,7 @@
     
     .progress-fill {
         height: 100%;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         border-radius: 10px;
         transition: width 1s ease;
     }
@@ -967,19 +967,19 @@
                 <div class="metric-card success">
                     <div class="metric-header">
                         <div class="metric-icon">
-                            <i class="bi bi-key"></i>
+                            <i class="bi bi-shield-check"></i>
                         </div>
                         <div class="metric-trend">
-                            {{ active_field_permissions }} permissions
+                            {{ profiles_count }} profiles
                         </div>
                     </div>
                     <div class="metric-content">
-                        <h3>Field Permissions</h3>
-                        <p>Configure granular field-level access control</p>
+                        <h3>Profile Management</h3>
+                        <p>Configure roles, permissions & field-level access</p>
                     </div>
                     <div class="metric-footer">
-                        <a href="{% url 'authentication:field_permissions_dashboard' %}" class="action-btn">
-                            Configure Permissions <i class="bi bi-arrow-right"></i>
+                        <a href="{% url 'authentication:profiles' %}" class="action-btn">
+                            Manage Profiles <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                 </div>
@@ -990,16 +990,16 @@
                             <i class="bi bi-funnel"></i>
                         </div>
                         <div class="metric-trend">
-                            Active filters
+                            {{ active_field_permissions }} permissions
                         </div>
                     </div>
                     <div class="metric-content">
-                        <h3>Data Filters</h3>
-                        <p>Manage data filtering and access rules</p>
+                        <h3>Field & Data Filters</h3>
+                        <p>Advanced field-level & row-level security</p>
                     </div>
                     <div class="metric-footer">
-                        <a href="{% url 'authentication:data_filters_manager' %}" class="action-btn">
-                            Manage Filters <i class="bi bi-arrow-right"></i>
+                        <a href="{% url 'authentication:profiles' %}" class="action-btn">
+                            Configure Filters <i class="bi bi-arrow-right"></i>
                         </a>
                     </div>
                 </div>

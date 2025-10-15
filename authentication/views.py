@@ -7,18 +7,12 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator
 from django.db.models import Q, Count, Sum
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.contrib.auth.forms import UserCreationForm
 from django import forms
 import json
 
-from .models import Module, Permission, Rule, Profile, UserProfile, UserActivity
-from .field_permissions_views import (
-    field_permissions_dashboard, field_permissions_matrix, profile_field_editor,
-    bulk_update_permissions, test_user_permissions, data_filters_manager,
-    create_data_filter, edit_data_filter, delete_data_filter,
-    dropdown_restrictions_manager, create_dropdown_restriction, 
-    edit_dropdown_restriction, delete_dropdown_restriction
-)
+from .models import Module, Permission, Rule, Profile, UserProfile, UserActivity, FieldPermission, DataFilter, DynamicDropdown
 
 
 def login_view(request):
@@ -218,7 +212,8 @@ def user_management_view(request):
         messages.error(request, 'Access denied. Administrator privileges required.')
         return redirect('authentication:dashboard')
     
-    search_query = request.GET.get('search', '')
+    search_query = request.GET.get('search', '').strip()
+    profile_filter = request.GET.get('profile', '').strip()
     users = User.objects.select_related('user_profile__profile').all()
     
     if search_query:
@@ -229,6 +224,12 @@ def user_management_view(request):
             Q(email__icontains=search_query)
         )
     
+    if profile_filter:
+        try:
+            users = users.filter(user_profile__profile_id=int(profile_filter))
+        except (ValueError, TypeError):
+            profile_filter = ''
+    
     paginator = Paginator(users, 10)
     page_number = request.GET.get('page')
     users_page = paginator.get_page(page_number)
@@ -238,46 +239,9 @@ def user_management_view(request):
     return render(request, 'authentication/user_management.html', {
         'users': users_page,
         'profiles': profiles,
-        'search_query': search_query
+        'search_query': search_query,
+        'selected_profile': profile_filter
     })
-
-
-@login_required
-def profile_management_view(request):
-    """Profile management interface"""
-    if not request.user.is_superuser:
-        messages.error(request, 'Access denied. Administrator privileges required.')
-        return redirect('authentication:dashboard')
-    
-    profiles = Profile.objects.all().prefetch_related('permissions__module', 'rules')
-    modules = Module.objects.filter(is_active=True).prefetch_related('permissions')
-    
-    return render(request, 'authentication/profile_management.html', {
-        'profiles': profiles,
-        'modules': modules
-    })
-
-
-@login_required
-def create_profile_view(request):
-    """Create new profile"""
-    if not request.user.is_superuser:
-        messages.error(request, 'Access denied. Administrator privileges required.')
-        return redirect('authentication:dashboard')
-    
-    if request.method == 'POST':
-        name = request.POST.get('name')
-        description = request.POST.get('description', '')
-        
-        if Profile.objects.filter(name=name).exists():
-            messages.error(request, f'Profile "{name}" already exists.')
-        else:
-            profile = Profile.objects.create(name=name, description=description)
-            messages.success(request, f'Profile "{name}" created successfully.')
-            return redirect('authentication:profile_detail', profile_id=profile.id)
-    
-    return render(request, 'authentication/create_profile.html')
-
 
 @login_required
 def profile_detail_view(request, profile_id):
@@ -287,7 +251,52 @@ def profile_detail_view(request, profile_id):
         return redirect('authentication:dashboard')
     
     profile = get_object_or_404(Profile, id=profile_id)
-    modules = Module.objects.filter(is_active=True).prefetch_related('permissions')
+    
+    # Filter out modules where Django app doesn't exist
+    # This prevents errors when modules are deleted from codebase but still in DB
+    from django.apps import apps
+    all_modules = Module.objects.filter(is_active=True).prefetch_related('permissions')
+    
+    # Whitelist of known good modules (even if Django app name differs slightly)
+    valid_modules = []
+    installed_apps = [app.label for app in apps.get_app_configs()]
+    
+    for module in all_modules:
+        module_name = module.name.lower()
+        
+        # Try exact match first
+        if module_name in installed_apps:
+            valid_modules.append(module)
+            continue
+        
+        # Try adding 's' for plural (lead -> leads)
+        if module_name + 's' in installed_apps:
+            valid_modules.append(module)
+            continue
+        
+        # Try removing 's' for singular (leads -> lead)
+        if module_name.endswith('s') and module_name[:-1] in installed_apps:
+            valid_modules.append(module)
+            continue
+        
+        # Try y -> ies transformation (property -> properties)
+        if module_name.endswith('y') and module_name[:-1] + 'ies' in installed_apps:
+            valid_modules.append(module)
+            continue
+        
+        # Try ies -> y transformation (properties -> property)
+        if module_name.endswith('ies') and module_name[:-3] + 'y' in installed_apps:
+            valid_modules.append(module)
+            continue
+        
+        # Check if any installed app name contains this module name
+        if any(module_name in app or app in module_name for app in installed_apps if not app.startswith('django')):
+            valid_modules.append(module)
+            continue
+        
+        print(f"⚠️ Skipping module '{module.name}' ({module.display_name}) - no matching Django app found")
+    
+    modules = valid_modules
     
     # Get current permissions for this profile
     current_permissions = {}
@@ -301,11 +310,19 @@ def profile_detail_view(request, profile_id):
     import json
     current_permissions_json = json.dumps(current_permissions)
     
+    # Get Data Filters for this profile
+    data_filters = DataFilter.objects.filter(profile=profile).select_related('module').order_by('module__name', 'order')
+    
+    # Get Dynamic Dropdowns for this profile
+    dropdown_restrictions = DynamicDropdown.objects.filter(profile=profile).select_related('module').order_by('module__name', 'order')
+    
     return render(request, 'authentication/profile_detail.html', {
         'profile': profile,
         'modules': modules,
         'current_permissions': current_permissions,
-        'current_permissions_json': current_permissions_json
+        'current_permissions_json': current_permissions_json,
+        'data_filters': data_filters,
+        'dropdown_restrictions': dropdown_restrictions,
     })
 
 
@@ -329,6 +346,53 @@ def update_profile_permissions(request, profile_id):
         import json
         profile = get_object_or_404(Profile, id=profile_id)
         data = json.loads(request.body)
+        
+        # Check if this is a field permissions save request
+        action = data.get('action')
+        
+        if action == 'save_field_permissions':
+            # Handle field permissions
+            field_permissions = data.get('field_permissions', [])
+            
+            print(f"📋 Saving field permissions: profile_id={profile_id}, count={len(field_permissions)}")
+            
+            for field_perm in field_permissions:
+                module_name = field_perm.get('module')
+                model_name = field_perm.get('model')
+                field_name = field_perm.get('field')
+                can_view = field_perm.get('can_view', False)
+                can_edit = field_perm.get('can_edit', False)
+                
+                try:
+                    module = Module.objects.get(name=module_name)
+                    
+                    # Update or create field permission
+                    FieldPermission.objects.update_or_create(
+                        profile=profile,
+                        module=module,
+                        model_name=model_name,
+                        field_name=field_name,
+                        defaults={
+                            'can_view': can_view,
+                            'can_edit': can_edit,
+                            'can_filter': can_view,  # If can view, can filter
+                            'is_visible_in_list': can_view,
+                            'is_visible_in_detail': can_view,
+                            'is_visible_in_forms': can_edit,
+                            'is_active': True
+                        }
+                    )
+                except Module.DoesNotExist:
+                    print(f"⚠️ Module not found: {module_name}")
+                    continue
+            
+            print(f"✅ Successfully saved {len(field_permissions)} field permissions")
+            return JsonResponse({
+                'success': True, 
+                'message': f'Saved {len(field_permissions)} field permissions'
+            })
+        
+        # Handle module permissions (existing logic)
         module_name = data.get('module')
         permission_level = int(data.get('level', 0))
         
@@ -359,6 +423,134 @@ def update_profile_permissions(request, profile_id):
         print(f"❌ ERROR: Error updating permissions: {str(e)}")
         print(f"❌ ERROR: Traceback: {traceback.format_exc()}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def get_module_fields(request, profile_id, module_name):
+    """Get all model fields for a specific module to display field permissions"""
+    print(f"🔍 get_module_fields called: profile_id={profile_id}, module_name={module_name}")
+    
+    if not request.user.is_superuser:
+        print(f"❌ Access denied: user {request.user.username} is not superuser")
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        from django.apps import apps
+        profile = get_object_or_404(Profile, id=profile_id)
+        print(f"✅ Profile found: {profile.name}")
+        
+        module = get_object_or_404(Module, name=module_name)
+        print(f"✅ Module found: {module.display_name}")
+        
+        # Get all models for this module
+        # Try to find the Django app with name variations
+        app_config = None
+        app_name_to_use = module_name
+        
+        # Try exact match first
+        try:
+            app_config = apps.get_app_config(module_name)
+            print(f"✅ App config found for {module_name} (exact match)")
+        except LookupError:
+            # Try with 's' added (property -> properties)
+            try:
+                app_config = apps.get_app_config(module_name + 's')
+                app_name_to_use = module_name + 's'
+                print(f"✅ App config found for {app_name_to_use} (plural)")
+            except LookupError:
+                # Try without 's' (leads -> lead)
+                if module_name.endswith('s'):
+                    try:
+                        app_config = apps.get_app_config(module_name[:-1])
+                        app_name_to_use = module_name[:-1]
+                        print(f"✅ App config found for {app_name_to_use} (singular)")
+                    except LookupError:
+                        pass
+                
+                # Try y -> ies (property -> properties)
+                if not app_config and module_name.endswith('y'):
+                    try:
+                        app_config = apps.get_app_config(module_name[:-1] + 'ies')
+                        app_name_to_use = module_name[:-1] + 'ies'
+                        print(f"✅ App config found for {app_name_to_use} (y->ies)")
+                    except LookupError:
+                        pass
+        
+        if not app_config:
+            error_msg = f'Django app not found for module "{module_name}". This module may have been deleted from the codebase.'
+            print(f"❌ {error_msg}")
+            return JsonResponse({'error': error_msg}, status=404)
+        
+        models_data = []
+        
+        for model in app_config.get_models():
+            # Skip through models, history models, and preference models
+            model_name = model._meta.model_name
+            if model_name and ('through' in model_name or 'history' in model_name or 'preferences' in model_name or 'audit' in model_name):
+                continue
+            
+            fields_data = []
+            
+            # Get all fields except many-to-many and reverse relations
+            for field in model._meta.get_fields():
+                if field.many_to_many or field.one_to_many:
+                    continue
+                
+                # Get existing field permission if any
+                try:
+                    field_perm = FieldPermission.objects.get(
+                        profile=profile,
+                        module=module,
+                        model_name=model.__name__,
+                        field_name=field.name
+                    )
+                    can_view = field_perm.can_view
+                    can_edit = field_perm.can_edit
+                except FieldPermission.DoesNotExist:
+                    # Default: all fields visible and editable
+                    can_view = True
+                    can_edit = True
+                
+                field_info = {
+                    'name': field.name,
+                    'verbose_name': getattr(field, 'verbose_name', field.name).title(),
+                    'field_type': field.get_internal_type() if hasattr(field, 'get_internal_type') else 'Unknown',
+                    'can_view': can_view,
+                    'can_edit': can_edit,
+                    'is_required': not getattr(field, 'blank', True) if hasattr(field, 'blank') else False,
+                }
+                
+                fields_data.append(field_info)
+            
+            if fields_data:  # Only include models that have fields
+                verbose_name = model._meta.verbose_name
+                model_verbose_name = verbose_name.title() if verbose_name else model.__name__
+                models_data.append({
+                    'model_name': model.__name__,
+                    'model_verbose_name': model_verbose_name,
+                    'fields': fields_data
+                })
+        
+        print(f"✅ Found {len(models_data)} models with fields for {module_name}")
+        
+        return JsonResponse({
+            'success': True,
+            'module': module_name,
+            'models': models_data
+        })
+        
+    except Exception as e:
+        import traceback
+        error_msg = str(e)
+        traceback_str = traceback.format_exc()
+        print(f"❌ Error getting module fields: {error_msg}")
+        print(f"❌ Traceback: {traceback_str}")
+        return JsonResponse({
+            'success': False,
+            'error': error_msg,
+            'traceback': traceback_str if request.user.is_superuser else None
+        }, status=500)
 
 
 @login_required
@@ -539,6 +731,7 @@ def edit_user_view(request, user_id):
 
 
 @login_required
+@require_POST
 def toggle_user_status(request, user_id):
     """Toggle user active/inactive status"""
     if not request.user.is_superuser:
@@ -563,7 +756,16 @@ def toggle_user_status(request, user_id):
             })
     
     user.is_active = not user.is_active
-    user.save()
+    user.save(update_fields=['is_active'])
+    
+    try:
+        user_profile = user.user_profile
+    except UserProfile.DoesNotExist:
+        user_profile = None
+    
+    if user_profile:
+        user_profile.is_active = user.is_active
+        user_profile.save(update_fields=['is_active'])
     
     UserActivity.objects.create(
         user=request.user,
@@ -576,6 +778,7 @@ def toggle_user_status(request, user_id):
     return JsonResponse({
         'success': True,
         'is_active': user.is_active,
+        'profile_is_active': user_profile.is_active if user_profile else None,
         'message': f'User {"activated" if user.is_active else "deactivated"} successfully'
     })
 
@@ -657,6 +860,7 @@ def create_profile_view(request):
     if request.method == 'POST':
         name = request.POST.get('name', '').strip()
         description = request.POST.get('description', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
         
         if not name:
             messages.error(request, 'Profile name is required.')
@@ -668,7 +872,8 @@ def create_profile_view(request):
         
         profile = Profile.objects.create(
             name=name,
-            description=description
+            description=description,
+            is_active=is_active
         )
         
         UserActivity.objects.create(
@@ -782,3 +987,390 @@ def view_user_profile(request, user_id):
 def auth_check_view(request):
     """Check authentication status"""
     return render(request, 'authentication/auth_check.html')
+
+
+@csrf_exempt
+@login_required
+def get_model_fields_for_filter(request, module_name):
+    """Get all fields for a model to use in filter builder"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        from django.apps import apps
+        
+        # Map module names to app names and model names
+        model_map = {
+            'leads': ('leads', 'Lead'),
+            'properties': ('properties', 'Property'),
+            'projects': ('projects', 'Project'),
+            'authentication': ('authentication', 'User'),
+        }
+        
+        module_lower = module_name.lower()
+        if module_lower not in model_map:
+            return JsonResponse({'error': f'Unknown module: {module_name}'}, status=400)
+        
+        app_label, model_name = model_map[module_lower]
+        
+        try:
+            model = apps.get_model(app_label, model_name)
+        except LookupError:
+            return JsonResponse({'error': f'Model not found: {app_label}.{model_name}'}, status=404)
+        
+        # Get all fields from the model
+        fields_list = []
+        
+        # Get regular fields
+        for field in model._meta.get_fields():
+            field_name = field.name
+            field_type = field.get_internal_type() if hasattr(field, 'get_internal_type') else 'Unknown'
+            
+            # Skip reverse relations
+            if field.auto_created and not field.concrete:
+                continue
+            
+            # Determine field category and suggested operators
+            if field_type in ['CharField', 'TextField', 'EmailField', 'URLField', 'SlugField']:
+                category = 'text'
+                operators = ['__icontains', '__exact', '__startswith', '__endswith', '__in']
+            elif field_type in ['IntegerField', 'BigIntegerField', 'SmallIntegerField', 'PositiveIntegerField', 
+                               'FloatField', 'DecimalField']:
+                category = 'number'
+                operators = ['__exact', '__gt', '__gte', '__lt', '__lte', '__in']
+            elif field_type in ['BooleanField', 'NullBooleanField']:
+                category = 'boolean'
+                operators = ['__exact']
+            elif field_type in ['DateField', 'DateTimeField']:
+                category = 'date'
+                operators = ['__exact', '__gt', '__gte', '__lt', '__lte', '__year', '__month', '__day']
+            elif field_type in ['ForeignKey', 'OneToOneField']:
+                category = 'relation'
+                operators = ['__exact', '__in']
+                # Add related field lookups
+                related_model = field.related_model
+                field_name = field.name
+                # Add base relation
+                fields_list.append({
+                    'value': f'{field_name}',
+                    'label': f'{field.verbose_name.title()} (ID)',
+                    'type': category,
+                    'operators': operators
+                })
+                # Add common related field lookups
+                if hasattr(related_model, 'name'):
+                    fields_list.append({
+                        'value': f'{field_name}__name',
+                        'label': f'{field.verbose_name.title()} → Name',
+                        'type': 'text',
+                        'operators': ['__icontains', '__exact', '__in'],
+                        'has_choices': True  # Flag for frontend to show dropdown
+                    })
+                if hasattr(related_model, 'username'):
+                    fields_list.append({
+                        'value': f'{field_name}__username',
+                        'label': f'{field.verbose_name.title()} → Username',
+                        'type': 'text',
+                        'operators': ['__icontains', '__exact'],
+                        'has_choices': True  # Flag for frontend to show dropdown
+                    })
+                continue
+            elif field_type == 'ManyToManyField':
+                category = 'relation_many'
+                operators = ['__in']
+            else:
+                category = 'other'
+                operators = ['__exact', '__icontains']
+            
+            # Get verbose name or use field name
+            verbose_name = getattr(field, 'verbose_name', field_name)
+            label = verbose_name.title() if verbose_name else field_name.replace('_', ' ').title()
+            
+            fields_list.append({
+                'value': field_name,
+                'label': label,
+                'type': category,
+                'operators': operators
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'model': model_name,
+            'fields': fields_list
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def get_field_choices(request, module_name, field_name):
+    """Get available choices/values for a specific field (especially ForeignKey fields)"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    try:
+        from django.apps import apps
+        
+        # Map module names to app names and model names
+        model_map = {
+            'leads': ('leads', 'Lead'),
+            'properties': ('properties', 'Property'),
+            'projects': ('projects', 'Project'),
+            'authentication': ('authentication', 'User'),
+        }
+        
+        module_lower = module_name.lower()
+        if module_lower not in model_map:
+            return JsonResponse({'error': f'Unknown module: {module_name}'}, status=400)
+        
+        app_label, model_name = model_map[module_lower]
+        
+        try:
+            model = apps.get_model(app_label, model_name)
+        except LookupError:
+            return JsonResponse({'error': f'Model not found: {app_label}.{model_name}'}, status=404)
+        
+        # Parse field name (may include lookup like "property_type__name")
+        field_parts = field_name.split('__')
+        base_field_name = field_parts[0]
+        
+        # Get the field from the model
+        try:
+            field = model._meta.get_field(base_field_name)
+        except Exception as e:
+            return JsonResponse({'error': f'Field not found: {field_name}'}, status=404)
+        
+        choices = []
+        
+        # Check if it's a ForeignKey
+        if hasattr(field, 'related_model'):
+            related_model = field.related_model
+            
+            # Determine which field to display
+            if len(field_parts) > 1:
+                display_field = field_parts[1]  # e.g., "name" from "property_type__name"
+            else:
+                # Try to find a suitable display field
+                if hasattr(related_model, 'name'):
+                    display_field = 'name'
+                elif hasattr(related_model, 'display_name'):
+                    display_field = 'display_name'
+                elif hasattr(related_model, 'title'):
+                    display_field = 'title'
+                else:
+                    display_field = 'id'
+            
+            # Fetch all records from the related model
+            try:
+                records = related_model.objects.all()[:100]  # Limit to 100 for performance
+                
+                for record in records:
+                    if hasattr(record, display_field):
+                        value = getattr(record, display_field)
+                        choices.append({
+                            'id': record.pk,
+                            'value': str(value),
+                            'display': str(value)
+                        })
+                    else:
+                        choices.append({
+                            'id': record.pk,
+                            'value': str(record.pk),
+                            'display': str(record)
+                        })
+            except Exception as e:
+                return JsonResponse({'error': f'Error fetching records: {str(e)}'}, status=500)
+        
+        # Check if field has choices defined
+        elif hasattr(field, 'choices') and field.choices:
+            for choice_value, choice_display in field.choices:
+                choices.append({
+                    'value': choice_value,
+                    'display': choice_display
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'field': field_name,
+            'choices': choices,
+            'has_choices': len(choices) > 0
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
+
+# ==================== DATA FILTERS & DROPDOWN RESTRICTIONS CRUD ====================
+
+@csrf_exempt
+@login_required
+def manage_data_filter(request, profile_id):
+    """Create, update, or delete data filters for a profile"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    profile = get_object_or_404(Profile, id=profile_id)
+    
+    if request.method == 'GET':
+        # Get all data filters for this profile
+        filters = DataFilter.objects.filter(profile=profile).select_related('module')
+        filters_data = [{
+            'id': f.id,
+            'name': f.name,
+            'description': f.description,
+            'module_id': f.module.id,
+            'module_name': f.module.name,
+            'module_display': f.module.display_name,
+            'model_name': f.model_name,
+            'filter_type': f.filter_type,
+            'filter_conditions': f.filter_conditions,
+            'is_active': f.is_active,
+            'order': f.order,
+        } for f in filters]
+        return JsonResponse({'success': True, 'filters': filters_data})
+    
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            if action == 'create':
+                module = get_object_or_404(Module, id=data.get('module_id'))
+                data_filter = DataFilter.objects.create(
+                    profile=profile,
+                    module=module,
+                    name=data.get('name'),
+                    description=data.get('description', ''),
+                    model_name=data.get('model_name'),
+                    filter_type=data.get('filter_type', 'include'),
+                    filter_conditions=data.get('filter_conditions', {}),
+                    is_active=data.get('is_active', True),
+                    order=data.get('order', 0)
+                )
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Data filter created successfully',
+                    'filter_id': data_filter.id
+                })
+            
+            elif action == 'update':
+                data_filter = get_object_or_404(DataFilter, id=data.get('filter_id'), profile=profile)
+                data_filter.name = data.get('name', data_filter.name)
+                data_filter.description = data.get('description', data_filter.description)
+                data_filter.model_name = data.get('model_name', data_filter.model_name)
+                data_filter.filter_type = data.get('filter_type', data_filter.filter_type)
+                data_filter.filter_conditions = data.get('filter_conditions', data_filter.filter_conditions)
+                data_filter.is_active = data.get('is_active', data_filter.is_active)
+                data_filter.order = data.get('order', data_filter.order)
+                data_filter.save()
+                return JsonResponse({'success': True, 'message': 'Data filter updated successfully'})
+            
+            elif action == 'delete':
+                data_filter = get_object_or_404(DataFilter, id=data.get('filter_id'), profile=profile)
+                data_filter.delete()
+                return JsonResponse({'success': True, 'message': 'Data filter deleted successfully'})
+            
+            else:
+                return JsonResponse({'error': 'Invalid action'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+@login_required
+def manage_dropdown_restriction(request, profile_id):
+    """Create, update, or delete dropdown restrictions for a profile"""
+    if not request.user.is_superuser:
+        return JsonResponse({'error': 'Access denied'}, status=403)
+    
+    profile = get_object_or_404(Profile, id=profile_id)
+    
+    if request.method == 'GET':
+        # Get all dropdown restrictions for this profile
+        restrictions = DynamicDropdown.objects.filter(profile=profile).select_related('module')
+        restrictions_data = [{
+            'id': r.id,
+            'name': r.name,
+            'module_id': r.module.id,
+            'module_name': r.module.name,
+            'module_display': r.module.display_name,
+            'field_name': r.field_name,
+            'source_model': r.source_model,
+            'source_field': r.source_field,
+            'display_field': r.display_field,
+            'allowed_values': r.allowed_values,
+            'restricted_values': r.restricted_values,
+            'filter_conditions': r.filter_conditions,
+            'is_multi_select': r.is_multi_select,
+            'default_value': r.default_value,
+            'placeholder_text': r.placeholder_text,
+            'is_active': r.is_active,
+            'order': r.order,
+        } for r in restrictions]
+        return JsonResponse({'success': True, 'restrictions': restrictions_data})
+    
+    elif request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            action = data.get('action')
+            
+            if action == 'create':
+                module = get_object_or_404(Module, id=data.get('module_id'))
+                dropdown = DynamicDropdown.objects.create(
+                    profile=profile,
+                    module=module,
+                    name=data.get('name'),
+                    field_name=data.get('field_name'),
+                    source_model=data.get('source_model'),
+                    source_field=data.get('source_field'),
+                    display_field=data.get('display_field'),
+                    allowed_values=data.get('allowed_values', []),
+                    restricted_values=data.get('restricted_values', []),
+                    filter_conditions=data.get('filter_conditions', {}),
+                    is_multi_select=data.get('is_multi_select', False),
+                    default_value=data.get('default_value', ''),
+                    placeholder_text=data.get('placeholder_text', ''),
+                    is_active=data.get('is_active', True),
+                    order=data.get('order', 0)
+                )
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Dropdown restriction created successfully',
+                    'restriction_id': dropdown.id
+                })
+            
+            elif action == 'update':
+                dropdown = get_object_or_404(DynamicDropdown, id=data.get('restriction_id'), profile=profile)
+                dropdown.name = data.get('name', dropdown.name)
+                dropdown.field_name = data.get('field_name', dropdown.field_name)
+                dropdown.source_model = data.get('source_model', dropdown.source_model)
+                dropdown.source_field = data.get('source_field', dropdown.source_field)
+                dropdown.display_field = data.get('display_field', dropdown.display_field)
+                dropdown.allowed_values = data.get('allowed_values', dropdown.allowed_values)
+                dropdown.restricted_values = data.get('restricted_values', dropdown.restricted_values)
+                dropdown.filter_conditions = data.get('filter_conditions', dropdown.filter_conditions)
+                dropdown.is_multi_select = data.get('is_multi_select', dropdown.is_multi_select)
+                dropdown.default_value = data.get('default_value', dropdown.default_value)
+                dropdown.placeholder_text = data.get('placeholder_text', dropdown.placeholder_text)
+                dropdown.is_active = data.get('is_active', dropdown.is_active)
+                dropdown.order = data.get('order', dropdown.order)
+                dropdown.save()
+                return JsonResponse({'success': True, 'message': 'Dropdown restriction updated successfully'})
+            
+            elif action == 'delete':
+                dropdown = get_object_or_404(DynamicDropdown, id=data.get('restriction_id'), profile=profile)
+                dropdown.delete()
+                return JsonResponse({'success': True, 'message': 'Dropdown restriction deleted successfully'})
+            
+            else:
+                return JsonResponse({'error': 'Invalid action'}, status=400)
+                
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

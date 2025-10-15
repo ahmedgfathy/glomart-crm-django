@@ -31,7 +31,8 @@ group = "django-user"
 chdir = "/var/www/glomart-crm"
 
 # Enable preloading the application in master process
-preload_app = True
+# Temporarily disabled to reload models after changes
+preload_app = False
 
 # Disable access logging to stdout (we have accesslog)
 disable_redirect_access_to_syslog = True
