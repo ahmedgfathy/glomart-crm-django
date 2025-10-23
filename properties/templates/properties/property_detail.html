@@ -251,15 +251,15 @@
         transition: all 0.3s ease;
     }
 
-    .action-buttons .btn-primary {
-        background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    .action-buttons .btn-gradient {
+        background: linear-gradient(135deg, #1877f2 0%, #4267B2 100%);
         border: none;
-        box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+        box-shadow: 0 2px 8px rgba(24, 119, 242, 0.3);
     }
 
-    .action-buttons .btn-primary:hover {
+    .action-buttons .btn-gradient:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4);
     }
 </style>
 {% endblock %}
@@ -923,15 +923,15 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="{% url 'properties:property_edit' property.property_id %}" class="btn btn-primary">
+                        <a href="{% url 'properties:property_edit' property.property_id %}" class="btn btn-gradient">
                             <i class="bi bi-pencil me-2"></i>Edit Property
                         </a>
                         {% if property.owner_phone %}
-                        <a href="tel:{{ property.owner_phone }}" class="btn btn-outline-success">
+                        <a href="tel:{{ property.owner_phone }}" class="btn btn-outline-primary">
                             <i class="bi bi-telephone me-2"></i>Call Owner
                         </a>
                         {% elif property.mobile_number %}
-                        <a href="tel:{{ property.mobile_number }}" class="btn btn-outline-success">
+                        <a href="tel:{{ property.mobile_number }}" class="btn btn-outline-primary">
                             <i class="bi bi-telephone me-2"></i>Call Contact
                         </a>
                         {% endif %}

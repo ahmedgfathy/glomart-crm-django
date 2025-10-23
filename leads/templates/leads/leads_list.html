@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="content-wrapper">
-<div class="row mb-4">
+<div class="row mb-2">
     <div class="col-12">
         <div class="d-flex justify-content-between align-items-center">
             <div>
@@ -40,7 +40,7 @@
 </div>
 
 <!-- Statistics Cards -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-md-3">
         <div class="stat-card">
             <div class="stat-number">{{ total_leads }}</div>
@@ -72,7 +72,7 @@
 </div>
 
 <!-- Search and Filters -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-12">
         <div class="card-modern p-3">
             <form method="get" id="filterForm" class="row g-3 align-items-end" action="{% url 'leads:leads_list' %}">
@@ -154,7 +154,7 @@
             <button type="button" class="btn btn-outline-warning btn-sm" onclick="bulkStatusChange()">
                 <i class="bi bi-arrow-repeat me-1"></i>Change Status
             </button>
-            <button type="button" class="btn btn-outline-success btn-sm" onclick="bulkExport()">
+            <button type="button" class="btn btn-outline-primary btn-sm" onclick="bulkExport()">
                 <i class="bi bi-download me-1"></i>Export
             </button>
             <button type="button" class="btn btn-outline-danger btn-sm" onclick="bulkDelete()">
@@ -1059,7 +1059,7 @@ function resetColumnDefaults() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitBulkAssign()">Assign</button>
+                <button type="button" class="btn btn-gradient" onclick="submitBulkAssign()">Assign</button>
             </div>
         </div>
     </div>
@@ -1088,7 +1088,7 @@ function resetColumnDefaults() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitBulkStatus()">Update Status</button>
+                <button type="button" class="btn btn-gradient" onclick="submitBulkStatus()">Update Status</button>
             </div>
         </div>
     </div>
@@ -1210,7 +1210,7 @@ function resetColumnDefaults() {
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" onclick="resetColumnDefaults()">Reset to Defaults</button>
+                <button type="button" class="btn btn-gradient" onclick="resetColumnDefaults()">Reset to Defaults</button>
             </div>
         </div>
     </div>

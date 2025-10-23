@@ -1,7 +1,9 @@
 {% load static %}
 
-<!-- Dark Header with Logo Only -->
-<nav class="navbar navbar-dark bg-dark fixed-top">
+<!-- Pure Black Header -->
+{% load static %}
+{% load user_extras %}
+<nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom sticky-top shadow-sm">
     <div class="container-fluid px-4">
         <!-- Logo positioned naturally with some breathing room -->
         <a class="navbar-brand d-flex align-items-center" href="{% url 'authentication:dashboard' %}" style="margin-left: 20px;">
@@ -14,57 +16,78 @@
         <div class="d-flex align-items-center gap-3 ms-auto">
             <!-- Email -->
             <a href="https://mail.glomartrealestates.com/" target="_blank" class="btn btn-outline-secondary border-0" title="Open Email">
-                <i class="bi bi-envelope"></i>
+                <span class="material-symbols-outlined">mail</span>
             </a>
             
-            <!-- Calendar -->
-            <button class="btn btn-outline-secondary border-0" type="button" title="Calendar" onclick="alert('Calendar module coming soon!')">
-                <i class="bi bi-calendar3"></i>
-            </button>
+            <!-- Calendar / Events -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary border-0 position-relative" type="button" data-bs-toggle="dropdown" id="calendarButton">
+                    <span class="material-symbols-outlined">event</span>
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-success" id="eventsNotificationBadge" style="display: none; font-size: 0.6rem;"></span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" style="min-width: 350px; max-height: 400px; overflow-y: auto;" id="calendarDropdown">
+                    <li>
+                        <h6 class="dropdown-header d-flex justify-content-between align-items-center">
+                            <span><span class="material-symbols-outlined" style="font-size: 18px; vertical-align: middle;">event</span> Upcoming Events</span>
+                            <span class="badge bg-success" id="eventsCountBadge">0</span>
+                        </h6>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <div class="px-3 py-2 text-center" id="eventsLoadingState">
+                            <div class="spinner-border spinner-border-sm text-success" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <small class="d-block mt-2 text-muted">Loading events...</small>
+                        </div>
+                        <div id="eventsListContainer"></div>
+                    </li>
+                </ul>
+            </div>
             
             <!-- Documents -->
             <button class="btn btn-outline-secondary border-0" type="button" title="Documents" onclick="alert('Documents module coming soon!')">
-                <i class="bi bi-file-earmark-text"></i>
+                <span class="material-symbols-outlined">description</span>
             </button>
             
             <!-- Search -->
             <button class="btn btn-outline-secondary border-0" type="button" title="Search">
-                <i class="bi bi-search"></i>
+                <span class="material-symbols-outlined">search</span>
             </button>
             
             <!-- Notifications -->
             <div class="dropdown">
                 <button class="btn btn-outline-secondary border-0 position-relative" type="button" data-bs-toggle="dropdown">
-                    <i class="bi bi-bell"></i>
+                    <span class="material-symbols-outlined">notifications</span>
                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem;">3</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li><h6 class="dropdown-header">Notifications</h6></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-info-circle me-2"></i>New lead assigned</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="bi bi-check-circle me-2"></i>Task completed</a></li>
+                    <li><a class="dropdown-item" href="#"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">info</span>New lead assigned</a></li>
+                    <li><a class="dropdown-item" href="#"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">check_circle</span>Task completed</a></li>
                 </ul>
             </div>
             
-            <!-- User Menu -->
+            <!-- User Menu with Beautiful Avatar -->
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle border-0 d-flex align-items-center" type="button" data-bs-toggle="dropdown">
-                    <div class="bg-primary rounded-circle p-2 me-2">
-                        <i class="bi bi-person text-white"></i>
+                <button class="btn btn-outline-secondary dropdown-toggle border-0 d-flex align-items-center user-avatar-button" type="button" data-bs-toggle="dropdown">
+                    <div class="user-avatar-circle">
+                        <span class="user-initials">{{ user|get_initials }}</span>
                     </div>
                     <span class="fw-semibold">{{ user.get_full_name|default:user.username }}</span>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
-                    <li><a class="dropdown-item" href="{% url 'authentication:user_profile_settings' %}"><i class="bi bi-person me-2"></i>My Profile</a></li>
-                    <li><a class="dropdown-item" href="{% url 'authentication:user_profile_settings' %}"><i class="bi bi-gear me-2"></i>User Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:user_profile_settings' %}"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">person</span>My Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:user_profile_settings' %}"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">settings</span>User Settings</a></li>
                     {% if user.is_superuser %}
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{% url 'authentication:company_settings' %}"><i class="bi bi-building-gear me-2"></i>Company Settings</a></li>
-                    <li><a class="dropdown-item" href="{% url 'authentication:users' %}"><i class="bi bi-people me-2"></i>Manage Users</a></li>
-                    <li><a class="dropdown-item" href="{% url 'authentication:profiles' %}"><i class="bi bi-shield-check me-2"></i>Manage Profiles</a></li>
-                    <li><a class="dropdown-item" href="/admin/"><i class="bi bi-gear-wide me-2"></i>Admin</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:company_settings' %}"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">business</span>Company Settings</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:users' %}"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">group</span>Manage Users</a></li>
+                    <li><a class="dropdown-item" href="{% url 'authentication:profiles' %}"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">admin_panel_settings</span>Manage Profiles</a></li>
+                    <li><a class="dropdown-item" href="/admin/"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">dashboard</span>Admin</a></li>
                     {% endif %}
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="{% url 'authentication:logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'authentication:logout' %}"><span class="material-symbols-outlined me-2" style="font-size: 18px; vertical-align: middle;">logout</span>Logout</a></li>
                 </ul>
             </div>
         </div>

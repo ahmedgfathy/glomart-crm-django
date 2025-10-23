@@ -1,5 +1,0 @@
-mcp>=0.8.0
-PyMySQL>=1.1.0
-python-dotenv>=1.0.0
-glob2>=0.7
-typing-extensions>=4.0.0
