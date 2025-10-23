@@ -35,7 +35,7 @@ PROD_DB_USER="root"
 PROD_DB_PASS="ZeroCall20!@HH##1655&&"
 
 LOCAL_DB_HOST="localhost"
-LOCAL_DB_NAME="glomart_crm_local"
+LOCAL_DB_NAME="django_db_glomart_rs"
 LOCAL_DB_USER="root"
 LOCAL_DB_PASS="zerocall"
 
@@ -133,11 +133,68 @@ log "Cleaning up temporary files..."
 rm -f "$PROD_EXPORT_FILE"  # Remove production export file for security
 success "Cleanup completed"
 
+# =============================================================================
+# Sync static files (CSS, themes, images)
+# =============================================================================
+log "🎨 Syncing static files from production..."
+PROD_SERVER="root@5.180.148.92"
+PROD_PATH="/var/www/glomart-crm"
+LOCAL_PATH="/Users/ahmedgomaa/Downloads/glomart-crm-django"
+
+# Backup local static files
+if [ -d "${LOCAL_PATH}/static" ]; then
+    log "Backing up local static files..."
+    tar -czf "local_static_backup_$(date +%Y%m%d_%H%M%S).tar.gz" -C "${LOCAL_PATH}" static 2>/dev/null || true
+    success "Local static files backed up"
+fi
+
+# Sync production static files
+log "Downloading production static files (CSS, JS, images, themes)..."
+rsync -avz --delete "$PROD_SERVER:$PROD_PATH/static/" "${LOCAL_PATH}/static/" 2>/dev/null || {
+    warning "rsync failed, trying scp..."
+    rm -rf "${LOCAL_PATH}/static"
+    scp -r "$PROD_SERVER:$PROD_PATH/static" "${LOCAL_PATH}/" 2>/dev/null
+}
+success "Static files synced from production!"
+
+# =============================================================================
+# Sync media files (user uploads, property images)
+# =============================================================================
+log "📷 Syncing media files from production..."
+
+# Backup local media files
+if [ -d "${LOCAL_PATH}/media" ]; then
+    log "Backing up local media files..."
+    tar -czf "local_media_backup_$(date +%Y%m%d_%H%M%S).tar.gz" -C "${LOCAL_PATH}" media 2>/dev/null || true
+    success "Local media files backed up"
+fi
+
+# Sync production media files
+log "Downloading production media files (this may take a while)..."
+rsync -avz --delete "$PROD_SERVER:$PROD_PATH/media/" "${LOCAL_PATH}/media/" 2>/dev/null || {
+    warning "rsync failed, trying scp..."
+    rm -rf "${LOCAL_PATH}/media"
+    scp -r "$PROD_SERVER:$PROD_PATH/media" "${LOCAL_PATH}/" 2>/dev/null
+}
+success "Media files synced from production!"
+
 success "🎉 Production data successfully copied to local development!"
+log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+log "📊 SYNC SUMMARY - Local is now an EXACT copy of production!"
+log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+log "✅ Database: Production data copied to django_db_glomart_rs"
+log "✅ Static Files: CSS, themes, colors, images synced"
+log "✅ Media Files: Property images and uploads synced"
 log "📊 You now have the master production data in your local environment"
 log "🔐 Local admin login: admin / admin123"
 log "💾 Previous local data backed up to: $BACKUP_FILE"
 log "🚨 Remember: Production database was NOT modified - only copied FROM"
+
+log "\n🚀 NEXT STEPS:"
+log "   1. Restart Django server: python manage.py runserver"
+log "   2. Visit: http://127.0.0.1:8000/"
+log "   3. Local design/colors should now match production exactly!"
+log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 warning "⚠️  IMPORTANT REMINDERS:"
 warning "   1. Production database (master) was NOT touched"

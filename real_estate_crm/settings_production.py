@@ -46,7 +46,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'leads.middleware.UserActivityMiddleware',  # Custom middleware for activity tracking
+    'leads.middleware.AuditMiddleware',  # Custom middleware for audit tracking
 ]
 
 ROOT_URLCONF = 'real_estate_crm.urls'
@@ -62,7 +62,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'authentication.enhanced_context_processors.enhanced_module_context',
+                'authentication.enhanced_context_processors.enhanced_permissions_context',
             ],
         },
     },
@@ -126,7 +126,7 @@ MEDIA_ROOT = os.environ.get('MEDIA_ROOT', '/var/www/glomart-crm/media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom user model
-AUTH_USER_MODEL = 'authentication.User'
+#AUTH_USER_MODEL = .authentication.User. # Removed - using default User model
 
 # Login URLs
 LOGIN_URL = '/authentication/login/'

@@ -420,6 +420,13 @@ class UserActivity(models.Model):
         ('delete', 'Delete'),
         ('export', 'Export'),
         ('import', 'Import'),
+        ('user_created', 'User Created'),
+        ('user_updated', 'User Updated'),
+        ('user_deleted', 'User Deleted'),
+        ('user_status_changed', 'User Status Changed'),
+        ('profile_created', 'Profile Created'),
+        ('profile_updated', 'Profile Updated'),
+        ('profile_deleted', 'Profile Deleted'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activities')

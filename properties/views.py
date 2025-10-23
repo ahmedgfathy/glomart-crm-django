@@ -75,31 +75,7 @@ def property_list(request):
     ).prefetch_related('assigned_users')
     
     # Apply user profile data filters first
-    # properties = apply_user_data_filters(request.user, properties, 'Property') # TEMPORARILY DISABLED
-    
-    # Apply search filters
-    search_query = request.GET.get('search', '').strip()
-    if search_query:
-        properties = properties.filter(
-            Q(property_id__icontains=search_query) |
-            Q(property_number__icontains=search_query) |
-            Q(name__icontains=search_query) |
-            Q(description__icontains=search_query) |
-            Q(region__name__icontains=search_query) |
-            Q(compound__name__icontains=search_query) |
-            Q(mobile_number__icontains=search_query)
-        )
-def property_list(request):
-    """Display list of properties with search and filtering"""
-    
-    # Get all properties and apply user profile data filters
-    properties = Property.objects.select_related(
-        'region', 'property_type', 'category', 'status', 'activity',
-        'compound', 'handler', 'sales_person'
-    ).prefetch_related('assigned_users')
-    
-    # Apply user profile data filters first
-    # properties = apply_user_data_filters(request.user, properties, 'Property') # TEMPORARILY DISABLED
+    properties = apply_user_data_filters(request.user, properties, 'Property')
     
     # Apply search filters
     search_query = request.GET.get('search', '').strip()
@@ -296,7 +272,7 @@ def property_edit(request, property_id):
     ).prefetch_related('assigned_users')
     
     # Apply user profile data filters
-    # properties_queryset = apply_user_data_filters(request.user, properties_queryset, 'Property') # TEMPORARILY DISABLED
+    properties_queryset = apply_user_data_filters(request.user, properties_queryset, 'Property')
     
     # Order by creation date (same as list view)
     properties_queryset = properties_queryset.order_by('-created_at')

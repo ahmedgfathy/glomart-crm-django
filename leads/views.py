@@ -15,7 +15,7 @@ from .models import (
     Lead, LeadSource, LeadStatus, LeadNote, 
     LeadActivity, LeadDocument, LeadTag,
     LeadType, LeadPriority, LeadTemperature,
-    UserLeadPreferences
+    UserLeadPreferences, LeadEvent
 )
 from authentication.models import Module, Permission, DataFilter
 
@@ -1454,3 +1454,172 @@ def save_column_preferences(request):
             })
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+# ==================== EVENTS API ====================
+
+@login_required
+def get_lead_events_api(request, lead_id):
+    """Get all events for a specific lead"""
+    try:
+        lead = get_object_or_404(Lead, id=lead_id)
+        
+        # Check permissions
+        if not request.user.is_superuser:
+            user_profile = request.user.user_profile
+            if lead.assigned_to != request.user and not user_profile.profile.permissions.filter(
+                module__name='leads', code='view'
+            ).exists():
+                return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+        
+        # Get events
+        events = LeadEvent.objects.filter(lead_id=lead_id).order_by('-start_datetime')
+        
+        events_data = []
+        for event in events:
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'event_type': event.event_type,
+                'description': event.description,
+                'start_datetime': event.start_datetime.isoformat(),
+                'end_datetime': event.end_datetime.isoformat(),
+                'location': event.location,
+                'status': event.status,
+                'duration_minutes': event.duration_minutes,
+                'assigned_to': event.assigned_to.get_full_name() if event.assigned_to else None,
+                'created_by': event.created_by.get_full_name() if event.created_by else None,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@csrf_exempt
+@login_required
+def create_event_api(request):
+    """Create a new event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            lead_id = data.get('lead_id')
+            
+            lead = get_object_or_404(Lead, id=lead_id)
+            
+            # Check permissions
+            if not request.user.is_superuser:
+                user_profile = request.user.user_profile
+                if lead.assigned_to != request.user and not user_profile.profile.permissions.filter(
+                    module__name='leads', code='edit'
+                ).exists():
+                    return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+            
+            from django.utils.dateparse import parse_datetime
+            
+            # Create event
+            event = LeadEvent.objects.create(
+                lead_id=lead_id,
+                title=data.get('title'),
+                event_type=data.get('event_type', 'meeting'),
+                description=data.get('description', ''),
+                start_datetime=parse_datetime(data.get('start_datetime')),
+                end_datetime=parse_datetime(data.get('end_datetime')),
+                location=data.get('location', ''),
+                reminder_minutes_before=data.get('reminder_minutes_before', 30),
+                assigned_to=request.user,
+                created_by=request.user
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Event created successfully!',
+                'event_id': event.id
+            })
+        
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@csrf_exempt
+@login_required
+def update_event_status_api(request, event_id):
+    """Update event status"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(LeadEvent, id=event_id)
+            
+            # Check permissions
+            if not request.user.is_superuser:
+                if event.assigned_to != request.user and event.created_by != request.user:
+                    return JsonResponse({'success': False, 'error': 'Permission denied'}, status=403)
+            
+            event.status = data.get('status')
+            event.save(update_fields=['status'])
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Event {event.status} successfully!'
+            })
+        
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=400)
+
+
+@login_required
+def get_user_upcoming_events_api(request):
+    """Get upcoming events for the logged-in user (for calendar in navbar)"""
+    try:
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        # Get events for next 30 days
+        today = timezone.now()
+        next_month = today + timedelta(days=30)
+        
+        events = LeadEvent.objects.filter(
+            assigned_to=request.user,
+            start_datetime__gte=today,
+            start_datetime__lte=next_month,
+            status='scheduled'
+        ).order_by('start_datetime')[:20]  # Limit to 20 events
+        
+        events_data = []
+        for event in events:
+            try:
+                lead = Lead.objects.get(id=event.lead_id)
+                lead_name = lead.full_name
+            except Lead.DoesNotExist:
+                lead_name = "Unknown Lead"
+            
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'event_type': event.event_type,
+                'start_datetime': event.start_datetime.isoformat(),
+                'end_datetime': event.end_datetime.isoformat(),
+                'location': event.location,
+                'lead_id': event.lead_id,
+                'lead_name': lead_name,
+                'duration_minutes': event.duration_minutes,
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data,
+            'count': len(events_data)
+        })
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+

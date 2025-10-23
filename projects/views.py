@@ -19,8 +19,51 @@ from .models import (
     ProjectPriority, Currency, ProjectHistory, ProjectAssignment
 )
 from authentication.decorators import permission_required
-from authentication.models import UserActivity
+from authentication.models import UserActivity, DataFilter, Module
 from authentication.utils import log_user_activity
+
+
+def apply_user_data_filters(user, queryset, model_name):
+    """Apply user profile data filters to a queryset"""
+    if not hasattr(user, 'user_profile') or not user.user_profile.profile:
+        return queryset
+    
+    profile = user.user_profile.profile
+    
+    # Get data filters for this profile and model
+    try:
+        module = Module.objects.get(name='project')
+        filters = DataFilter.objects.filter(
+            profile=profile,
+            module=module,
+            model_name=model_name,
+            is_active=True
+        )
+        
+        if filters.exists():
+            # If there are multiple filters, we need to combine them properly
+            # For data access filters, we typically want to show records that match ANY of the filters (OR logic)
+            from django.db.models import Q
+            combined_filter = Q()
+            
+            for data_filter in filters:
+                if data_filter.filter_conditions:
+                    try:
+                        # Add each filter with OR logic
+                        combined_filter |= Q(**data_filter.filter_conditions)
+                    except Exception as e:
+                        # Log the error but don't break the view
+                        print(f"Error processing filter {data_filter.name}: {e}")
+                        continue
+            
+            # Apply the combined filter
+            if combined_filter:
+                queryset = queryset.filter(combined_filter)
+                    
+    except Module.DoesNotExist:
+        pass
+    
+    return queryset
 
 
 @login_required
@@ -31,6 +74,9 @@ def project_list(request):
         'status', 'project_type', 'category', 'priority', 
         'currency', 'assigned_to', 'created_by'
     ).filter(is_active=True)
+    
+    # Apply user profile data filters first
+    projects_query = apply_user_data_filters(request.user, projects_query, 'Project')
     
     # Apply filters
     search = request.GET.get('search')

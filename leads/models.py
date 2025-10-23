@@ -607,3 +607,87 @@ class UserLeadPreferences(models.Model):
         if self.show_actions:
             visible_columns.append('actions')
         return visible_columns
+
+
+class LeadEvent(models.Model):
+    """Events/Appointments associated with leads"""
+    EVENT_TYPES = [
+        ('meeting', 'Meeting'),
+        ('call', 'Phone Call'),
+        ('site_visit', 'Site Visit'),
+        ('follow_up', 'Follow Up'),
+        ('presentation', 'Presentation'),
+        ('negotiation', 'Negotiation'),
+        ('closing', 'Closing'),
+        ('other', 'Other'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('scheduled', 'Scheduled'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+        ('rescheduled', 'Rescheduled'),
+        ('no_show', 'No Show'),
+    ]
+    
+    lead_id = models.CharField(max_length=36, db_index=True)  # UUID string to match Lead.id
+    title = models.CharField(max_length=200)
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPES, default='meeting')
+    description = models.TextField(blank=True)
+    start_datetime = models.DateTimeField()
+    end_datetime = models.DateTimeField()
+    location = models.CharField(max_length=300, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
+    
+    # Attendees
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='assigned_events')
+    attendees = models.ManyToManyField(User, blank=True, related_name='lead_events')
+    
+    # Reminders
+    send_reminder = models.BooleanField(default=True)
+    reminder_minutes_before = models.PositiveIntegerField(default=30, help_text="Minutes before event to send reminder")
+    reminder_sent = models.BooleanField(default=False)
+    
+    # Meeting outcome (filled after completion)
+    outcome_notes = models.TextField(blank=True)
+    next_action = models.TextField(blank=True)
+    
+    # Metadata
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_events')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-start_datetime']
+        permissions = [
+            ("can_view_all_events", "Can view all events"),
+            ("can_manage_all_events", "Can manage all events"),
+        ]
+        indexes = [
+            models.Index(fields=['start_datetime', 'status']),
+            models.Index(fields=['assigned_to', 'start_datetime']),
+        ]
+    
+    def __str__(self):
+        return f"{self.title} ({self.start_datetime.strftime('%Y-%m-%d %H:%M')})"
+    
+    @property
+    def lead(self):
+        """Get the related lead object"""
+        try:
+            return Lead.objects.get(id=self.lead_id)
+        except Lead.DoesNotExist:
+            return None
+    
+    @property
+    def is_upcoming(self):
+        return self.start_datetime > timezone.now() and self.status == 'scheduled'
+    
+    @property
+    def is_past(self):
+        return self.end_datetime < timezone.now()
+    
+    @property
+    def duration_minutes(self):
+        return int((self.end_datetime - self.start_datetime).total_seconds() / 60)
+

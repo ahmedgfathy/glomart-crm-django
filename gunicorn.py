@@ -1,0 +1,9 @@
+bind = '127.0.0.1:8000'
+workers = 3
+timeout = 30
+keepalive = 2
+max_requests = 1000
+max_requests_jitter = 50
+preload_app = True  # Re-enabled after successful model loading
+user = 'django-user'
+group = 'django-user'
